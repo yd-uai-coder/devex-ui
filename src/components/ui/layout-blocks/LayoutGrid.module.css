@@ -1,0 +1,13 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--layout-grid-mobile-columns), 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+/* Menu.tsx の DESKTOP_MEDIA_QUERY (768px) に合わせている */
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(var(--layout-grid-desktop-columns), 1fr);
+  }
+}

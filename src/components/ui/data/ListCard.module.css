@@ -1,0 +1,13 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--list-card-mobile-columns), 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+/* Menu.tsx の DESKTOP_MEDIA_QUERY (768px) / LayoutGrid.module.css に合わせている */
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(var(--list-card-desktop-columns), 1fr);
+  }
+}

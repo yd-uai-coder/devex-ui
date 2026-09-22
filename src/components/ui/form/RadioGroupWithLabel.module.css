@@ -1,0 +1,11 @@
+/* RadioGroupの実際のDOM要素(RovingFocusGroupの素のView)は`flex`/`shrink`propを渡しても
+   孫のFrameにしか適用されず(RadioGroupWithLabel.tsx参照)、自身にはどのpropも届かない。
+   TamaguiはReact Native Viewの挙動に合わせ`.is_View`系要素へ基底CSSとして`flex-shrink: 0`を
+   当てているため(headlessブラウザでgetComputedStyleを実測し、`_shrink-*`ユーティリティ
+   クラスが一切無いのに`flex-shrink: 0`が出ていることを確認して発覚)、この要素は常に
+   コンテンツ幅のまま縮まず、選択肢の折り返し(flexWrap)が発動しなかった。
+   Tamaguiのprops経由では届かないため、直下の子要素をCSSで直接縮小可能にして回避する。 */
+.radioGroupWrap > div {
+  flex-shrink: 1;
+  min-width: 0;
+}

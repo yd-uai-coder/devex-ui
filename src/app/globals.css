@@ -1,0 +1,80 @@
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+  /* `clip` (not `hidden`) avoids a CSS quirk: setting only overflow-x to a
+     non-visible value implicitly promotes overflow-y to `auto`, which turns
+     `html` into its own scroll container and breaks normal page scrolling
+     for content taller than one viewport. */
+  overflow-x: clip;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Chromeは「ユーザー名+パスワード」という組のフォームを検出すると、実際に保存された
+   認証情報が無くても、該当する<input>にブラウザ独自のグレーのオートフィル背景を
+   リロードのたびに一瞬適用する。これがTamaguiのテーマ背景色が後から乗ったように見える
+   チラつきの原因(名前欄がパスワード欄と組で検出されやすく、メール欄はこの組み合わせ
+   判定の対象になりにくいため症状が出ない)。SSR出力(`curl`で未実行JS状態のHTMLを直接確認)
+   時点で`.t_Input`サブテーマの`--background`は既に正しく解決されていることを確認済みのため、
+   CSS変数解決のタイミング起因ではなくブラウザのオートフィルUIによるものと判断した。
+   対策は二重で行う: (1) `-webkit-box-shadow`の巨大なinsetで、Tamaguiが実際に使っている
+   `var(--background)`をオートフィル背景の上から塗り重ねて視覚的に隠す(ブラウザが
+   `background-color`を強制上書きしてもbox-shadowは別プロパティなので効く)。
+   (2) `:-webkit-autofill`自体の内部トランジションを極端に引き延ばし、(1)が効かない場合の
+   保険とする。`var(--background)`は`.t_Input`のようなコンポーネント別サブテーマの中でも
+   解決されるCSS変数のため、色をハードコードせずテーマ・ライト/ダーク・statusごとの
+   実際の背景色にそのまま追従する。 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px var(--background) inset;
+  box-shadow: 0 0 0px 1000px var(--background) inset;
+  -webkit-text-fill-color: var(--color);
+  caret-color: var(--color);
+  transition:
+    background-color 600000s ease-in-out 0s,
+    color 600000s ease-in-out 0s;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
