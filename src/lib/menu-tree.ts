@@ -23,6 +23,7 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "入力サジェスト", href: "/form-parts/suggest" },
       { label: "トークン入力", href: "/form-parts/token-input" },
       { label: "入力チェック", href: "/form-parts/validations" },
+      { label: "ファイルアップロード", href: "/form-parts/file-upload" },
     ],
   },
   {
@@ -51,6 +52,14 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "認証ガード", href: "/others/protected-demo" },
       { label: "サイズ・カラーサンプル", href: "/others/size-color-sample" },
       { label: "シャッフル", href: "/others/shuffle" }
+    ],
+  },
+  {
+    label: "Auth",
+    children: [
+      { label: "ユーザー登録", href: "/register" },
+      { label: "ログイン", href: "/login" },
+      { label: "ダッシュボード", href: "/dashboard" },
     ],
   },
 ];

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/layout/AppShell";
+import { AuthBootstrap } from "@/components/auth/AuthBootstrap";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +34,8 @@ export default function RootLayout({
     >
       <body>
         <Providers>
+          {/* 起動時に一度だけセッション復元を試みる(画面には何も描画しない) */}
+          <AuthBootstrap />
           <AppShell>{children}</AppShell>
         </Providers>
       </body>

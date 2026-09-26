@@ -24,4 +24,14 @@ if (typeof window !== "undefined") {
   if (!Element.prototype.scrollIntoView) {
     Element.prototype.scrollIntoView = () => {};
   }
+
+  // jsdomがResizeObserverを実装していないため落ちた。
+  // Select用のscrollIntoViewポリフィルと同じ理由でここに追加する。
+  if (typeof window.ResizeObserver === "undefined") {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  }
 }

@@ -31,7 +31,7 @@ export function Header() {
         fontSize="$7"
         $md={{ fontSize: "$9" }}
       >
-        Next.js + Tamagui Templates
+        Devex
       </H3>
       <ThemeToggleButton />
     </XStack>

@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/tamagui.config": ["./tamagui.config"]
     },
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },

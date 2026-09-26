@@ -11,11 +11,17 @@ import { LoginRequiredDialog } from "@/components/auth/LoginRequiredDialog";
 export function RequireAuth({ children }: { children: ReactNode }) {
   const mounted = useHasMounted();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const status = useAuthStore((s) => s.status);
   const pathname = usePathname();
   const [open, setOpen] = useState(true);
+  
 
-  // マウント前はハイドレーション不一致を避けるため非表示
-  if (!mounted) return null;
+
+  // マウント前はハイドレーション不一致を避けるため非表示。
+  // AuthBootstrapによるセッション復元(httpOnly Cookieからのサイレントリフレッシュ)が完了するまでは
+  // 「未ログイン」と確定できないため、ログイン必須ダイアログの表示を保留する
+  // (保留しないと、ログイン済みでも復元が終わるまでの一瞬ダイアログが出てすぐ消える)。
+  if (!mounted || status === "loading") return null;
 
   // 未ログイン時はログイン必須ダイアログを表示
   if (!accessToken) {

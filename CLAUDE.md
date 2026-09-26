@@ -53,7 +53,7 @@ npm run test:watch        # Vitest watchモード
   - `logoGlow` — 現状どのコンポーネントからも参照されていない(quaiz-front側でも未使用。上記「過去のセッションで見つかったハマりどころ」の`filter`propワークアウンド用に用意されている値)。
   - チャート機能(`PieChart`/`CalendarCard`/`LineChartCard`)で使う色は`tamagui.config.ts`のトークンではなく`src/lib/theme-gradients.ts`が`@tamagui/colors`から直接読む生のRadixカラー。quaiz-front側にチャート機能が無いため、この部分は当リポジトリ独自。
 
-**Testing**: Vitest + jsdom + React Testing Library、テストは`*.test.ts(x)`としてソースの隣にcolocate。`vitest.setup.ts`が`matchMedia`(`// @vitest-environment node`を指定したテストは対象外)と`Element.prototype.scrollIntoView`(Tamaguiの`Select`が呼ぶがjsdomは未実装)をポリフィルする。
+**Testing**: Vitest + jsdom + React Testing Library、テストは`*.test.ts(x)`としてテスト対象と同じディレクトリ直下の`__tests__/`サブフォルダに置く(Jest由来でJS界隈での認知度が高い規約。以前はソースの隣に直接colocateしていたが、ソース側の見通しを優先してこの構成に移行した)。相対importはテスト対象のファイルが1階層上になる分(`./Foo`→`../Foo`、`../../tamagui.config`→`../../../tamagui.config`等)深さが1つ増える点に注意。`vitest.setup.ts`が`matchMedia`(`// @vitest-environment node`を指定したテストは対象外)と`Element.prototype.scrollIntoView`(Tamaguiの`Select`が呼ぶがjsdomは未実装)をポリフィルする。
 
 **パスエイリアス**: `@/*` → `./src/*`(`tsconfig.json`で設定、Vitestは`vite-tsconfig-paths`経由で解決)。
 
@@ -62,6 +62,7 @@ npm run test:watch        # Vitest watchモード
 - **Tamaguiの`filter`propはtype上は存在するがWeb未実装**: `tamagui@2.6.0`/`@tamagui/core@2.6.0`の型は`filter`スタイルprop(例: `filter="drop-shadow(0 4px 8px $shadowColor)"`)を提供しているが、Webランタイムには実装されておらず(`native.cjs`のみ実装)、型チェックは通るのにCSSが一切出力されない。回避策は`style={{ filter: "drop-shadow(...)" }}`のように素の`style`propを使うこと。トークンとして一箇所で管理したい場合は`tamagui.config.ts`のtheme keyに追加し(`themes.light`/`themes.dark`双方に)、`style={{ filter: "var(--キー名)" }}`のようにCSS変数として参照する(Tamaguiは各theme keyを`--<キー名>`というCSS変数としてアクティブテーマにスコープして公開している)。
 - **Next.js App Routerのfavicon規約(`app/favicon.ico`、`app/icon.svg`)は`app/`配下のみを見る**: `public/`に置いたファイルは対象にならない。SVGをfaviconと画像素材(`<Image>`のsrc等)で共用したい場合は`public/`に置いたまま、`src/app/layout.tsx`の`export const metadata = { icons: { icon: "/xxx.svg" } }`で明示的に指定する(`app/icon.svg`規約に頼ると同じファイルの二重配置が必要になる)。既定の`src/app/favicon.ico`を残したまま重複させないこと。
 - **`next.config.ts`の`turbopack.root`**: ホームディレクトリ配下など、無関係な祖先ディレクトリに別の`package-lock.json`が存在する環境ではNext.jsがワークスペースルートを誤検出し、Reactが二重にロードされることがある。`turbopack.root`にこのプロジェクトのルートを明示することで回避している。
+- **Server Componentから`tamagui`を直接importすると`TypeError: createReactContext is not a function`になる**: Reactは`package.json`の`exports`に`"react-server"`条件専用のビルド(`react.react-server.js`)を持ち、Server Component(`"use client"`の無いモジュール)からimportされた`react`はこのビルドに解決される。このビルドには`Context` API(`React.createContext`)が存在しない(クライアント専用の概念でRSCには無関係なため意図的に除外されている)。`@tamagui/web`の内部(`createStyledContext`)はモジュール評価時に`React.createContext`を呼ぶため、Server Componentから`tamagui`を直接importするコンポーネントは必ずこのエラーで落ちる。回避策は該当ファイルに`"use client"`を追加するか、tamaguiを使う部分を別のClient Componentに切り出して描画を委譲すること(`params`の非同期解決が必要な動的ルートではこちらを使う)。Next.js 16 + React 19 + Tamagui 2.6の組み合わせ特有の制約。
 
 ## 今後の指針
 

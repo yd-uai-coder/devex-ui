@@ -34,6 +34,7 @@ const InputSimpleText = forwardRef<TamaguiElement, InputSimpleTextProps>(functio
 ) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
+  const errorId = `${inputId}-error`;
   const effectiveStatus = errorMessage ? "error" : status;
 
   return (
@@ -57,11 +58,20 @@ const InputSimpleText = forwardRef<TamaguiElement, InputSimpleTextProps>(functio
             placeholder={placeholder}
             disabled={status === "disabled"}
             borderColor="$color7"
+            aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={errorMessage ? errorId : undefined}
             {...inputProps}
           />
         </XStack>
         {errorMessage ? (
-          <Text color="$color9" fontSize="$2" marginTop="$1" $md={{ marginLeft: labelWidth }}>
+          <Text
+            id={errorId}
+            role="alert"
+            color="$color9"
+            fontSize="$2"
+            marginTop="$1"
+            $md={{ marginLeft: labelWidth }}
+          >
             {errorMessage}
           </Text>
         ) : null}

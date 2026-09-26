@@ -42,7 +42,7 @@ export default function ProtectedDemoPage() {
             現在の状態: {!mounted ? "確認中..." : accessToken ? "ログイン中(モック)" : "未ログイン"}
           </Text>
           <XStack gap="$3">
-            <StyledButton onPress={() => login(createMockAccessToken(), "mock-refresh-token")}>
+            <StyledButton onPress={() => login(createMockAccessToken())}>
               モックでログインする
             </StyledButton>
             <StyledButton theme="red" onPress={logout}>
@@ -50,8 +50,9 @@ export default function ProtectedDemoPage() {
             </StyledButton>
           </XStack>
           <Text fontSize="$2" color="$color11">
-            実際のアプリでは、ログインフォームからバックエンドのログインAPIを呼び出して得たトークンを
-            login(accessToken, refreshToken)へ渡す。/loginページ自体はアプリごとに異なるためこのテンプレートには含まれていない。
+            実際のアプリでは、ログインフォームからバックエンドのログインAPIを呼び出して得たアクセストークンを
+            login(accessToken)へ渡す。リフレッシュトークンはhttpOnly Cookieでサーバーが管理するため
+            クライアント側では扱わない。/loginページ自体はアプリごとに異なるためこのテンプレートには含まれていない。
           </Text>
         </StyledCard>
       </YStack>

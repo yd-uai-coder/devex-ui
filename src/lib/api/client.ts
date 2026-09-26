@@ -2,7 +2,7 @@ import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 // サイレントリフレッシュの無限ループを避けるため、リフレッシュ自身のリクエストは
-// 401でも再リフレッシュ対象から除外する。実際のバックエンドのリフレッシュエンドポイントに合わせて変更する。
+// 401でも再リフレッシュ対象から除外する。
 const REFRESH_PATH = "/api/v1/auth/refresh";
 
 export class ApiError extends Error {
@@ -37,9 +37,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit, isRetry = fa
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
+    // リフレッシュトークンはhttpOnly Cookieでやり取りするため、全リクエストでCookie送信を
+    // 有効にする(クロスオリジンでも送るために必要)。
+    // 実際に    // refresh_token Cookieが送信されるかはCookie自身のpath=/api/v1/auth属性で決まるため、
+    // 他のエンドポイントへは送られない。
+    credentials: "include",
     headers: {
       Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...init?.headers,
     },

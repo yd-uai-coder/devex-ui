@@ -97,6 +97,7 @@ export function LayoutForm() {
             buttonName="送信する"
             onBeforeSubmit={handleBeforeSubmit}
             onSubmitted={handleSubmitted}
+            demoDelayMs={2000}
             buttonProps={{
               theme: "green",
               backgroundColor: "$color9",
