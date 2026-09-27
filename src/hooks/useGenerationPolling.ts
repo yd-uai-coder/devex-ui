@@ -17,7 +17,9 @@ export function useGenerationPolling(
   onCompleted: () => void,
 ): { timedOut: boolean } {
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [timedOut, setTimedOut] = useState(false);
+  // timedOutはelapsedMsから導出できるため、別state+同期用useEffectは持たない
+  // (レンダー中に計算するだけで済み、setStateを伴うeffectを1つ減らせる)。
+  const timedOut = elapsedMs >= POLL_TIMEOUT_MS;
 
   const polling = active && !timedOut;
 
@@ -35,17 +37,13 @@ export function useGenerationPolling(
     polling ? POLL_INTERVAL_MS : null,
   );
 
-  useEffect(() => {
-    if (elapsedMs >= POLL_TIMEOUT_MS) {
-      setTimedOut(true);
-    }
-  }, [elapsedMs]);
-
-  // activeがfalseに戻ったら(例: 新しいプロジェクトに切り替わった)状態をリセットする
+  // activeがfalseに戻ったら(例: 新しいプロジェクトに切り替わった)状態をリセットする。
+  // elapsedMsは外部シグナル(active)に同期する内部stateであり、レンダー中に導出できる
+  // 値ではないためeffectでのsetStateが妥当(eslint-disableはこの1箇所のみに限定する)。
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElapsedMs(0);
-      setTimedOut(false);
     }
   }, [active]);
 

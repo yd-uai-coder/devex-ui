@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, H1, Text, XStack, YStack } from "tamagui";
+import { Button, Text, XStack, YStack } from "tamagui";
 import { useCounterStore } from "./counter-store";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 

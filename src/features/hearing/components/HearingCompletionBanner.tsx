@@ -11,8 +11,8 @@ type HearingCompletionBannerProps = {
 // is_sufficient=trueでも即座に生成へは進まない。構造化サマリを提示しユーザーの明示的な
 // 承認を得てから/generateを呼ぶ(docs/external_design.md 2.3節)。
 export function HearingCompletionBanner({ completion, onApprove, approving }: HearingCompletionBannerProps) {
-  if (!completion.is_sufficient) return null;
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  if (!completion.is_sufficient) return null;
 
   return (
     <YStack

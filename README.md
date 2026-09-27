@@ -1,9 +1,26 @@
-# next-tamagui-templates
+# devex-ui
 
-[Next.js](https://nextjs.org)(App Router)+ [Tamagui](https://tamagui.dev) によるUIテンプレート集です。目的は2つ:
+[Devex](../README.md)(AIとの対話でヒアリングを行い、要件定義書・外部設計書・内部設計書・実装計画書の4種Markdownドキュメントを自動生成するシステム)のフロントエンドです。Next.js(App Router)+ Tamaguiで構築しています。
+
+## Devexとしての主な機能
+
+実際のDevex機能は`src/features/`配下に実装しています(バックエンドは[devex-api](../devex-api/README.md))。
+
+- **認証**(`src/features/auth/`) — ログイン・ユーザー登録画面(`src/app/(pages)/login`・`register`)
+- **ダッシュボード**(`src/features/dashboard/`、`/dashboard`) — プロジェクト一覧・新規作成導線
+- **チャットヒアリング**(`src/features/hearing/`、`/projects/[id]/chat`) — AIとのチャットによるヒアリング。SSEでの応答ストリーミング、ヒアリング完了判定
+- **ドキュメントプレビュー**(`src/features/documents/`、`/projects/[id]/documents`) — 生成された4種ドキュメントのタブ切り替え表示・ダウンロード、生成中のポーリング(`src/hooks/useGenerationPolling.ts`)
+
+`src/components/ui/`配下は後述するデザインシステム/デモページ集であり、上記のDevex機能はその上に構築されています。
+
+### 本リポジトリの位置づけ(テンプレートとしての出自、`next-tamagui-templates`)
+
+本リポジトリは元々「[Next.js](https://nextjs.org)(App Router)+ [Tamagui](https://tamagui.dev)によるUIテンプレート集」として作られており、以下の目的も引き続き兼ねています:
 
 1. UIデザインにおける使いやすいサンプルであること
 2. このリポジトリをcloneすれば、今後のアプリ開発で開発とテストがスムーズに進められること
+
+以降の節は、このテンプレートとしての機能(セットアップ済みスタック、コンポーネントカタログ、デモページ)の説明です。
 
 ## セットアップ済みのスタック
 
@@ -355,6 +372,10 @@ DB/Tursoは実行時のデプロイ要件ではありませんが、`src/db/`一
 
 - VercelプロジェクトのEnvironment Variablesに `NEXT_PUBLIC_API_URL` を設定する(値: `devex-api`側の公開URL。`devex-api`はConoHa VPS上でDocker運用する構成で、詳細は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)参照)。未設定時は`http://localhost:8000`にフォールバックするため、本番デプロイ前に必ず設定すること。
 - `devex-api`側の`CORS_ORIGINS`に、Vercelが割り当てたURL(またはカスタムドメイン)を追加しておくこと。未追加のままだと`/dashboard`・`/projects/*`等のAPI呼び出しがすべてCORSエラーになる。
+
+### CI
+
+`.github/workflows/ci.yml`が、push/PR時にlint・test・buildを実行します(デプロイは行いません)。実際のデプロイはVercelのネイティブGitHub連携が担い、Vercel側でこのリポジトリを一度接続すれば`main`へのpushで自動的にデプロイされます(追加のワークフロー不要)。詳細は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)「GitHub Actionsによる自動デプロイ」参照。
 
 ## セットアップ
 

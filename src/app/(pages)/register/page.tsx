@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link";
-import { H2, Text, XStack, YStack } from "tamagui";
+import { H2, Text, YStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 
