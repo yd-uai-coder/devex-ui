@@ -349,6 +349,13 @@ DBからのデータ取得はServer Component側で行い、表示はClient Comp
 
 DB/Tursoは実行時のデプロイ要件ではありませんが、`src/db/`一式は残しているため、将来DBを使った動的な機能を追加したい場合は「データベース」節を参照してください(Turso等のリモートDBを使う場合は`TURSO_DATABASE_URL`・`TURSO_AUTH_TOKEN`をVercelのEnvironment Variablesに登録します)。
 
+### Devex固有のデプロイ手順(devex-api連携)
+
+本アプリを実際のDevexプロジェクト(`src/features/`配下、`/dashboard`・`/projects/*`等)として動かす場合は、上記の一般的なVercelデプロイ手順に加えて以下が必要:
+
+- VercelプロジェクトのEnvironment Variablesに `NEXT_PUBLIC_API_URL` を設定する(値: `devex-api`側の公開URL。`devex-api`はConoHa VPS上でDocker運用する構成で、詳細は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)参照)。未設定時は`http://localhost:8000`にフォールバックするため、本番デプロイ前に必ず設定すること。
+- `devex-api`側の`CORS_ORIGINS`に、Vercelが割り当てたURL(またはカスタムドメイン)を追加しておくこと。未追加のままだと`/dashboard`・`/projects/*`等のAPI呼び出しがすべてCORSエラーになる。
+
 ## セットアップ
 
 ```bash
