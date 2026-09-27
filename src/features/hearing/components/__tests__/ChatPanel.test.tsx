@@ -5,6 +5,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { ChatPanel } from "../ChatPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
+import { ApiError } from "@/lib/api/client";
 
 function renderPanel() {
   return render(
@@ -108,5 +109,19 @@ describe("ChatPanel", () => {
     renderPanel();
 
     expect(screen.getByText("要約です")).toBeInTheDocument();
+  });
+  it("生成トリガーが失敗したらエラーを表示し、承認ボタンを再度押せる状態に戻す", async () => {
+    const approveAndGenerate = vi.fn().mockRejectedValue(new ApiError(500, "生成の開始に失敗しました"));
+    useHearingStore.setState({
+      completion: { is_sufficient: true, summary: "要約です", missing_points: [] },
+      approveAndGenerate,
+    });
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("生成の開始に失敗しました");
+    expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).not.toBeDisabled();
   });
 });

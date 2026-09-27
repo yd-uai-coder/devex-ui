@@ -7,7 +7,7 @@ import { LayoutGrid } from "@/components/ui/layout-blocks/LayoutGrid";
 import { MENU_TREE } from "@/lib/menu-tree";
 import menuStyles from "@/components/layout/Menu.module.css";
 
-const HERO_IMAGE = "https://dummyimage.com/1200x800/b3e687/ffffff&text=Next.js_Tamagui";
+const HERO_IMAGE = "https://dummyimage.com/1200x800/b3e687/ffffff&text=Devex";
 
 function menuGroupCards() {
   return MENU_TREE.map((group, index) => (
@@ -42,17 +42,17 @@ function menuGroupCards() {
 export default function Home() {
   return (
     <YStack gap="$8" paddingVertical="$4">
-      <Hero mode="imageRight" imageSrc={HERO_IMAGE} imageAlt="Next.js + Tamagui Templates">
+      <Hero mode="imageRight" imageSrc={HERO_IMAGE} imageAlt="Devex">
         <YStack gap="$3">
-          <H1>Next.js + Tamagui Templates</H1>
+          <H1>Devex</H1>
           <Paragraph color="$color11">
-            Next.js (App Router) と Tamagui によるUIテンプレート集です。UIデザインにおける実装サンプルとして活用でき、cloneすれば今後のアプリ開発で開発・テストをスムーズに進められます。
+            AIとの対話ヒアリングから、要件定義書・外部設計書・内部設計書・実装計画書の4種類のドキュメントを自動生成するアプリケーションです。プロジェクトを作成し、チャットでヒアリングに答えるだけで設計書一式が仕上がります。
           </Paragraph>
         </YStack>
       </Hero>
 
       <YStack gap="$4">
-        <H2>コンポーネントサンプル</H2>
+        <H2>はじめる</H2>
         <LayoutGrid columns={{ base: 1, md: 3 }} aspectRatio={1/ 1}>
           {menuGroupCards()}
         </LayoutGrid>

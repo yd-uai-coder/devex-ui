@@ -5,6 +5,7 @@ import { Button, TextArea, Text, XStack, YStack } from "tamagui";
 import { MessageBubble } from "@/features/hearing/components/MessageBubble";
 import { HearingCompletionBanner } from "@/features/hearing/components/HearingCompletionBanner";
 import { useHearingStore } from "@/features/hearing/hearing-store";
+import { ApiError } from "@/lib/api/client";
 
 export function ChatPanel({ projectId }: { projectId: string }) {
   const messages = useHearingStore((s) => s.messages);
@@ -20,6 +21,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
 
   const [draft, setDraft] = useState("");
   const [approving, setApproving] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadHistory(projectId);
@@ -33,9 +35,15 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   }
 
   async function handleApprove() {
+    setApproveError(null);
     setApproving(true);
-    await approveAndGenerate(projectId);
-    setApproving(false);
+    try {
+      await approveAndGenerate(projectId);
+    } catch (err) {
+      setApproveError(err instanceof ApiError ? err.message : "設計書の生成開始に失敗しました");
+    } finally {
+      setApproving(false);
+    }
   }
 
   return (
@@ -78,6 +86,11 @@ export function ChatPanel({ projectId }: { projectId: string }) {
 
       {completion && !generationTriggered ? (
         <HearingCompletionBanner completion={completion} onApprove={handleApprove} approving={approving} />
+      ) : null}
+      {approveError ? (
+        <Text role="alert" color="$color9" fontSize="$2">
+          {approveError}
+        </Text>
       ) : null}
 
       <YStack gap="$2">

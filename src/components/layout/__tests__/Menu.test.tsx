@@ -33,23 +33,33 @@ describe("Menu", () => {
     expect(menu).toHaveAttribute("data-open", "false");
   });
 
-  it("renders the Counter and copy-theme links plus one placeholder link", () => {
+  it("renders the Devex group links (MENU_TREE)", async () => {
+    const user = userEvent.setup();
     renderMenu();
 
+    // アコーディオンは現在のpathnameに一致するグループのみ自動展開する仕様のため
+    // (HierarchicalMenu.tsx参照)、テスト環境では一致するpathnameが無く既定で閉じている。
+    // 明示的にトリガーをクリックして展開してからリンクを検証する。
+    await user.click(screen.getByRole("button", { name: "Devex" }));
+
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(3);
+    expect(links).toHaveLength(4);
 
-    expect(screen.getByRole("link", { name: "Counter" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "ダッシュボード" })).toHaveAttribute(
       "href",
-      "/counter",
+      "/dashboard",
     );
-    expect(
-      screen.getByRole("link", { name: "コンポーネントサンプル 3" }),
-    ).toHaveAttribute("href", "/copy-theme");
-
-    const placeholders = links.filter(
-      (link) => link.getAttribute("href") === "#",
+    expect(screen.getByRole("link", { name: "新規プロジェクト作成" })).toHaveAttribute(
+      "href",
+      "/projects/new",
     );
-    expect(placeholders).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "ユーザー登録" })).toHaveAttribute(
+      "href",
+      "/register",
+    );
+    expect(screen.getByRole("link", { name: "ログイン" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
   });
 });
