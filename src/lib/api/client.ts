@@ -1,6 +1,6 @@
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
+import { API_BASE_URL } from "@/lib/api/base-url";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 // サイレントリフレッシュの無限ループを避けるため、リフレッシュ自身のリクエストは
 // 401でも再リフレッシュ対象から除外する。
 const REFRESH_PATH = "/api/v1/auth/refresh";

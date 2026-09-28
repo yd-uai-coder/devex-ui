@@ -1,6 +1,5 @@
 import "server-only";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE_URL } from "@/lib/api/base-url";
 
 // ISR対象ページ(Server Component)専用のfetchヘルパー。apiFetch(client.ts)と違い
 // 認証ストア/localStorageのアクセストークンには一切依存せず、認証不要な公開エンドポイントのみを

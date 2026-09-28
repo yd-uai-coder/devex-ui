@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
+import { API_BASE_URL } from "@/lib/api/base-url";
 
 export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
 
@@ -36,8 +37,6 @@ export function restoreDocumentVersion(
     { method: "POST" },
   );
 }
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class DownloadError extends Error {}
 

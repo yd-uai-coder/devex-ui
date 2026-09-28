@@ -31,6 +31,7 @@ describe("createProject", () => {
       notesRaw: "",
       environment: { languages: ["python"], frameworks: [], databases: [], deployTargets: [] },
       files: [file],
+      templateId: null,
     });
 
     expect(project.id).toBe("p1");
@@ -50,6 +51,8 @@ describe("createProject", () => {
       deploy_targets: [],
     });
     expect(body.getAll("files")).toHaveLength(1);
+    // templateId=nullの場合はtemplate_idフィールド自体を送らない
+    expect(body.has("template_id")).toBe(false);
   });
 
   it("environmentが全て空ならenvironmentフィールド自体を送らない", async () => {
@@ -61,6 +64,7 @@ describe("createProject", () => {
       notesRaw: "",
       environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
       files: [],
+      templateId: null,
     });
 
     const body = stub.requests[0].init?.body as FormData;
