@@ -37,7 +37,7 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   await page.getByRole("button", { name: "ヒアリングを始める" }).click();
   await expect(page).toHaveURL(/\/projects\/[^/]+\/chat/);
 
-  // 4. チャットヒアリング(2ターンでヒアリング完了と判定される、fake.py参照)
+  // 4. チャットヒアリング(3ターンでヒアリング完了と判定される、fake.py参照)
   const messageBox = page.getByPlaceholder("メッセージを入力");
   await expect(messageBox).toBeVisible();
 
@@ -46,6 +46,10 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   // オープニング発話と通常のチャット返信が同じ固定文字列(E2eFakeLLM._reply_for、
   // Phase-4-4.md「実機検証で発見した不具合」参照)のため、strict mode違反を避けるべく.first()を使う。
   await expect(page.getByText("E2E Fake", { exact: false }).first()).toBeVisible();
+
+  // 最低発話数ガード(3回)を満たすための追加発話
+  await messageBox.fill("MVPでは在庫の入出庫記録と一覧表示のみ作ります");
+  await page.getByRole("button", { name: "送信" }).click();
 
   await messageBox.fill("特に技術的な制約はありません");
   await page.getByRole("button", { name: "送信" }).click();
@@ -97,6 +101,9 @@ test("ドキュメントプレビュー画面から再生成すると、再度�
 
   const messageBox = page.getByPlaceholder("メッセージを入力");
   await messageBox.fill("利用者は正社員とアルバイトの両方です");
+  await page.getByRole("button", { name: "送信" }).click();
+  // 最低発話数ガード(3回)を満たすための追加発話
+  await messageBox.fill("MVPでは打刻と月次集計のみ作ります");
   await page.getByRole("button", { name: "送信" }).click();
   await messageBox.fill("特にありません");
   await page.getByRole("button", { name: "送信" }).click();

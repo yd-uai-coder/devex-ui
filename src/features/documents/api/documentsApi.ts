@@ -10,10 +10,31 @@ export type GeneratedDocumentRead = {
   content: string;
   version: number;
   created_at: string;
+  is_current: boolean;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
   return apiFetch<GeneratedDocumentRead[]>(`/api/v1/projects/${projectId}/documents`);
+}
+
+export function listDocumentVersions(
+  projectId: string,
+  docType: DocType,
+): Promise<GeneratedDocumentRead[]> {
+  return apiFetch<GeneratedDocumentRead[]>(
+    `/api/v1/projects/${projectId}/documents/${docType}/versions`,
+  );
+}
+
+export function restoreDocumentVersion(
+  projectId: string,
+  docType: DocType,
+  version: number,
+): Promise<GeneratedDocumentRead> {
+  return apiFetch<GeneratedDocumentRead>(
+    `/api/v1/projects/${projectId}/documents/${docType}/versions/${version}/restore`,
+    { method: "POST" },
+  );
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";

@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next + Tamagui Templates",
-  description: "Next.js + Tamagui UI template collection",
+  title: "Devex",
+  description: "AIによるシステム開発を支援するAIツール",
 };
 
 export default function RootLayout({

@@ -84,6 +84,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       sending: true,
       streamingReply: "",
       connectionLost: false,
+      projectStatus: state.projectStatus === "completed" ? "revising" : state.projectStatus,
     }));
 
     try {
@@ -115,7 +116,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
 
   approveAndGenerate: async (projectId) => {
     await triggerGeneration(projectId);
-    set({ generationTriggered: true });
+    set({ generationTriggered: true, projectStatus: "generating", completion: null });
   },
 
   dismissConnectionLost: () => set({ connectionLost: false }),

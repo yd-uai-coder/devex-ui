@@ -7,8 +7,8 @@ import { DocumentTabs } from "../DocumentTabs";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 
 const DOCS: GeneratedDocumentRead[] = [
-  { id: "d1", doc_type: "requirements", content: "# 要件定義", version: 1, created_at: "" },
-  { id: "d2", doc_type: "external_design", content: "# 外部設計", version: 1, created_at: "" },
+  { id: "d1", doc_type: "requirements", content: "# 要件定義", version: 1, created_at: "", is_current: true },
+  { id: "d2", doc_type: "external_design", content: "# 外部設計", version: 1, created_at: "", is_current: true },
 ];
 
 function renderTabs(documents: GeneratedDocumentRead[] = DOCS) {

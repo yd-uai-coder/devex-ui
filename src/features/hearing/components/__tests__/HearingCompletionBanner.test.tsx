@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
+import { useHearingStore } from "@/features/hearing/hearing-store";
 import { HearingCompletionBanner } from "../HearingCompletionBanner";
 
 function renderBanner(overrides: { approving?: boolean; onApprove?: () => void } = {}) {
@@ -18,6 +19,11 @@ function renderBanner(overrides: { approving?: boolean; onApprove?: () => void }
 }
 
 describe("HearingCompletionBanner", () => {
+  // バナーがstoreのprojectStatusを購読するため、テストごとに初期化する
+  beforeEach(() => {
+    useHearingStore.setState({ projectStatus: "interviewing" });
+  });
+
   it("is_sufficient=falseなら何も表示しない", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
@@ -53,6 +59,32 @@ describe("HearingCompletionBanner", () => {
     renderBanner({ approving: true });
 
     expect(screen.getByRole("button", { name: "生成を開始しています..." })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("projectStatus==='completed'ならボタンが無効化され「設計書は生成済みです」と表示する", () => {
+    useHearingStore.setState({ projectStatus: "completed" });
+    renderBanner();
+
+    expect(screen.getByRole("button", { name: "設計書は生成済みです" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  // 生成後に再度チャットしてrevisingへ遷移したら、ボタンが再び押下可能になる
+  it("projectStatusがcompleted→revisingに変わるとボタンが再描画され押下可能になる", async () => {
+    useHearingStore.setState({ projectStatus: "completed" });
+    renderBanner();
+    expect(screen.getByRole("button", { name: "設計書は生成済みです" })).toBeInTheDocument();
+
+    await act(async () => {
+      useHearingStore.setState({ projectStatus: "revising" });
+    });
+
+    expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).not.toHaveAttribute(
       "aria-disabled",
       "true",
     );

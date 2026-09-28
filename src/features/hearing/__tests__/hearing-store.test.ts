@@ -150,6 +150,42 @@ describe("useHearingStore", () => {
     expect(stub.requests[0].url).toContain("/generate");
   });
 
+  it("approveAndGenerate()は使用済みの完了判定を破棄し、projectStatusをgeneratingにする", async () => {
+    useHearingStore.setState({
+      projectStatus: "interviewing",
+      completion: { is_sufficient: true, summary: "要約", missing_points: [] },
+    });
+    stub.queue({ status: 202, body: null });
+
+    await useHearingStore.getState().approveAndGenerate("p1");
+
+    expect(useHearingStore.getState().projectStatus).toBe("generating");
+    expect(useHearingStore.getState().completion).toBeNull();
+  });
+
+  // 生成済み(completed)のプロジェクトへ再度チャットするとサーバー側がrevisingへ遷移させる。
+  // storeのprojectStatusも追従しないと、新しい完了バナーのボタンが押せないままになる。
+  it("sendMessage()はprojectStatus==='completed'のときrevisingへ遷移させる", async () => {
+    useHearingStore.setState({ projectStatus: "completed" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["はい"]));
+    stub.queue({ status: 200, body: { is_sufficient: true, summary: "要約", missing_points: [] } });
+
+    await useHearingStore.getState().sendMessage("p1", "追加の要望です");
+
+    expect(useHearingStore.getState().projectStatus).toBe("revising");
+    expect(useHearingStore.getState().completion?.is_sufficient).toBe(true);
+  });
+
+  it("sendMessage()はcompleted以外のprojectStatusを変更しない", async () => {
+    useHearingStore.setState({ projectStatus: "interviewing" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["はい"]));
+    stub.queue({ status: 200, body: { is_sufficient: false, summary: "", missing_points: [] } });
+
+    await useHearingStore.getState().sendMessage("p1", "こんにちは");
+
+    expect(useHearingStore.getState().projectStatus).toBe("interviewing");
+  });
+
   it("dismissConnectionLost()はconnectionLostをfalseに戻す", () => {
     useHearingStore.setState({ connectionLost: true });
 

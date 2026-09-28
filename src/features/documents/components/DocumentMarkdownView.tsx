@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui";
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
+import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
 import type { Components } from "react-markdown";
 
 type DocumentMarkdownViewProps = {
@@ -111,6 +112,7 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
           {downloadError}
         </Text>
       ) : null}
+      <VersionHistoryPanel projectId={projectId} docType={document.doc_type} />
       <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {document.content}

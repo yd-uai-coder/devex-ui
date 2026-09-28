@@ -6,6 +6,7 @@ export type CreateProjectInput = {
   systemOverview: string;
   goalsRaw: string;
   notesRaw: string;
+  templateId: string | null;
   environment: EnvironmentValues;
   files: File[];
 };
@@ -19,6 +20,10 @@ export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
   formData.set("goals_raw", input.goalsRaw);
   if (input.notesRaw) {
     formData.set("notes_raw", input.notesRaw);
+  }
+
+  if (input.templateId) {
+    formData.set("template_id", input.templateId);
   }
 
   const { languages, frameworks, databases, deployTargets } = input.environment;

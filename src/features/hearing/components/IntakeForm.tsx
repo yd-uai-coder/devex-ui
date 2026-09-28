@@ -13,6 +13,7 @@ import { CheckboxGroup } from "@/components/ui/form/CheckboxGroup";
 import { FieldsetGroup } from "@/components/ui/form/FieldsetGroup";
 import { CollapsibleSection } from "@/components/ui/form/CollapsibleSection";
 import { FileUploadField } from "@/features/hearing/components/FileUploadField";
+import { TemplateSelectField } from "@/features/hearing/components/TemplateSelectField";
 import { createProject } from "@/features/hearing/api/createProject";
 import { intakeSchema } from "@/features/hearing/schemas";
 import type { IntakeValues } from "@/features/hearing/schemas";
@@ -78,6 +79,7 @@ const DEFAULT_VALUES: IntakeValues = {
   systemOverview: "",
   goalsRaw: "",
   notesRaw: "",
+  templateId: null, // Phase-6-4:追記
   environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
   files: [],
 };
@@ -86,10 +88,13 @@ export function IntakeForm() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   // FormGeneralのonSubmittedは引数を取らないため、作成後の遷移先(project.id)を
+  // ユーザーがプリフィルに気づけないため、その場合だけ自動展開する。
+  const [environmentSectionOpen, setEnvironmentSectionOpen] = useState(false);
+  
   // handleBeforeSubmit成功時にここへ保持しておく(LoginForm/RegisterFormと同じ設計)。
   const createdProjectIdRef = useRef<string | null>(null);
 
-  const { control, handleSubmit } = useForm<IntakeValues>({
+  const { control, handleSubmit, setValue } = useForm<IntakeValues>({
     resolver: zodResolver(intakeSchema),
     defaultValues: DEFAULT_VALUES,
   });
@@ -173,7 +178,27 @@ export function IntakeForm() {
         )}
       />
 
-      <CollapsibleSection summary="環境設定(任意・未入力の場合はAIにおまかせします)">
+      <Controller
+        name="templateId"
+        control={control}
+        render={({ field }) => (
+          <TemplateSelectField
+            value={field.value}
+            onChange={(templateId, environment) => {
+              field.onChange(templateId);
+              if (environment) {
+                setValue("environment", environment);
+                setEnvironmentSectionOpen(true);
+              }
+            }}
+          />
+        )}
+      />
+
+      <CollapsibleSection
+        summary="環境設定(任意・未入力の場合はAIにおまかせします)"
+        defaultOpen={environmentSectionOpen} 
+      >
         <Controller
           name="environment.languages"
           control={control}

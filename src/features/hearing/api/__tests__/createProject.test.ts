@@ -66,4 +66,22 @@ describe("createProject", () => {
     const body = stub.requests[0].init?.body as FormData;
     expect(body.has("environment")).toBe(false);
   });
+
+  it("templateIdが指定されていればtemplate_idフィールドを送る", async () => {
+    stub.queue({ status: 201, body: SAMPLE_PROJECT_RESPONSE });
+
+    await createProject({
+      systemOverview: "x",
+      goalsRaw: "y",
+      notesRaw: "",
+      templateId: "t1",
+      environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
+      files: [],
+    });
+
+    const body = stub.requests[0].init?.body as FormData;
+    expect(body.get("template_id")).toBe("t1");
+  });
 });
+
+

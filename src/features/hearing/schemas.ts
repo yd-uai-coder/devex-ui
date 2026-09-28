@@ -28,6 +28,7 @@ export const intakeSchema = z.object({
     maxLength("実現したいこと", GOALS_MAX_LENGTH),
   ),
   notesRaw: applyRules(z.string().trim(), maxLength("補足", NOTES_MAX_LENGTH)),
+  templateId: z.string().nullable(),
   environment: environmentSchema,
   // ファイルごとの拡張子/サイズ検証はFileUploadField側(選択時点)で行うため、
   // ここでは件数のみをsubmit時の最終防御として確認する。

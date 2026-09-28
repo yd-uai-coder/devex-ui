@@ -27,7 +27,11 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
       <Text fontWeight="600">ヒアリング内容の確認</Text>
       <Text>{completion.summary}</Text>
       <Button theme="green" disabled={projectStatus === "completed" || approving} onPress={onApprove}>
-        {projectStatus === "completed"? "設計書は生成済みです"  :approving ? "生成を開始しています..." : "この内容で設計書を生成する"}
+        {projectStatus === "completed"
+          ? "設計書は生成済みです"
+          : approving
+            ? "生成を開始しています..."
+            : "この内容で設計書を生成する"}
       </Button>
     </YStack>
   );
