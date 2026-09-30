@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { getProject } from "@/features/hearing/api/hearingApi";
 import { useInterval } from "@/hooks/useInterval";
 
-const POLL_INTERVAL_MS = 5000;
-const POLL_TIMEOUT_MS = 3 * 60 * 1000;
+export const POLL_INTERVAL_MS = 5000;
+export const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
 // POST /generateは202のみ返しプッシュ通知が無いため、生成完了はGET /projects/{id}のstatusを
 // ポーリングして検知する。チャット画面(ヒアリング完了承認後)とドキュメントプレビュー画面

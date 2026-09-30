@@ -7,27 +7,39 @@ const REFRESH_PATH = "/api/v1/auth/refresh";
 
 export class ApiError extends Error {
   status: number;
+  // devex-apiの共通エラー形式{detail, code}のcode(例: "VERSION_CONFLICT")。
+  // 同じstatus(409・400)の中で原因を見分けるために使う。codeを持たないエラーではundefined。
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
-// FastAPI/Pydanticのエラーレスポンス({detail: string} または 422時の
-// {detail: [{msg: string, ...}, ...]})からメッセージを取り出す。
-async function extractErrorMessage(res: Response): Promise<string> {
+// FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の
+// {detail: [{msg: string, ...}, ...]})から、メッセージとcodeを取り出してApiErrorにする。
+async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
-    if (typeof body?.detail === "string") return body.detail;
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    if (typeof body?.detail === "string") return new ApiError(res.status, body.detail, code);
     if (Array.isArray(body?.detail)) {
-      return body.detail.map((issue: { msg?: string }) => issue.msg).filter(Boolean).join(", ");
+      const message = body.detail
+        .map((issue: { msg?: string }) => issue.msg)
+        .filter(Boolean)
+        .join(", ");
+      return new ApiError(res.status, message, code);
     }
   } catch {
     // レスポンスがJSONでない場合はstatusTextにフォールバックする
   }
-  return res.statusText || `リクエストに失敗しました(status: ${res.status})`;
+  return new ApiError(
+    res.status,
+    res.statusText || `リクエストに失敗しました(status: ${res.status})`,
+  );
 }
 
 // バックエンド(FastAPI想定)への薄いfetchラッパー。認証トークンの付与・401時の
@@ -61,7 +73,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, isRetry = fa
         return apiFetch<T>(path, init, true);
       }
       // リフレッシュに失敗した場合はrefreshTokens()内で既にログアウト済み
-      throw new ApiError(res.status, await extractErrorMessage(res));
+      throw await toApiError(res);
     }
 
     // リフレッシュを試みなかった/リトライ後も失敗した401は、ログアウト状態に落とす。
@@ -69,7 +81,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit, isRetry = fa
     if (res.status === 401 && accessToken) {
       useAuthStore.getState().logout();
     }
-    throw new ApiError(res.status, await extractErrorMessage(res));
+    throw await toApiError(res);
   }
 
   if (res.status === 204) {

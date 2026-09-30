@@ -78,3 +78,13 @@ input:-webkit-autofill:active {
     color-scheme: dark;
   }
 }
+
+/* UML レビュー画面の接続点(features/uml/components/nodes/NodeHandles.tsx)。
+   普段は隠して直交辺の矢印を見せ、マウスを乗せたとき・選択中だけ表示する。 */
+.react-flow__handle.uml-handle {
+  opacity: 0;
+}
+.react-flow__node:hover .react-flow__handle.uml-handle,
+.react-flow__node.selected .react-flow__handle.uml-handle {
+  opacity: 1;
+}

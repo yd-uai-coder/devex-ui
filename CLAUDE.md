@@ -40,7 +40,7 @@ npm run test:watch        # Vitest watchモード
 
 **バックエンド連携(FastAPI前提)**: このテンプレートは、実運用では別リポジトリのFastAPIバックエンドとデータ連携するアプリの土台として使うことを想定している。バックエンド自体はこのリポジトリに含まれず、`npm run dev`から起動されるものでもない。
 
-- `src/lib/api/client.ts`の`apiFetch<T>()` — `NEXT_PUBLIC_API_URL`(`.env.example`参照、未設定時`http://localhost:8000`)を単一の設定源とする薄いfetchラッパー。`ApiError`(status+message)、FastAPI/Pydanticの`{detail: string | [{msg}]}`形式のエラーパース、`204 No Content`対応を持つ。**ドキュメント化された例外**: `src/lib/api/`は本来featureに依存しない層だが、`client.ts`だけは認証トークンの取得・401時のログアウトのために`src/components/auth/auth-store.ts`をimportしている。
+- `src/lib/api/client.ts`の`apiFetch<T>()` — `NEXT_PUBLIC_API_URL`(`.env.example`参照、未設定時`http://localhost:8000`)を単一の設定源とする薄いfetchラッパー。`ApiError`(status+message+任意の`code`)、FastAPI/Pydanticの`{detail: string | [{msg}], code?: string}`形式のエラーパース(`code`は同じstatusの中で原因を見分けるために使う。例: 409 `VERSION_CONFLICT`)、`204 No Content`対応を持つ。**ドキュメント化された例外**: `src/lib/api/`は本来featureに依存しない層だが、`client.ts`だけは認証トークンの取得・401時のログアウトのために`src/components/auth/auth-store.ts`をimportしている。
 - `src/lib/api/server-fetch.ts`の`serverFetch<T>()` — Server Component/ISR用。`'server-only'`ガード、認証トークンには依存しない(公開エンドポイント専用)、失敗時は例外を投げずnullを返してページ全体のクラッシュを防ぐ。
 - `src/lib/api/cache.ts` — React Query/SWRを使わない代わりのTTLキャッシュ判定(`isCacheFresh`、既定20秒)。各機能のZustandストアが`fetchedAt`を持ち、mutation成功時に`null`へ戻す(invalidate)ことで鮮度を管理する設計(詳細はREADME「APIへのデータ取得の方針」)。
 - `src/components/auth/auth-store.ts` — JWTの`exp`をデコードしてサイレントリフレッシュタイマーを仕掛けるZustand `persist`ストア。同時リフレッシュは1回にまとめる(`refreshPromise`による重複排除)。`RequireAuth`/`GuardedLink`/`LoginRequiredDialog`と組み合わせて使う(`/others/protected-demo`がデモページ)。ログインAPI自体の契約(エンドポイント形状)はアプリごとに異なるため、`login(accessToken, refreshToken)`はトークンを受け取って保存するだけにしてあり、実際のログインフォーム/APIコールは呼び出し側(実アプリ)で実装する。

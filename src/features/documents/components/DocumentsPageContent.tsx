@@ -33,6 +33,9 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           <Link href={`/projects/${projectId}/chat`}>
             <Text color="$blue10">チャットに戻る</Text>
           </Link>
+          <Link href={`/projects/${projectId}/uml`}>
+            <Text color="$blue10">設計図を生成する →</Text>
+          </Link>
           <Button size="$3" disabled={regenerating} onPress={() => regenerate(projectId)}>
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>

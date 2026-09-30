@@ -66,6 +66,15 @@ describe("DocumentsPageContent", () => {
     expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
   });
 
+  it("設計図の生成・一覧画面へのリンクを表示する", () => {
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "設計図を生成する →" })).toHaveAttribute(
+      "href",
+      "/projects/p1/uml",
+    );
+  });
+
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {
     useDocumentsStore.setState({ status: "success", documents: [] });
 

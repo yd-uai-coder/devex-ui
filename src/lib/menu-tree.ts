@@ -15,4 +15,11 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "ログイン", href: "/login" },
     ],
   },
+  {
+    label: "開発用",
+    children: [
+      // バックエンド無しで UML 画面の挙動を確かめるデモ(Phase 11 時点)
+      { label: "UML設計図デモ", href: "/uml-demo" },
+    ],
+  },
 ];
