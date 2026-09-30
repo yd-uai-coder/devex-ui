@@ -11,9 +11,10 @@ export function parseFilename(header: string | null): string | null {
   return asciiMatch ? asciiMatch[1] : null;
 }
 
-// 文字列をファイルとして保存させる(一時的な <a download> をクリックする)。
-export function saveFile(filename: string, content: string, mimeType: string): void {
-  const blob = new Blob([content], { type: mimeType });
+// 文字列または Blob をファイルとして保存させる(一時的な <a download> をクリックする)。
+// Blob はそのまま使う(mimeType は文字列から Blob を作るときだけ使う)。
+export function saveFile(filename: string, content: string | Blob, mimeType: string): void {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = window.document.createElement("a");
   link.href = url;

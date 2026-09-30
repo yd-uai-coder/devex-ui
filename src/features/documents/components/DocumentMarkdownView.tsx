@@ -8,6 +8,12 @@ import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
+import { splitByAnchors } from "@/features/documents/anchors";
+import { DiagramEmbed } from "@/features/documents/components/DiagramEmbed";
+import { DiagramSyncBar } from "@/features/documents/components/DiagramSyncBar";
+import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useDiagramEmbeds } from "@/features/documents/hooks/useDiagramEmbeds";
+import type { UmlEmbedRead } from "@/features/uml/api/types";
 import type { Components } from "react-markdown";
 
 type DocumentMarkdownViewProps = {
@@ -61,9 +67,40 @@ const markdownComponents: Components = {
   ),
 };
 
+// 内部設計書の本文を、UML 図のアンカーを境に分けて描く(アンカーの位置に図を差し込む。M9a・D8)。
+function renderWithDiagrams(content: string, embeds: UmlEmbedRead[], loaded: boolean) {
+  const byId = new Map(embeds.map((embed) => [embed.diagram_id, embed]));
+  return splitByAnchors(content).map((segment, index) =>
+    segment.kind === "markdown" ? (
+      <ReactMarkdown key={index} remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {segment.text}
+      </ReactMarkdown>
+    ) : (
+      <DiagramEmbed key={index} embed={byId.get(segment.diagramId)} loaded={loaded}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {segment.body}
+        </ReactMarkdown>
+      </DiagramEmbed>
+    ),
+  );
+}
+
 export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownViewProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // 図を差し込むのは内部設計書だけ(図と文書の対応は docs/internal_design.md 3.3節、D5)
+  const isInternalDesign = document.doc_type === "internal_design";
+  const { embeds, loaded, error: embedsError, reload } = useDiagramEmbeds(
+    projectId,
+    isInternalDesign,
+  );
+  const fetchDocuments = useDocumentsStore((s) => s.fetchDocuments);
+
+  // 再反映・zip の後: 文書の本文(アンカーの範囲)と図の状態(exported)が変わるので両方を取り直す
+  async function handleDiagramsChanged() {
+    await fetchDocuments(projectId, { force: true });
+    await reload();
+  }
 
   async function handleCopy() {
     try {
@@ -106,10 +143,22 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
         </Text>
       ) : null}
       <VersionHistoryPanel projectId={projectId} docType={document.doc_type} />
+      {isInternalDesign ? (
+        <DiagramSyncBar projectId={projectId} embeds={embeds} onChanged={handleDiagramsChanged} />
+      ) : null}
+      {embedsError ? (
+        <Text role="alert" color="$color9">
+          {`設計図を取得できませんでした: ${embedsError}`}
+        </Text>
+      ) : null}
       <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {document.content}
-        </ReactMarkdown>
+        {isInternalDesign ? (
+          renderWithDiagrams(document.content, embeds, loaded)
+        ) : (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {document.content}
+          </ReactMarkdown>
+        )}
       </YStack>
     </YStack>
   );

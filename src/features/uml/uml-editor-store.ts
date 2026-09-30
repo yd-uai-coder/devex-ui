@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ApiError } from "@/lib/api/client";
+import { useDocumentsStore } from "@/features/documents/documents-store";
 import {
   approveDiagram,
   computeLayout,
@@ -111,6 +112,7 @@ const INITIAL = {
   approving: false,
   exporting: false,
 };
+
 
 // 消した要素・関係のジオメトリを配置から除く。同じ id を後で再利用したとき
 // (nextId は空いている最小の番号を使う)に古い座標・折れ点を引き継がないようにするため。
@@ -298,6 +300,8 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
         // 保存した場合は version が変わっているので、get() で取り直した版を送る
         const current = get().diagram ?? diagram;
         set(fromServer(await approveDiagram(projectId, current.id, current.version)));
+        // 承認と同時に内部設計書へ反映される(本文が変わる)ので、文書一覧のキャッシュを捨てる
+        useDocumentsStore.setState({ fetchedAt: null });
       } catch (err) {
         if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
           set({ conflict: true });

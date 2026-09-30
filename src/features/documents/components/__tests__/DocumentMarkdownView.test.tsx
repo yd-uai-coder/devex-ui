@@ -4,10 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentMarkdownView } from "../DocumentMarkdownView";
+import type { DocType } from "@/features/documents/api/documentsApi";
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import { makeEmbed } from "@/features/uml/test-utils/umlFixtures";
 
 const SAMPLE_DOC = {
   id: "d1",
-  doc_type: "requirements" as const,
+  doc_type: "requirements" as DocType,
   content: "# 見出し\n本文です",
   version: 1,
   created_at: "",
@@ -111,5 +114,47 @@ describe("DocumentMarkdownView", () => {
     await user.click(screen.getByRole("button", { name: "ダウンロード(.md)" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ダウンロードに失敗しました");
+  });
+
+  it("内部設計書では、アンカーの位置に図を差し込み、要素表も描く", async () => {
+    const stub = stubFetch();
+    stub.queue({ body: [makeEmbed()] });
+    const content = [
+      "## 3.3 バックエンド処理",
+      "",
+      "<!-- uml:diagram:d1:start v=2 -->",
+      "",
+      "| 名称 | 種別 |",
+      "|---|---|",
+      "| 認証API | モジュール |",
+      "",
+      "<!-- uml:diagram:d1:end -->",
+      "",
+      "- 主要処理ロジック",
+    ].join("\n");
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentMarkdownView
+          projectId="p1"
+          document={{ ...SAMPLE_DOC, doc_type: "internal_design", content }}
+        />
+      </TamaguiProvider>,
+    );
+
+    expect(await screen.findByRole("img", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "認証API" })).toBeInTheDocument();
+    expect(screen.getByText("主要処理ロジック")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "図を再反映" })).toBeInTheDocument();
+    expect(stub.requests[0].url).toMatch(/\/projects\/p1\/uml\/embeds$/);
+    stub.restore();
+  });
+
+  it("内部設計書以外では図の埋め込みを取得しない", () => {
+    const stub = stubFetch();
+    renderView();
+
+    expect(screen.queryByRole("button", { name: "図を再反映" })).not.toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    stub.restore();
   });
 });

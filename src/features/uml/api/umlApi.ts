@@ -9,8 +9,10 @@ import type {
   UmlDiagramApprove,
   UmlDiagramRead,
   UmlDiagramUpdate,
+  UmlEmbedRead,
   UmlGenerateRequest,
   UmlGenerationRunRead,
+  UmlReflectRead,
   ValidationResult,
 } from "@/features/uml/api/types";
 
@@ -104,18 +106,43 @@ export async function exportDiagram(
   diagramId: string,
   format: ExportFormat,
 ): Promise<ExportedFile> {
-  const accessToken = useAuthStore.getState().accessToken;
-  const res = await fetch(
-    `${API_BASE_URL}${umlPath(projectId, `/diagrams/${diagramId}/export/${format}`)}`,
-    {
-      credentials: "include",
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    },
-  );
-  if (!res.ok) throw await toApiError(res);
+  const res = await fetchAttachment(umlPath(projectId, `/diagrams/${diagramId}/export/${format}`));
 
   const content = await res.text();
   const filename =
     parseFilename(res.headers.get("Content-Disposition")) ?? `${diagramId}.${format}`;
   return { filename, content, mimeType: EXPORT_MIME_TYPES[format] };
+}
+
+// ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
+// 失敗は apiFetch と同じ ApiError(code 付き)にする。
+async function fetchAttachment(path: string): Promise<Response> {
+  const accessToken = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res;
+}
+
+// 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
+export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
+  return apiFetch<UmlEmbedRead[]>(umlPath(projectId, "/embeds"));
+}
+
+// 承認済みの図すべてを内部設計書へ反映し直す。404: 内部設計書が無い
+export function reflectDiagrams(projectId: string): Promise<UmlReflectRead> {
+  return apiFetch<UmlReflectRead>(umlPath(projectId, "/reflect"), { method: "POST" });
+}
+
+export type DownloadedBundle = { filename: string; content: Blob };
+
+// 内部設計書の md と、反映済みの図(SVG・draw.io)の zip(D8)。入れた図は exported になる。
+// zip はバイナリなので text() ではなく blob() で受け取る。
+export async function downloadBundle(projectId: string): Promise<DownloadedBundle> {
+  const res = await fetchAttachment(umlPath(projectId, "/bundle"));
+  const content = await res.blob();
+  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "internal_design.zip";
+  return { filename, content };
 }

@@ -2,13 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDiagram,
   computeLayout,
+  downloadBundle,
   exportDiagram,
   generateDiagrams,
   getCandidates,
   getDiagram,
   listDataItems,
   listDiagrams,
+  listEmbeds,
   listGenerationRuns,
+  reflectDiagrams,
   updateDiagram,
   validateDiagram,
 } from "../umlApi";
@@ -153,5 +156,62 @@ describe("exportDiagram", () => {
 
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).code).toBe("UML_DIAGRAM_NOT_APPROVED");
+  });
+});
+
+describe("内部設計書への反映", () => {
+  let stub: ReturnType<typeof stubFetch>;
+
+  beforeEach(() => {
+    stub = stubFetch();
+  });
+
+  afterEach(() => {
+    stub.restore();
+  });
+
+  it("listEmbeds は GET .../embeds を呼ぶ", async () => {
+    stub.queue({ body: [] });
+
+    await listEmbeds("p1");
+
+    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/embeds$`));
+    expect(stub.requests[0].init?.method).toBeUndefined();
+  });
+
+  it("reflectDiagrams は本文なしで POST .../reflect し、反映した数を返す", async () => {
+    stub.queue({ body: { reflected: 2 } });
+
+    const result = await reflectDiagrams("p1");
+
+    expect(stub.requests[0].url).toMatch(new RegExp(`${BASE}/reflect$`));
+    expect(stub.requests[0].init?.method).toBe("POST");
+    expect(result).toEqual({ reflected: 2 });
+  });
+});
+
+describe("downloadBundle", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("zip を Blob のまま受け取り、Content-Disposition のファイル名を返す", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="internal_design.zip"',
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const bundle = await downloadBundle("p1");
+
+    expect(fetchMock.mock.calls[0][0]).toMatch(new RegExp(`${BASE}/bundle$`));
+    expect(bundle.filename).toBe("internal_design.zip");
+    expect(bundle.content).toBeInstanceOf(Blob);
+    expect(bundle.content.size).toBe(4);
   });
 });

@@ -6,6 +6,7 @@ import type {
   LayoutModel,
   UmlCandidatesRead,
   UmlDiagramRead,
+  UmlEmbedRead,
   UmlGenerationRunRead,
 } from "@/features/uml/api/types";
 
@@ -111,6 +112,22 @@ export function makeCandidates(overrides: Partial<UmlCandidatesRead> = {}): UmlC
       { code: "DF-2", title: "プロジェクト作成" },
     ],
     er_tables: ["users", "projects"],
+    ...overrides,
+  };
+}
+
+// GET .../uml/embeds の1件(承認済みで、文書に反映済み)
+export function makeEmbed(overrides: Partial<UmlEmbedRead> = {}): UmlEmbedRead {
+  return {
+    diagram_id: "d1",
+    notation: "component",
+    subject: "",
+    title: "コンポーネント図(全体)",
+    status: "approved",
+    version: 2,
+    source_outdated: false,
+    doc_state: "reflected",
+    svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>認証API</text></svg>',
     ...overrides,
   };
 }

@@ -4,7 +4,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DiagramList } from "../DiagramList";
 import { useUmlStore } from "@/features/uml/uml-store";
-import { makeDiagram } from "@/features/uml/test-utils/umlFixtures";
+import { makeCandidates, makeDiagram } from "@/features/uml/test-utils/umlFixtures";
 
 function renderList() {
   return render(
@@ -42,5 +42,18 @@ describe("DiagramList", () => {
     expect(screen.queryByRole("link", { name: "データフロー図: ログイン" })).not.toBeInTheDocument();
     expect(screen.getByText("生成中...")).toBeInTheDocument();
     expect(screen.getByText("生成に失敗しました: 出力が不正")).toBeInTheDocument();
+  });
+
+  it("図の元になった内部設計書の版が今の版と違えば、再生成を促す", () => {
+    useUmlStore.setState({
+      diagrams: [
+        makeDiagram({ id: "d1", source_doc_versions: { internal_design: 1 } }),
+        makeDiagram({ id: "d2", notation: "er", source_doc_versions: { internal_design: 2 } }),
+      ],
+      candidates: makeCandidates({ internal_design_version: 2 }),
+    });
+    renderList();
+
+    expect(screen.getAllByText("内部設計書が更新されています(再生成を検討してください)")).toHaveLength(1);
   });
 });

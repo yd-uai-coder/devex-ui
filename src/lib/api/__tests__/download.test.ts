@@ -33,4 +33,16 @@ describe("saveFile", () => {
     expect(document.querySelector("a[download]")).toBeNull();
     vi.unstubAllGlobals();
   });
+
+  it("Blob を受け取ったら、そのまま保存させる(zip などのバイナリ)", () => {
+    const createObjectURL = vi.fn().mockReturnValue("blob:2");
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const zip = new Blob([new Uint8Array([0x50, 0x4b])], { type: "application/zip" });
+
+    saveFile("internal_design.zip", zip, "application/zip");
+
+    expect(createObjectURL).toHaveBeenCalledWith(zip);
+    vi.unstubAllGlobals();
+  });
 });
