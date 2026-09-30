@@ -2,9 +2,10 @@ import type { LayoutModel, NotationType, SemanticModel } from "@/features/uml/ap
 
 // UML デモページ(/uml-demo)用の固定データ。バックエンド無しで画面を確かめるためのもの。
 // layout_model は devex-api のレイアウトエンジン(app/uml/layout、Phase 9)を実際に実行した出力を
-// そのまま埋め込んでいる(直交辺の折れ点つき)。意味モデルを変えたときは、devex-api/backend で
-// SemanticModelAdapter.validate_python(モデル) を app.uml.layout.compute_layout に渡し、
-// 出力の model_dump(mode="json") で置き換える(座標を手で書き換えない)。
+// そのまま埋め込んでいる(直交辺の折れ点つき。Phase 12 からは辺ラベルの位置 label_pos も含む)。
+// 意味モデルを変えたときは、devex-api/backend で SemanticModelAdapter.validate_python(モデル) と
+// edge_labels(モデル, データ項目名) を app.uml.layout.compute_layout に渡し、出力の
+// model_dump(mode="json") で置き換える(座標を手で書き換えない)。demoExports.ts も同じ出力から作り直す。
 export const DEMO_MODELS: Record<
   NotationType,
   { semantic_model: SemanticModel; layout_model: LayoutModel }
@@ -161,7 +162,8 @@ export const DEMO_MODELS: Record<
               421.9,
               359.0
             ]
-          ]
+          ],
+          "label_pos": null
         },
         "r2": {
           "points": [
@@ -189,7 +191,8 @@ export const DEMO_MODELS: Record<
               392.5,
               275.0
             ]
-          ]
+          ],
+          "label_pos": null
         },
         "r3": {
           "points": [
@@ -209,7 +212,8 @@ export const DEMO_MODELS: Record<
               713.18,
               368.0
             ]
-          ]
+          ],
+          "label_pos": null
         },
         "r4": {
           "points": [
@@ -229,7 +233,8 @@ export const DEMO_MODELS: Record<
               888.18,
               443.0
             ]
-          ]
+          ],
+          "label_pos": null
         },
         "r5": {
           "points": [
@@ -249,7 +254,8 @@ export const DEMO_MODELS: Record<
               713.18,
               350.0
             ]
-          ]
+          ],
+          "label_pos": null
         }
       },
       "metrics": {
@@ -452,6 +458,10 @@ export const DEMO_MODELS: Record<
               170.0,
               234.0
             ]
+          ],
+          "label_pos": [
+            193.936,
+            211.0
           ]
         },
         "r2": {
@@ -464,6 +474,10 @@ export const DEMO_MODELS: Record<
               170.0,
               384.0
             ]
+          ],
+          "label_pos": [
+            193.936,
+            361.0
           ]
         },
         "r3": {
@@ -484,6 +498,10 @@ export const DEMO_MODELS: Record<
               270.73,
               596.0
             ]
+          ],
+          "label_pos": [
+            301.46599999999995,
+            441.0
           ]
         }
       },
@@ -606,6 +624,10 @@ export const DEMO_MODELS: Record<
               232.12,
               272.0
             ]
+          ],
+          "label_pos": [
+            495.725,
+            90.0
           ]
         },
         "f2": {
@@ -622,6 +644,10 @@ export const DEMO_MODELS: Record<
               232.12,
               281.0
             ]
+          ],
+          "label_pos": [
+            512.725,
+            268.0
           ]
         },
         "f3": {
@@ -638,6 +664,10 @@ export const DEMO_MODELS: Record<
               480.0,
               346.0
             ]
+          ],
+          "label_pos": [
+            356.06,
+            303.0
           ]
         },
         "f4": {
@@ -658,6 +688,10 @@ export const DEMO_MODELS: Record<
               841.33,
               103.0
             ]
+          ],
+          "label_pos": [
+            696.715,
+            352.0
           ]
         }
       },

@@ -4,10 +4,11 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import type { DfdElementType } from "@/features/uml/api/types";
+import { DiagramReviewActions } from "@/features/uml/components/DiagramReviewActions";
 import { ElementInspector } from "@/features/uml/components/ElementInspector";
 import { UmlCanvas } from "@/features/uml/components/UmlCanvas";
 import { ValidationPanel } from "@/features/uml/components/ValidationPanel";
-import { DIAGRAM_STATUS_LABELS, diagramTitle } from "@/features/uml/labels";
+import { diagramTitle } from "@/features/uml/labels";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
 // 自動レイアウトの再実行は、手で動かした座標を置き換える(M6: 明示的な再実行のときだけ上書きする)。
@@ -36,6 +37,8 @@ export function UmlDiagramPageContent({
   const layingOut = useUmlEditorStore((s) => s.layingOut);
   const conflict = useUmlEditorStore((s) => s.conflict);
   const layoutNotice = useUmlEditorStore((s) => s.layoutNotice);
+  const approving = useUmlEditorStore((s) => s.approving);
+  const exporting = useUmlEditorStore((s) => s.exporting);
   const load = useUmlEditorStore((s) => s.load);
   const save = useUmlEditorStore((s) => s.save);
   const runLayout = useUmlEditorStore((s) => s.runLayout);
@@ -48,7 +51,7 @@ export function UmlDiagramPageContent({
   }, [projectId, diagramId, load]);
 
   const generating = diagram?.generation_status === "generating";
-  const busy = saving || layingOut || conflict || generating;
+  const busy = saving || layingOut || conflict || generating || approving || exporting;
 
   return (
     <YStack paddingVertical="$4" gap="$3">
@@ -68,8 +71,8 @@ export function UmlDiagramPageContent({
 
       {diagram ? (
         <>
+          <DiagramReviewActions />
           <XStack gap="$3" alignItems="center" flexWrap="wrap">
-            <Text color="$color11">{`状態: ${DIAGRAM_STATUS_LABELS[diagram.status]}`}</Text>
             <Button size="$3" disabled={busy || !dirty} onPress={() => void save()}>
               {saving ? "保存中..." : "保存"}
             </Button>

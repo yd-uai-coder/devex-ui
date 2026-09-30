@@ -21,7 +21,7 @@ export class ApiError extends Error {
 
 // FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の
 // {detail: [{msg: string, ...}, ...]})から、メッセージとcodeを取り出してApiErrorにする。
-async function toApiError(res: Response): Promise<ApiError> {
+export async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
     const code = typeof body?.code === "string" ? body.code : undefined;

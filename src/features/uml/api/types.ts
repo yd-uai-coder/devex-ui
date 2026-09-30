@@ -70,7 +70,12 @@ export type UmlRelation = SemanticModel["relations"][number];
 // ---- 配置(app/uml/layout/model.py の出力スキーマ) ----
 // x, y はノードの左上。points は端点を含む直交折れ線。空リストは「折れ点なし」(D2)。
 export type LayoutBox = { x: number; y: number; w: number; h: number; lane: number; row: number };
-export type LayoutEdgeGeometry = { points: [number, number][] };
+// label_pos: 辺ラベルの中心(出力の draw.io/SVG が使う。レビュー画面は React Flow が自前で置く)。
+// ラベルの無い辺・手で動かしたノードにつながる辺(points=[])では null か省略。
+export type LayoutEdgeGeometry = {
+  points: [number, number][];
+  label_pos?: [number, number] | null;
+};
 export type LayoutModel = {
   width: number;
   height: number;
@@ -109,6 +114,12 @@ export type UmlDiagramUpdate = {
   semantic_model: SemanticModel;
   layout_model?: LayoutModel | null;
 };
+
+// UmlDiagramApprove(version は画面で見ていた版。違えば 409 VERSION_CONFLICT)
+export type UmlDiagramApprove = { version: number };
+
+// 出力の形式(GET .../export/drawio | .../export/svg)
+export type ExportFormat = "drawio" | "svg";
 
 // ---- 生成(app/schemas/uml_generation.py) ----
 export type UmlSubjectSpec = { subject?: string; tables?: string[] | null };

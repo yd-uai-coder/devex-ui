@@ -4,7 +4,7 @@ import { H3, Text, YStack } from "tamagui";
 
 type Row = { feature: string; real: string; demo: string };
 
-// 現時点(Phase 11 完了時点)でブラウザ上でできること・できないことの一覧。
+// 現時点(Phase 12 完了時点)でブラウザ上でできること・できないことの一覧。
 // 「実画面」はバックエンド(devex-api)を起動した状態の /projects/[id]/uml と /projects/[id]/uml/[diagramId]。
 export const CAPABILITIES: Row[] = [
   { feature: "生成対象の選択(component / ER 全体図・部分図 / DFD の個別・一括5件まで)", real: "できる", demo: "できる(送信内容を表示するだけで生成はしない)" },
@@ -23,12 +23,13 @@ export const CAPABILITIES: Row[] = [
   { feature: "他で更新されたときの競合表示と再読み込み", real: "できる", demo: "できない" },
   { feature: "自動レイアウト(初回の自動実行・再実行)", real: "できる(30件超・検証エラーのときは格子配置と理由の表示)", demo: "埋め込んだエンジンの配置に戻すだけ(再計算はしない)" },
   { feature: "検証(エラー・警告の一覧と、該当要素の選択)", real: "できる", demo: "できない(案内の警告を1件出すだけ)" },
+  { feature: "承認(draft / reviewing → approved)と、承認後の保存・自動レイアウトでレビュー中へ戻る状態遷移", real: "できる(配置が無い・検証エラーのときは承認できない)", demo: "できる(検証はサーバーが要るため、検証エラーによる拒否は起きない)" },
+  { feature: "承認済みの図の draw.io / SVG 出力とダウンロード(出力で exported になる)", real: "できる(編集後の図を出力する)", demo: "できる(編集前の図を実エンジンで出力したファイルを保存する。編集は反映されない)" },
+  { feature: "他の画面で更新された図の承認(409 で競合として再読み込みを促す)", real: "できる", demo: "できない" },
 ];
 
 // まだ実装していない機能(実画面でもできない)
 export const NOT_IMPLEMENTED: { feature: string; when: string }[] = [
-  { feature: "承認・状態遷移(draft → reviewing → approved → exported)。状態は表示のみ", when: "Phase 12" },
-  { feature: "draw.io / SVG の出力とダウンロード", when: "Phase 12" },
   { feature: "内部設計書への図の差し込み・zip ダウンロード・陳腐化の検知", when: "Phase 13" },
   { feature: "図の手直しを文書へ反映する AI 修正案", when: "Phase 13b" },
   { feature: "アクティビティ図", when: "Phase 14" },
@@ -41,7 +42,8 @@ export const NOT_IMPLEMENTED: { feature: string; when: string }[] = [
 
 // 見つかっている不具合(実画面にも影響する)
 export const KNOWN_ISSUES: string[] = [
-  "線のラベル(DFD のデータ項目名・ER の多重度)は折れ線の中央に置くだけなので、平行に近い線どうしでラベルが重なることがある。エンジンはラベルの位置を計算していない",
+  "レビュー画面の線のラベル(DFD のデータ項目名・ER の多重度)は折れ線の中央に置くだけなので、平行に近い線どうしでラベルが重なることがある。エンジンが重ならない位置を計算したラベル位置(Phase 12)は、draw.io / SVG の出力だけが使う",
+  "手で動かしたノードにつながる線は、SVG の出力では簡易な直交経路で描くため、ノードを避けず、ラベルがノードに重なることがある。自動レイアウトを再実行すれば解消する",
 ];
 
 const CELL = { padding: "4px 8px", borderBottom: "1px solid var(--borderColor)", textAlign: "left" as const, verticalAlign: "top" as const };

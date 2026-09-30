@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
+import { parseFilename } from "@/lib/api/download";
 
 export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
 
@@ -62,15 +63,4 @@ export async function downloadDocument(
   const content = await res.text();
   const filename = parseFilename(res.headers.get("Content-Disposition")) ?? `${docId}.md`;
   return { filename, content };
-}
-
-// Content-Disposition: attachment; filename="..."; filename*=UTF-8''...
-// のfilename*(RFC 5987、UTF-8パーセントエンコード)を優先して取り出す
-// (devex-api app/api/routes/projects.py _content_dispositionが両方を含めて返す)。
-function parseFilename(header: string | null): string | null {
-  if (!header) return null;
-  const utf8Match = header.match(/filename\*=UTF-8''([^;]+)/i);
-  if (utf8Match) return decodeURIComponent(utf8Match[1]);
-  const asciiMatch = header.match(/filename="([^"]+)"/i);
-  return asciiMatch ? asciiMatch[1] : null;
 }

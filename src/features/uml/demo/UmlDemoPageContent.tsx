@@ -8,6 +8,7 @@ import { GenerationRunHistory } from "@/features/uml/components/GenerationRunHis
 import { UmlDiagramPageContent } from "@/features/uml/components/UmlDiagramPageContent";
 import { DemoCapabilities } from "@/features/uml/demo/DemoCapabilities";
 import { DEMO_PROJECT_ID } from "@/features/uml/demo/demoData";
+import { DEMO_EXPORTS } from "@/features/uml/demo/demoExports";
 import {
   installDemoStores,
   loadDemoDiagram,
@@ -38,8 +39,9 @@ export function UmlDemoPageContent() {
     <YStack paddingVertical="$4" gap="$4">
       <H2>UML設計図デモ(バックエンド無し)</H2>
       <Text color="$color11">
-        Phase 11 時点の UML 画面を、固定データで動かすページです。画面部品とストアは本物を使い、
-        サーバーとの通信(生成・保存・自動レイアウト・検証)だけを、送信内容の表示に置き換えています。
+        Phase 12 時点の UML 画面を、固定データで動かすページです。画面部品とストアは本物を使い、
+        サーバーとの通信(生成・保存・自動レイアウト・検証・承認・出力)だけを、送信内容の表示に
+        置き換えています。出力は、最初の図を実際の出力エンジンで書き出したファイルを埋め込んでいます。
         再読み込みすると最初の状態に戻ります。
       </Text>
 
@@ -71,7 +73,9 @@ export function UmlDemoPageContent() {
       <Text color="$color11" fontSize="$2">
         試せる操作: ノードのドラッグ(つながる線が折れ線から滑らかな線に替わる)、要素の追加、
         ノード右端から左端へのドラッグで線の追加、選択して Delete キーで削除、右の属性パネルでの編集、
-        保存・自動レイアウト・検証ボタン(送信内容が下に表示される)。記法を切り替えると編集内容は捨てられます。
+        保存・自動レイアウト・検証ボタン(送信内容が下に表示される)。承認すると出力ボタンが現れ、
+        押すと 3. のファイルがダウンロードされる。承認した後に保存するとレビュー中に戻る。
+        記法を切り替えると編集内容と状態は最初に戻ります。
       </Text>
       {/* key で作り直し、記法を切り替えたときにキャンバスの表示範囲(fitView)を合わせ直す */}
       <UmlDiagramPageContent
@@ -79,6 +83,24 @@ export function UmlDemoPageContent() {
         projectId={DEMO_PROJECT_ID}
         diagramId={`demo-${notation}`}
       />
+      <Separator />
+
+      <H3>3. 出力のプレビュー({NOTATION_LABELS[notation]})</H3>
+      <Text color="$color11" fontSize="$2">
+        最初の図(編集前)を、devex-api の出力エンジン(app/uml/export)で書き出した SVG です。
+        線のラベルは、レイアウトエンジンが重ならない位置を計算したもの(label_pos)で、
+        レビュー画面(線の中央に置く)とは位置が違うことがあります。レーン帯は描きません。
+      </Text>
+      {/* 埋め込んだ SVG 文字列の data URL なので、next/image の最適化の対象外 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        alt={`${NOTATION_LABELS[notation]}の出力(SVG)`}
+        src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(DEMO_EXPORTS[notation].svg.content)}`}
+        style={{ maxWidth: "100%", alignSelf: "flex-start", border: "1px solid var(--borderColor)" }}
+      />
+      <Text color="$color11" fontSize="$2">
+        {`ファイル名: ${DEMO_EXPORTS[notation].drawio.filename} / ${DEMO_EXPORTS[notation].svg.filename}`}
+      </Text>
       <Separator />
 
       <H3>送信されるはずのリクエスト(新しい順)</H3>

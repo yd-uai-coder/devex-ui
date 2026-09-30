@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { ApiError } from "@/lib/api/client";
 import {
+  approveDiagram,
   computeLayout,
+  exportDiagram,
   getDiagram,
   listDataItems,
   updateDiagram,
@@ -11,6 +13,7 @@ import type {
   DataItemRead,
   DfdElementType,
   ErColumn,
+  ExportFormat,
   LayoutModel,
   SemanticModel,
   UmlDiagramRead,
@@ -35,6 +38,7 @@ import {
   type RelationPatch,
 } from "@/features/uml/model/editOps";
 import type { AsyncStatus } from "@/lib/api/types";
+import { saveFile } from "@/lib/api/download";
 
 // 属性パネルで編集する対象。キャンバスでの選択と同期する。
 export type Selection = { kind: "element" | "relation"; id: string } | null;
@@ -62,6 +66,8 @@ type UmlEditorStore = {
   // 最後に実行した検証の結果(編集すると古くなるため null に戻す)
   validation: ValidationResult | null;
   validating: boolean;
+  approving: boolean;
+  exporting: boolean;
 
   load: (projectId: string, diagramId: string) => Promise<void>;
   moveNodes: (moved: Record<string, Position>) => void;
@@ -80,6 +86,10 @@ type UmlEditorStore = {
   updateColumn: (tableId: string, index: number, patch: Partial<ErColumn>) => void;
   deleteColumn: (tableId: string, index: number) => void;
   validate: () => Promise<void>;
+  // 承認(M7)。未保存の変更があれば先に保存してから承認する
+  approve: () => Promise<void>;
+  // 出力(M8)。ファイルを保存させた後、図を取り直す(状態が exported になるため)
+  exportDiagram: (format: ExportFormat) => Promise<void>;
 };
 
 const INITIAL = {
@@ -98,6 +108,8 @@ const INITIAL = {
   selection: null,
   validation: null,
   validating: false,
+  approving: false,
+  exporting: false,
 };
 
 // 消した要素・関係のジオメトリを配置から除く。同じ id を後で再利用したとき
@@ -274,6 +286,48 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
     deleteColumn: (tableId, index) => {
       const { model } = get();
       if (model) commit(deleteColumn(model, tableId, index));
+    },
+
+    approve: async () => {
+      const { projectId, diagram } = get();
+      if (!projectId || !diagram) return;
+      // 承認は DB に保存済みの版に対して行う。未保存の変更があれば先に保存する(検証と同じ順序)。
+      if (get().dirty && !(await get().save())) return;
+      set({ approving: true, error: null });
+      try {
+        // 保存した場合は version が変わっているので、get() で取り直した版を送る
+        const current = get().diagram ?? diagram;
+        set(fromServer(await approveDiagram(projectId, current.id, current.version)));
+      } catch (err) {
+        if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
+          set({ conflict: true });
+        } else if (err instanceof ApiError && err.code === "UML_APPROVAL_VALIDATION_FAILED") {
+          // 検証エラーの一覧は検証パネルに出す(承認の応答は件数だけを返す)
+          set({ error: err.message });
+          await get().validate();
+        } else {
+          set({ error: messageOf(err, "承認に失敗しました") });
+        }
+      } finally {
+        set({ approving: false });
+      }
+    },
+
+    exportDiagram: async (format) => {
+      const { projectId, diagram } = get();
+      if (!projectId || !diagram) return;
+      set({ exporting: true, error: null });
+      try {
+        const file = await exportDiagram(projectId, diagram.id, format);
+        saveFile(file.filename, file.content, file.mimeType);
+        // 出力に成功すると approved が exported になる。状態の表示を合わせるため取り直す
+        // (出力は承認済み=未保存の変更が無い状態でしか呼ばないので、取り直しても編集は失われない)
+        set(fromServer(await getDiagram(projectId, diagram.id)));
+      } catch (err) {
+        set({ error: messageOf(err, "出力に失敗しました") });
+      } finally {
+        set({ exporting: false });
+      }
     },
 
     validate: async () => {

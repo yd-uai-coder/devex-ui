@@ -12,6 +12,9 @@ vi.mock("@/features/uml/components/UmlCanvas", () => ({ UmlCanvas: () => <div>ca
 vi.mock("@/features/uml/components/ElementInspector", () => ({
   ElementInspector: () => <div>inspector</div>,
 }));
+vi.mock("@/features/uml/components/DiagramReviewActions", () => ({
+  DiagramReviewActions: () => <div>review-actions</div>,
+}));
 vi.mock("@/features/uml/components/ValidationPanel", () => ({
   ValidationPanel: () => <div>validation</div>,
 }));
@@ -39,6 +42,8 @@ describe("UmlDiagramPageContent", () => {
       save: vi.fn().mockResolvedValue(true),
       runLayout: vi.fn().mockResolvedValue(undefined),
       validating: false,
+      approving: false,
+      exporting: false,
       addElement: vi.fn(),
       validate: vi.fn().mockResolvedValue(undefined),
     });
@@ -53,7 +58,8 @@ describe("UmlDiagramPageContent", () => {
 
     expect(useUmlEditorStore.getState().load).toHaveBeenCalledWith("p1", "d1");
     expect(screen.getByRole("heading", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
-    expect(screen.getByText("状態: 下書き")).toBeInTheDocument();
+    // 状態表示と承認・出力は DiagramReviewActions.test.tsx で検証する
+    expect(screen.getByText("review-actions")).toBeInTheDocument();
     expect(screen.getByText("canvas")).toBeInTheDocument();
   });
 
