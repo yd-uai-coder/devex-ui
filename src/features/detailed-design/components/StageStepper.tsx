@@ -10,6 +10,7 @@ import { STAGE_TITLES, STATE_LABELS } from "@/features/detailed-design/labels";
 const STATE_COLORS: Record<StageState, string> = {
   not_started: "$color10",
   draft: "$blue10",
+  regenerated: "$purple10",
   reviewing: "$orange10",
   approved: "$green10",
   outdated: "$red10",

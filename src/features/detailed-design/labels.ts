@@ -17,6 +17,7 @@ export const STAGE_TITLES: Record<number, string> = {
 export const STATE_LABELS: Record<StageState, string> = {
   not_started: "未着手",
   draft: "下書き",
+  regenerated: "再生成済(未承認)",
   reviewing: "レビュー中",
   approved: "承認済み",
   outdated: "古い",
@@ -36,12 +37,21 @@ export function describeMissingInput(key: string): string {
   return key;
 }
 
+export function hasErrors(stage: DesignStageRead): boolean {
+  return stage.issues.some((issue) => issue.severity === "error");
+}
+
 // 承認ボタンを押せるか。古い段階は、内容を変えずに承認し直せる(入力の版を記録し直す)。
+// 生成中・内容が空・検証のエラーがある段階は承認できない(バックエンドも409で断る。Phase 16)。
 export function canApprove(stage: DesignStageRead): boolean {
   return (
     stage.is_open &&
     stage.version !== null &&
+    stage.model !== null &&
+    stage.generation_status !== "generating" &&
+    !hasErrors(stage) &&
     (stage.state === "draft" ||
+      stage.state === "regenerated" ||
       stage.state === "reviewing" ||
       stage.state === "outdated")
   );

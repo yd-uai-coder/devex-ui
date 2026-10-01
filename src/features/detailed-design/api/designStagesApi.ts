@@ -35,3 +35,14 @@ export function approveDesignStage(
     body: JSON.stringify({ version }),
   });
 }
+
+// 段階のAIの下書きの生成を受け付ける(202)。生成はバックグラウンドで進むので、完了は
+// listDesignStages のポーリング(generation_status)で待つ。Phase 16 は段階1だけ。
+export function generateDesignStage(
+  projectId: string,
+  stage: number,
+): Promise<DesignStageRead> {
+  return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
+    method: "POST",
+  });
+}

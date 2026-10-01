@@ -5,7 +5,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeStages } from "../../test-utils/stageFixtures";
+import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 
 function renderContent() {
   return render(
@@ -19,7 +19,9 @@ describe("DetailedDesignPageContent", () => {
   beforeEach(() => {
     useDetailedDesignStore.setState({
       projectId: "p1",
-      stages: makeStages({ 1: { state: "reviewing", version: 1 } }),
+      stages: makeStages({
+        1: { state: "reviewing", version: 1, model: makeFunctionList() },
+      }),
       selectedStage: 1,
       status: "success",
       error: null,

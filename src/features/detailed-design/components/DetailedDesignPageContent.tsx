@@ -57,6 +57,7 @@ export function DetailedDesignPageContent({
           />
           {current ? (
             <StageWorkArea
+              projectId={projectId}
               stage={current}
               approving={approving}
               actionError={actionError}

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { StageWorkArea } from "../StageWorkArea";
-import { makeStages } from "../../test-utils/stageFixtures";
+import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
 function renderArea(
@@ -15,6 +15,7 @@ function renderArea(
   render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
       <StageWorkArea
+        projectId="p1"
         stage={stage}
         approving={false}
         actionError={actionError}
@@ -36,7 +37,9 @@ describe("StageWorkArea", () => {
   });
 
   it("レビュー中の段階は承認できる", async () => {
-    const [stage1] = makeStages({ 1: { state: "reviewing", version: 2 } });
+    const [stage1] = makeStages({
+      1: { state: "reviewing", version: 2, model: makeFunctionList() },
+    });
     const user = userEvent.setup();
     const onApprove = renderArea(stage1);
 
@@ -47,7 +50,12 @@ describe("StageWorkArea", () => {
 
   it("古い段階は理由を示し、「このまま承認し直す」にする", () => {
     const [stage1] = makeStages({
-      1: { state: "outdated", version: 2, approved_version: 2 },
+      1: {
+        state: "outdated",
+        version: 2,
+        approved_version: 2,
+        model: makeFunctionList(),
+      },
     });
     renderArea(stage1);
 
