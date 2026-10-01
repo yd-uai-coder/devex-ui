@@ -23,6 +23,7 @@ describe("ChatPanel", () => {
       sending: false,
       streamingReply: "",
       connectionLost: false,
+      streamError: null,
       completion: null,
       generationTriggered: false,
       loadHistory: vi.fn().mockResolvedValue(undefined),
@@ -120,8 +121,19 @@ describe("ChatPanel", () => {
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    await user.click(screen.getByLabelText("生成する"));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("生成の開始に失敗しました");
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).not.toBeDisabled();
+  });
+
+  it("バックエンドが伝えた失敗の理由を表示し、保存されていないことを伝える", () => {
+    useHearingStore.setState({ streamError: "本日の利用上限に達しました。" });
+
+    renderPanel();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "本日の利用上限に達しました。 送信したメッセージは保存されていません。",
+    );
   });
 });

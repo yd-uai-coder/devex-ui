@@ -12,6 +12,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   const streamingReply = useHearingStore((s) => s.streamingReply);
   const sending = useHearingStore((s) => s.sending);
   const connectionLost = useHearingStore((s) => s.connectionLost);
+  const streamError = useHearingStore((s) => s.streamError);
   const completion = useHearingStore((s) => s.completion);
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const loadHistory = useHearingStore((s) => s.loadHistory);
@@ -35,6 +36,8 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   }
 
   async function handleApprove() {
+    // 二度押しの防止(ボタンも approving の間は無効にする)
+    if (approving) return;
     setApproveError(null);
     setApproving(true);
     try {
@@ -60,6 +63,25 @@ export function ChatPanel({ projectId }: { projectId: string }) {
           backgroundColor="$red2"
         >
           <Text color="$color9">接続が切れました。直前のメッセージが保存されていない可能性があります。</Text>
+          <Button size="$2" onPress={dismissConnectionLost}>
+            閉じる
+          </Button>
+        </XStack>
+      ) : null}
+      {streamError ? (
+        <XStack
+          role="alert"
+          aria-live="polite"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="$3"
+          padding="$3"
+          borderRadius="$4"
+          backgroundColor="$red2"
+        >
+          <Text color="$color9">
+            {streamError} 送信したメッセージは保存されていません。もう一度送信してください。
+          </Text>
           <Button size="$2" onPress={dismissConnectionLost}>
             閉じる
           </Button>

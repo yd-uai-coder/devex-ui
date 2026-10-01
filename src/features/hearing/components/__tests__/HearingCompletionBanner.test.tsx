@@ -45,14 +45,28 @@ describe("HearingCompletionBanner", () => {
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
 
-  it("ボタン押下でonApproveを呼ぶ", async () => {
+  it("ボタン押下で確認ダイアログを開き、「生成する」でonApproveを呼ぶ", async () => {
     const onApprove = vi.fn();
     const user = userEvent.setup();
     renderBanner({ onApprove });
 
     await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    expect(onApprove).not.toHaveBeenCalled();
+    // ダイアログ内のボタンは jsdom ではロールのクエリで「隠れている」扱いになるため、aria-label で取る
+    await user.click(screen.getByLabelText("生成する"));
 
     expect(onApprove).toHaveBeenCalledTimes(1);
+  });
+
+  it("確認ダイアログでキャンセルするとonApproveを呼ばない", async () => {
+    const onApprove = vi.fn();
+    const user = userEvent.setup();
+    renderBanner({ onApprove });
+
+    await user.click(screen.getByRole("button", { name: "この内容で設計書を生成する" }));
+    await user.click(screen.getByLabelText("キャンセル"));
+
+    expect(onApprove).not.toHaveBeenCalled();
   });
 
   it("approving=trueならボタンが無効化され文言が変わる", () => {

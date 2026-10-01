@@ -12,10 +12,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-function renderForm() {
+function renderForm(mode?: "simple" | "detailed") {
   return render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <IntakeForm />
+      <IntakeForm mode={mode} />
     </TamaguiProvider>,
   );
 }
@@ -85,8 +85,25 @@ describe("IntakeForm", () => {
       deploy_targets: [],
     });
     expect(body.getAll("files")).toHaveLength(1);
+    // mode を渡さなければ簡易ドキュメントモードで作成する
+    expect(body.get("mode")).toBe("simple");
 
     await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/projects/p1/chat"));
+  }, 15000);
+
+  it("mode=detailedを渡すと、詳細設計モードでプロジェクトを作成する", async () => {
+    stub.queue({ status: 200, body: [] }); // テンプレート一覧(マウント時に取得)
+    stub.queue({ status: 201, body: { id: "p2", title: "t", status: "interviewing", mode: "detailed" } });
+    const user = userEvent.setup();
+    renderForm("detailed");
+
+    await user.type(screen.getByLabelText("システム概要"), "備品予約");
+    await user.type(screen.getByLabelText("実現したいこと"), "重複を防ぐ");
+    await user.click(screen.getByRole("button", { name: "ヒアリングを始める" }));
+
+    await vi.waitFor(() => expect(stub.requests).toHaveLength(2));
+    const body = stub.requests[1].init?.body as FormData;
+    expect(body.get("mode")).toBe("detailed");
   }, 15000);
 
   it("テンプレートを選択すると環境設定にプリフィルされ、template_idが送信される", async () => {

@@ -14,6 +14,7 @@ import { FieldsetGroup } from "@/components/ui/form/FieldsetGroup";
 import { CollapsibleSection } from "@/components/ui/form/CollapsibleSection";
 import { FileUploadField } from "@/features/hearing/components/FileUploadField";
 import { TemplateSelectField } from "@/features/hearing/components/TemplateSelectField";
+import type { ProjectMode } from "@/features/dashboard/api/projects";
 import { createProject } from "@/features/hearing/api/createProject";
 import { intakeSchema } from "@/features/hearing/schemas";
 import type { IntakeValues } from "@/features/hearing/schemas";
@@ -84,7 +85,8 @@ const DEFAULT_VALUES: IntakeValues = {
   files: [],
 };
 
-export function IntakeForm() {
+// mode: ダッシュボードのモード選択ダイアログで選んだモード(作成後は変えない)
+export function IntakeForm({ mode = "simple" }: { mode?: ProjectMode }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   // FormGeneralのonSubmittedは引数を取らないため、作成後の遷移先(project.id)を
@@ -105,7 +107,7 @@ export function IntakeForm() {
         async (values) => {
           setSubmitError(null);
           try {
-            const project = await createProject(values);
+            const project = await createProject({ ...values, mode });
             createdProjectIdRef.current = project.id;
             resolve(true);
           } catch (err) {

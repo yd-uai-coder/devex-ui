@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Button, Text, YStack } from "tamagui";
+import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import type { HearingCompletionCheck } from "@/features/hearing/api/hearingApi";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 
@@ -12,6 +14,7 @@ type HearingCompletionBannerProps = {
 // 承認を得てから/generateを呼ぶ(docs/external_design.md 2.3節)。
 export function HearingCompletionBanner({ completion, onApprove, approving }: HearingCompletionBannerProps) {
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   if (!completion.is_sufficient) return null;
 
   return (
@@ -26,13 +29,29 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
     >
       <Text fontWeight="600">ヒアリング内容の確認</Text>
       <Text>{completion.summary}</Text>
-      <Button theme="green" disabled={projectStatus === "completed" || approving} onPress={onApprove}>
+      {/* 生成は数分かかり、やり直すとAIの利用枠も使うため、押す前に確認する(気づき#4) */}
+      <Button
+        theme="green"
+        disabled={projectStatus === "completed" || approving}
+        onPress={() => setConfirmOpen(true)}
+      >
         {projectStatus === "completed"
           ? "設計書は生成済みです"
           : approving
             ? "生成を開始しています..."
             : "この内容で設計書を生成する"}
       </Button>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="設計書を生成しますか"
+        description="この内容で設計書を生成します。生成には数分かかり、その間はチャットを送れません。"
+        confirmLabel="生成する"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onApprove();
+        }}
+      />
     </YStack>
   );
 }

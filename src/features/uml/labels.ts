@@ -41,6 +41,7 @@ export const REASON_LABELS: Record<GenerationReasonCode, string> = {
   TOKEN_LIMIT: "出力が長すぎて途中で止まりました",
   INVALID_OUTPUT: "AIの出力が形式に合いませんでした",
   GENERATION_FAILED: "生成に失敗しました",
+  STALE_GENERATION: "時間内に終わらなかったため中断しました",
 };
 
 // component・ER 全体図は subject が空文字

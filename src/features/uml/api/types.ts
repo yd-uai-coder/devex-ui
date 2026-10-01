@@ -137,7 +137,9 @@ export type GenerationReasonCode =
   | "QUOTA_EXCEEDED"
   | "TOKEN_LIMIT"
   | "INVALID_OUTPUT"
-  | "GENERATION_FAILED";
+  | "GENERATION_FAILED"
+  // 生成中のまま止まった(15分超)ものを、一覧の取得時にバックエンドが失敗へ戻した
+  | "STALE_GENERATION";
 export type UmlGenerationResultRead = {
   subject: string;
   diagram_id: string;

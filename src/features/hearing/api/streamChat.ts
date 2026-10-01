@@ -1,12 +1,22 @@
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 
-export class StreamChatError extends Error {}
+export class StreamChatError extends Error {
+  // バックエンドの共通エラー形式の code(例: "LLM_QUOTA_EXCEEDED")。HTTPの失敗では持たない。
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "StreamChatError";
+    this.code = code;
+  }
+}
 
 // POST /api/v1/projects/{id}/chat のSSEレスポンスを解釈する。バックエンドの形式は
-// `data: {"delta": "..."}\n\n` を`data: [DONE]\n\n`まで繰り返すだけの単純なものであり、
-// event:/id:/retry:等の他のSSEフィールドは使わないため、@microsoft/fetch-event-source等の
-// 汎用ライブラリは導入せず、fetch+ReadableStreamで直接パースする。
+// `data: {"delta": "..."}\n\n` を`data: [DONE]\n\n`まで繰り返すだけの単純なもので、
+// 途中で失敗したときだけ`event: error\ndata: {"code": "...", "detail": "..."}\n\n`を送って終わる
+// (200を返した後なのでステータスコードでは伝えられないため)。id:/retry:等は使わないため、
+// @microsoft/fetch-event-source等の汎用ライブラリは導入せず、fetch+ReadableStreamで直接パースする。
 // apiFetchの401リトライ機構はbodyのストリームを
 // 一度しか読めないため使えず、このヘルパー自身で1回だけリフレッシュ→リトライする。
 export async function* streamChat(
@@ -43,9 +53,10 @@ export async function* streamChat(
     while (boundary !== -1) {
       const rawEvent = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
-      const delta = parseEvent(rawEvent);
-      if (delta === DONE_MARKER) return;
-      if (delta !== null) yield delta;
+      const event = parseEvent(rawEvent);
+      if (event.kind === "done") return;
+      if (event.kind === "error") throw new StreamChatError(event.detail, event.code);
+      if (event.kind === "delta") yield event.delta;
       boundary = buffer.indexOf("\n\n");
     }
   }
@@ -66,17 +77,34 @@ function sendRequest(projectId: string, message: string, signal?: AbortSignal): 
   });
 }
 
-const DONE_MARKER = "__DONE__";
+type SseEvent =
+  | { kind: "delta"; delta: string }
+  | { kind: "done" }
+  | { kind: "error"; code?: string; detail: string }
+  | { kind: "ignored" };
 
-function parseEvent(rawEvent: string): string | null {
-  const dataLine = rawEvent.split("\n").find((line) => line.startsWith("data:"));
-  if (!dataLine) return null;
-  const payload = dataLine.slice("data:".length).trim();
-  if (payload === "[DONE]") return DONE_MARKER;
+const STREAM_ERROR_FALLBACK = "応答の生成中にエラーが発生しました。もう一度送信してください。";
+
+export function parseEvent(rawEvent: string): SseEvent {
+  const lines = rawEvent.split("\n");
+  const eventName = lines.find((line) => line.startsWith("event:"))?.slice("event:".length).trim();
+  const dataLine = lines.find((line) => line.startsWith("data:"));
+  const payload = dataLine?.slice("data:".length).trim() ?? "";
+
+  if (eventName === "error") {
+    try {
+      const parsed = JSON.parse(payload) as { code?: string; detail?: string };
+      return { kind: "error", code: parsed.code, detail: parsed.detail || STREAM_ERROR_FALLBACK };
+    } catch {
+      return { kind: "error", detail: STREAM_ERROR_FALLBACK };
+    }
+  }
+  if (!dataLine) return { kind: "ignored" };
+  if (payload === "[DONE]") return { kind: "done" };
   try {
     const parsed = JSON.parse(payload) as { delta?: string };
-    return parsed.delta ?? null;
+    return parsed.delta ? { kind: "delta", delta: parsed.delta } : { kind: "ignored" };
   } catch {
-    return null;
+    return { kind: "ignored" };
   }
 }

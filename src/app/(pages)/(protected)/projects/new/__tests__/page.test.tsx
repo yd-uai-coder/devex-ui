@@ -10,16 +10,28 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-describe("NewProjectPage", () => {
-  it("ログイン済みならヒアリング入力フォームを表示する", () => {
-    useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
+async function renderPage(query: { [key: string]: string | undefined }) {
+  useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
+  const element = await NewProjectPage({ searchParams: Promise.resolve(query) });
+  render(
+    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+      {element}
+    </TamaguiProvider>,
+  );
+}
 
-    render(
-      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-        <NewProjectPage />
-      </TamaguiProvider>,
-    );
+describe("NewProjectPage", () => {
+  it("ログイン済みならヒアリング入力フォームを表示する", async () => {
+    await renderPage({});
 
     expect(screen.getByRole("button", { name: "ヒアリングを始める" })).toBeInTheDocument();
+    // ?mode= が無ければ簡易ドキュメントモード
+    expect(screen.getByText("モード: 簡易ドキュメントモード")).toBeInTheDocument();
+  });
+
+  it("?mode=detailed なら詳細設計モードで作成する", async () => {
+    await renderPage({ mode: "detailed" });
+
+    expect(screen.getByText("モード: 詳細設計モード")).toBeInTheDocument();
   });
 });

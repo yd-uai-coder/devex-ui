@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
-import { GenerationPanel, MAX_SUBJECTS_PER_REQUEST } from "../GenerationPanel";
+import { approvedTargets, GenerationPanel, MAX_SUBJECTS_PER_REQUEST } from "../GenerationPanel";
 import { useUmlStore } from "@/features/uml/uml-store";
 import { makeCandidates, makeDiagram } from "@/features/uml/test-utils/umlFixtures";
 
@@ -121,5 +121,38 @@ describe("GenerationPanel", () => {
       "true",
     );
     expect(screen.getByText("生成中の図があります")).toBeInTheDocument();
+  });
+
+  it("承認済みの図を再生成するときは確認してから生成する(気づき#6)", async () => {
+    useUmlStore.setState({
+      diagrams: [makeDiagram({ notation: "component", subject: "", status: "approved" })],
+    });
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "コンポーネント図を生成" }));
+    expect(generate).not.toHaveBeenCalled();
+    expect(screen.getByText(/承認がやり直しになります/)).toBeInTheDocument();
+    // ダイアログ内のボタンは jsdom ではロールのクエリで「隠れている」扱いになるため、aria-label で取る
+    await user.click(screen.getByLabelText("再生成する"));
+
+    expect(generate).toHaveBeenCalledWith("p1", { notation: "component", subjects: [] });
+  });
+});
+
+describe("approvedTargets", () => {
+  it("同じ記法・対象の承認済み(出力済みを含む)の図だけを返す", () => {
+    const diagrams = [
+      makeDiagram({ id: "a", notation: "dfd", subject: "ログイン", status: "exported" }),
+      makeDiagram({ id: "b", notation: "dfd", subject: "プロジェクト作成", status: "reviewing" }),
+      makeDiagram({ id: "c", notation: "er", subject: "", status: "approved" }),
+    ];
+
+    const targets = approvedTargets(diagrams, {
+      notation: "dfd",
+      subjects: [{ subject: "ログイン" }, { subject: "プロジェクト作成" }],
+    });
+
+    expect(targets.map((d) => d.id)).toEqual(["a"]);
   });
 });

@@ -6,6 +6,7 @@ const SAMPLE_PROJECT_RESPONSE = {
   id: "p1",
   title: "自動生成タイトル",
   status: "interviewing",
+  mode: "simple",
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };
@@ -53,6 +54,26 @@ describe("createProject", () => {
     expect(body.getAll("files")).toHaveLength(1);
     // templateId=nullの場合はtemplate_idフィールド自体を送らない
     expect(body.has("template_id")).toBe(false);
+    // mode を省略した場合はフィールド自体を送らない(バックエンドの既定 simple になる)
+    expect(body.has("mode")).toBe(false);
+  });
+
+  it("modeが指定されていればmodeフィールドを送る", async () => {
+    stub.queue({ status: 201, body: { ...SAMPLE_PROJECT_RESPONSE, mode: "detailed" } });
+
+    const project = await createProject({
+      systemOverview: "x",
+      goalsRaw: "y",
+      notesRaw: "",
+      environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
+      files: [],
+      templateId: null,
+      mode: "detailed",
+    });
+
+    const body = stub.requests[0].init?.body as FormData;
+    expect(body.get("mode")).toBe("detailed");
+    expect(project.mode).toBe("detailed");
   });
 
   it("environmentが全て空ならenvironmentフィールド自体を送らない", async () => {

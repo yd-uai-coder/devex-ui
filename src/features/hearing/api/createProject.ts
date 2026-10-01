@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
-import type { ProjectRead } from "@/features/dashboard/api/projects";
+import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
 import type { EnvironmentValues } from "@/features/hearing/schemas";
 
 export type CreateProjectInput = {
@@ -7,6 +7,8 @@ export type CreateProjectInput = {
   goalsRaw: string;
   notesRaw: string;
   templateId: string | null;
+  // 省略時はバックエンドの既定(simple)になる
+  mode?: ProjectMode;
   environment: EnvironmentValues;
   files: File[];
 };
@@ -24,6 +26,9 @@ export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
 
   if (input.templateId) {
     formData.set("template_id", input.templateId);
+  }
+  if (input.mode) {
+    formData.set("mode", input.mode);
   }
 
   const { languages, frameworks, databases, deployTargets } = input.environment;
