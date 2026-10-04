@@ -83,7 +83,7 @@ describe("StructurePanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "モジュール一覧を保存する" }));
+    await user.click(screen.getAllByRole("button", { name: "モジュール一覧を保存する" })[0]);
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(4);
     expect(model).toEqual(makeModuleList("Service層"));

@@ -72,7 +72,7 @@ describe("DataFlowPanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(2);
     expect(model).toEqual({ dfd_groups: ["reservations"], summaries: [] });
@@ -106,7 +106,7 @@ describe("DataFlowPanel", () => {
     const output = screen.getByRole("textbox", { name: "F-01 の出力" });
     await user.clear(output);
     await user.type(output, "予約ID");
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
 
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(model).toMatchObject({ summaries: [{ function_id: "F-01", output: "予約ID" }] });

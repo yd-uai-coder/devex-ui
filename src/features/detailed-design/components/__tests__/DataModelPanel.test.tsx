@@ -86,7 +86,7 @@ describe("DataModelPanel", () => {
       "aria-disabled",
       "true",
     );
-    await user.click(screen.getByRole("button", { name: "CRUD 図を保存する" }));
+    await user.click(screen.getAllByRole("button", { name: "CRUD 図を保存する" })[0]);
     const [, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
     expect(stage).toBe(3);
     expect(model).toEqual({

@@ -11,6 +11,7 @@ import type {
   FunctionListModel,
 } from "@/features/detailed-design/api/types";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import {
   CELL,
   HEAD,
@@ -75,6 +76,13 @@ export function FunctionListPanel({
 
   return (
     <YStack gap="$4">
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -282,26 +290,21 @@ export function FunctionListPanel({
         </>
       ) : null}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          theme="gray"
-          disabled={!stage.is_open || generating}
-          onPress={() => setDraft((m) => addRow(m))}
-        >
-          処理を追加
-        </StyledButton>
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      <StageSaveBar
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+        leading={
+          <StyledButton
+            theme="gray"
+            disabled={!stage.is_open || generating}
+            onPress={() => setDraft((m) => addRow(m))}
+          >
+            処理を追加
+          </StyledButton>
+        }
+      />
 
       <StageIssueList issues={stage.issues} />
     </YStack>

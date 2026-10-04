@@ -3,6 +3,8 @@ import type {
   DataFlowModel,
   DesignStageRead,
   FunctionListModel,
+  LogicModel,
+  LogicRow,
   ModuleListModel,
   ProcedureModel,
   ProcedureStep,
@@ -87,6 +89,26 @@ export function makeProcedures(): ProcedureModel {
       { function_id: "F-01", reason: "検証", note: "", steps: [makeStep(), makeBranch()] },
     ],
   };
+}
+
+// makeProcedures の手順 F-01#1 が呼ぶ関数1つの詳細(段階6の検証を通る。テスト専用)。
+export function makeLogic(patch: Partial<LogicRow> = {}): LogicRow {
+  return {
+    module: "app/api/routes/reservations.py",
+    function: "create_reservation",
+    signature: "async def create_reservation(payload) -> Reservation",
+    args: "payload: 予約リクエスト",
+    returns: "保存済みの予約",
+    raises: "ValidationError(422)",
+    pre: "利用者は認証済み",
+    post: "予約が1件増える",
+    pseudo: [{ text: "本文を検証する", sub: ["不正なら 422"] }],
+    ...patch,
+  };
+}
+
+export function makeLogics(): LogicModel {
+  return { logics: [makeLogic()] };
 }
 
 // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。

@@ -112,6 +112,16 @@ describe("designStagesApi", () => {
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-02"] });
   });
 
+  it("段階6は下書きを作る関数を本文の logics で渡す(Phase 21)", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 6, generation_status: "generating" } });
+    const logics = [{ module: "app/services/reservation.py", function: "create" }];
+
+    await generateDesignStage("p1", 6, undefined, logics);
+
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/6/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
+  });
+
   it("段階3は CRUD 図を保存し、DFD から決まる R/W を受け取る", async () => {
     const accesses = [{ function_id: "F-01", table: "reservations", kind: "write" as const }];
     stub.queue({

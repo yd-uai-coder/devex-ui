@@ -58,7 +58,7 @@ describe("FunctionListPanel", () => {
   it("行を編集すると保存できるようになり、編集した内容を保存する", async () => {
     const user = userEvent.setup();
     const onDirtyChange = renderPanel(draftStage());
-    expect(screen.getByRole("button", { name: "保存する" })).toHaveAttribute(
+    expect(screen.getAllByRole("button", { name: "保存する" })[0]).toHaveAttribute(
       "aria-disabled",
       "true",
     );
@@ -66,7 +66,7 @@ describe("FunctionListPanel", () => {
     const name = screen.getByRole("textbox", { name: "F-01 の名称" });
     await user.clear(name);
     await user.type(name, "予約する");
-    await user.click(screen.getByRole("button", { name: "保存する" }));
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
 
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];

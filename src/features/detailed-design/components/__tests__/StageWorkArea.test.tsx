@@ -8,6 +8,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import {
   makeFunctionList,
   makeModuleList,
+  makeProcedures,
   makeStages,
 } from "../../test-utils/stageFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
@@ -71,7 +72,7 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
-  it("開いた段階5には主要処理の手順のパネルを出し、段階6はまだ準備中(Phase 20)", () => {
+  it("開いた段階5には主要処理の手順のパネルを出す(Phase 20)", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -87,9 +88,26 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
+  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる(Phase 21)", async () => {
+    const user = userEvent.setup();
+    const stages = makeStages({
+      5: { state: "approved", version: 1, approved_version: 1, model: makeProcedures() },
+      6: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages, save: vi.fn().mockResolvedValue(true) });
+    const onApprove = renderArea(stages[5]);
+
+    expect(screen.getByText("詳細を書く関数")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "段階6を飛ばす(06を書かない)" })[0]);
+    await user.click(screen.getByLabelText("飛ばして承認する"));
+
+    expect(useDetailedDesignStore.getState().save).toHaveBeenCalledWith("p1", 6, { logics: [] });
+    expect(onApprove).toHaveBeenCalled();
+  });
+
   it("登録の無い段階は、開いていれば準備中を出す", () => {
-    const stages = makeStages({ 6: { is_open: true, missing_inputs: [] } });
-    renderArea(stages[5]);
+    const stages = makeStages({ 7: { is_open: true, missing_inputs: [] } });
+    renderArea(stages[6]);
 
     expect(screen.getByText(/準備中/)).toBeInTheDocument();
   });

@@ -8,6 +8,7 @@ import type { CrudModel, DesignStageRead } from "@/features/detailed-design/api/
 import { CrudMatrix } from "@/features/detailed-design/components/CrudMatrix";
 import { ErEditorSection } from "@/features/detailed-design/components/ErEditorSection";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { TableDefinitionTable } from "@/features/detailed-design/components/TableDefinitionTable";
 import { crudTables, hasCrudDraft, toCrud } from "@/features/detailed-design/crudOps";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -67,6 +68,14 @@ export function DataModelPanel({
 
   return (
     <YStack gap="$4">
+      <StageSaveBar
+        label="CRUD 図を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -131,19 +140,13 @@ export function DataModelPanel({
         />
       )}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "CRUD 図を保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      <StageSaveBar
+        label="CRUD 図を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
 
       <StageIssueList issues={stage.issues} />
     </YStack>

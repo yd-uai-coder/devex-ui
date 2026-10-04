@@ -12,6 +12,7 @@ import {
 import { ModuleListTable } from "@/features/detailed-design/components/ModuleListTable";
 import { StageDiagramSection } from "@/features/detailed-design/components/StageDiagramSection";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
+import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import {
@@ -69,6 +70,14 @@ export function StructurePanel({
 
   return (
     <YStack gap="$4">
+      <StageSaveBar
+        label="モジュール一覧を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
+
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">
           <StyledButton
@@ -134,19 +143,13 @@ export function StructurePanel({
         />
       )}
 
-      <XStack gap="$3" alignItems="center" flexWrap="wrap">
-        <StyledButton
-          disabled={!dirty || saving || generating || !stage.is_open}
-          onPress={() => void save(projectId, stage.stage, draft)}
-        >
-          {saving ? "保存しています..." : "モジュール一覧を保存する"}
-        </StyledButton>
-        {dirty ? (
-          <Text color="$color11" fontSize="$2">
-            保存していない編集があります。
-          </Text>
-        ) : null}
-      </XStack>
+      <StageSaveBar
+        label="モジュール一覧を保存する"
+        dirty={dirty}
+        saving={saving}
+        disabled={generating || !stage.is_open}
+        onSave={() => void save(projectId, stage.stage, draft)}
+      />
 
       <StageIssueList issues={stage.issues} />
     </YStack>
