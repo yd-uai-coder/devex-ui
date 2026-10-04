@@ -5,8 +5,9 @@ import {
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
-import type { DesignStageRead } from "../types";
+import { MAX_DFD_GROUPS, type DesignStageRead } from "../types";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import { makeDataFlow } from "@/features/detailed-design/test-utils/stageFixtures";
 
 const STAGE1: DesignStageRead = {
   stage: 1,
@@ -55,6 +56,17 @@ describe("designStagesApi", () => {
       version: null,
       model: { functions: [] },
     });
+  });
+
+  it("段階2のデータフローもsaveDesignStageでそのまま送る", async () => {
+    stub.queue({ status: 200, body: { ...STAGE1, stage: 2 } });
+    const model = makeDataFlow(["reservations"]);
+
+    await saveDesignStage("p1", 2, { version: 1, model });
+
+    expect(stub.requests[0].url).toContain("/design-stages/2");
+    expect(JSON.parse(stub.requests[0].init?.body as string).model).toEqual(model);
+    expect(MAX_DFD_GROUPS).toBe(5);
   });
 
   it("approveDesignStageはPOST /approveでversionを送る", async () => {

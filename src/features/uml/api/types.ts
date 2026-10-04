@@ -168,6 +168,8 @@ export type DataItemRead = {
   created_at: string;
   updated_at: string;
 };
+// 作成・更新の本文(更新は name・fields を丸ごと置き換える。Phase 17)
+export type DataItemWrite = { name: string; fields: DataItemField[] };
 
 // ---- 検証(app/uml/validation/base.py) ----
 export type ValidationIssue = { code: string; message: string; element_id: string | null };

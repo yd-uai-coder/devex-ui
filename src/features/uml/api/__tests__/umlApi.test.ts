@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDiagram,
   computeLayout,
+  createDataItem,
+  deleteDataItem,
   downloadBundle,
   exportDiagram,
   generateDiagrams,
@@ -12,6 +14,7 @@ import {
   listEmbeds,
   listGenerationRuns,
   reflectDiagrams,
+  updateDataItem,
   updateDiagram,
   validateDiagram,
 } from "../umlApi";
@@ -69,6 +72,26 @@ describe("umlApi", () => {
       semantic_model: COMPONENT_MODEL,
       layout_model: COMPONENT_LAYOUT,
     });
+  });
+
+  it("データ辞書の作成・更新・削除は POST・PUT・DELETE を呼ぶ", async () => {
+    const payload = { name: "予約", fields: [{ name: "id", type: "UUID" }] };
+    stub.queue({ status: 201, body: { id: "i1", ...payload } });
+    stub.queue({ body: { id: "i1", ...payload } });
+    // fetch のスタブは本文なしの 204 を作れない(Response が本文付きの 204 を拒む)ので、
+    // 削除は呼び出し先とメソッドだけを確かめる(204 の扱いは apiFetch 側のテストの範囲)
+
+    const created = await createDataItem("p1", payload);
+    await updateDataItem("p1", "i1", payload);
+    await deleteDataItem("p1", "i1");
+
+    expect(created.id).toBe("i1");
+    expect(stub.requests.map((r) => [r.init?.method, r.url.replace(/^.*(?=\/api\/)/, "")])).toEqual([
+      ["POST", `${BASE}/data-items`],
+      ["PUT", `${BASE}/data-items/i1`],
+      ["DELETE", `${BASE}/data-items/i1`],
+    ]);
+    expect(JSON.parse(stub.requests[1].init?.body as string)).toEqual(payload);
   });
 
   it("generateDiagrams は notation と subjects を POST し、202 の生成履歴を返す", async () => {

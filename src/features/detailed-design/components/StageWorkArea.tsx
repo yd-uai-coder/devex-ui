@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
+import { DataFlowPanel } from "@/features/detailed-design/components/DataFlowPanel";
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
 import {
   canApprove,
@@ -12,8 +13,21 @@ import {
   STATE_LABELS,
 } from "@/features/detailed-design/labels";
 
+// 段階ごとの中身のパネルが受け取る値(どの段階のパネルも同じ形にする)。
+type StagePanelProps = {
+  projectId: string;
+  stage: DesignStageRead;
+  onDirtyChange: (dirty: boolean) => void;
+};
+
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階3以降は各段階の Phase で足す)。
+const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
+  1: FunctionListPanel,
+  2: DataFlowPanel,
+};
+
 // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、
-// 段階ごとの中身(下書きの生成・表や図の編集)は段階の実装で足す(Phase 16 は段階1)。
+// 段階ごとの中身(下書きの生成・表や図の編集)は STAGE_PANELS に登録したパネルが持つ。
 export function StageWorkArea({
   projectId,
   stage,
@@ -29,7 +43,8 @@ export function StageWorkArea({
 }) {
   // 段階の中身に保存していない編集があるか。あるうちは承認させない(承認されるのは保存済みの版のため)
   const [dirty, setDirty] = useState(false);
-  const hasPanel = stage.stage === 1 && stage.is_open;
+  const Panel = stage.is_open ? STAGE_PANELS[stage.stage] : undefined;
+  const hasPanel = Panel !== undefined;
 
   return (
     <YStack flex={1} gap="$3">
@@ -52,8 +67,8 @@ export function StageWorkArea({
         </Paragraph>
       ) : null}
 
-      {hasPanel ? (
-        <FunctionListPanel
+      {Panel ? (
+        <Panel
           // 保存・生成で版や生成の状態が変わったら作り直し、編集中の内容をサーバーの内容に戻す
           key={`${stage.version}-${stage.generation_status}`}
           projectId={projectId}
