@@ -40,6 +40,19 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
+  it("開いた段階3には、データモデルのパネルを出す(Phase 18)", () => {
+    const stages = makeStages({
+      1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
+      2: { state: "approved", version: 3, approved_version: 3 },
+      3: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[2]);
+
+    expect(screen.getByText("CRUD 図")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
   it("開いていない段階は、足りない入力を示し、承認できない", () => {
     const [, stage2] = makeStages();
     renderArea(stage2);

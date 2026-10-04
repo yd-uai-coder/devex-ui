@@ -35,8 +35,18 @@ export type ErColumn = {
   is_primary_key: boolean;
   is_foreign_key: boolean;
   nullable: boolean;
+  // テーブル定義の制約・説明(詳細設計モードの段階3。古い ER には無い。Phase 18)
+  constraints?: string;
+  description?: string;
 };
-export type ErElement = { id: string; name: string; kind: "table"; columns: ErColumn[] };
+export type ErElement = {
+  id: string;
+  name: string;
+  kind: "table";
+  columns: ErColumn[];
+  // テーブル単位の注記(複合一意制約・役割など。古い ER には無い。Phase 18)
+  description?: string;
+};
 export type ErRelationType = "one_to_one" | "one_to_many" | "many_to_many";
 export type ErRelation = {
   id: string;

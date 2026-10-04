@@ -215,6 +215,20 @@ export function deleteColumn(model: SemanticModel, tableId: string, index: numbe
   return mapTable(model, tableId, (columns) => columns.filter((_, i) => i !== index));
 }
 
+// ER のテーブルの説明(複合一意制約・役割など)を書き換える。古い ER のテーブルには description が
+// 無いので、updateElement(記法に無い属性は足さない)ではなくこちらで足す(Phase 18)。
+export function updateTableDescription(
+  model: SemanticModel,
+  tableId: string,
+  description: string,
+): SemanticModel {
+  if (model.notation !== "er") return model;
+  return {
+    ...model,
+    elements: model.elements.map((el) => (el.id === tableId ? { ...el, description } : el)),
+  };
+}
+
 function mapTable(
   model: SemanticModel,
   tableId: string,

@@ -18,6 +18,7 @@ import {
   updateDiagram,
   validateDiagram,
 } from "../umlApi";
+import type { ErSemanticModel } from "../types";
 import { ApiError } from "@/lib/api/client";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { COMPONENT_LAYOUT, COMPONENT_MODEL, makeCandidates } from "@/features/uml/test-utils/umlFixtures";
@@ -71,6 +72,41 @@ describe("umlApi", () => {
       version: 3,
       semantic_model: COMPONENT_MODEL,
       layout_model: COMPONENT_LAYOUT,
+    });
+  });
+
+  it("updateDiagram は ER の列・テーブルの制約と説明もそのまま送る(Phase 18)", async () => {
+    const model: ErSemanticModel = {
+      notation: "er",
+      elements: [
+        {
+          id: "t1",
+          name: "users",
+          kind: "table",
+          description: "利用者",
+          columns: [
+            {
+              name: "email",
+              type: "VARCHAR(255)",
+              is_primary_key: false,
+              is_foreign_key: false,
+              nullable: false,
+              constraints: "UNIQUE",
+              description: "ログイン ID",
+            },
+          ],
+        },
+      ],
+      relations: [],
+    };
+
+    await updateDiagram("p1", "d1", { version: 1, semantic_model: model, layout_model: null });
+
+    const sent = JSON.parse(stub.requests[0].init?.body as string);
+    expect(sent.semantic_model.elements[0].description).toBe("利用者");
+    expect(sent.semantic_model.elements[0].columns[0]).toMatchObject({
+      constraints: "UNIQUE",
+      description: "ログイン ID",
     });
   });
 

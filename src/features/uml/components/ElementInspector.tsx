@@ -65,7 +65,8 @@ function ElementForm({ model, element }: { model: SemanticModel; element: UmlEle
         value={element.name}
         onChangeText={(name) => updateElement(element.id, { name })}
       />
-      {"description" in element ? (
+      {/* ER のテーブルの説明は、カラム表の上の「テーブルの説明」で直す(null を入れないため。Phase 18) */}
+      {"description" in element && model.notation !== "er" ? (
         <Input
           aria-label="説明"
           placeholder={model.notation === "dfd" ? "加工の内容(1行)" : "責務(1行)"}
@@ -92,13 +93,21 @@ function ElementForm({ model, element }: { model: SemanticModel; element: UmlEle
 }
 
 // ER のカラム表。PK/FK/NULL 許可は小さなチェックボックスで切り替える。
+// 制約・説明とテーブルの説明は、詳細設計モードの段階3でテーブル定義の表に出す(Phase 18)。
 function ColumnTable({ table }: { table: ErElement }) {
   const addColumn = useUmlEditorStore((s) => s.addColumn);
   const updateColumn = useUmlEditorStore((s) => s.updateColumn);
   const deleteColumn = useUmlEditorStore((s) => s.deleteColumn);
+  const updateTableDescription = useUmlEditorStore((s) => s.updateTableDescription);
 
   return (
     <YStack gap="$2">
+      <Input
+        aria-label="テーブルの説明"
+        placeholder="テーブルの説明(役割・複合一意制約など)"
+        value={table.description ?? ""}
+        onChangeText={(text) => updateTableDescription(table.id, text)}
+      />
       <Text fontWeight="700">カラム</Text>
       {table.columns.map((column, index) => (
         <YStack key={index} gap="$1" padding="$2" borderWidth={1} borderColor="$borderColor">
@@ -114,6 +123,22 @@ function ColumnTable({ table }: { table: ErElement }) {
               aria-label={`カラム${index + 1}の型`}
               value={column.type}
               onChangeText={(type) => updateColumn(table.id, index, { type })}
+            />
+          </XStack>
+          <XStack gap="$2">
+            <Input
+              flex={1}
+              aria-label={`カラム${index + 1}の制約`}
+              placeholder="制約(UNIQUE・既定値など)"
+              value={column.constraints ?? ""}
+              onChangeText={(constraints) => updateColumn(table.id, index, { constraints })}
+            />
+            <Input
+              flex={1}
+              aria-label={`カラム${index + 1}の説明`}
+              placeholder="説明"
+              value={column.description ?? ""}
+              onChangeText={(description) => updateColumn(table.id, index, { description })}
             />
           </XStack>
           <XStack gap="$3" alignItems="center">

@@ -33,6 +33,7 @@ import {
   deleteElement,
   deleteRelation,
   updateColumn,
+  updateTableDescription,
   updateElement,
   updateRelation,
   type ElementPatch,
@@ -86,6 +87,8 @@ type UmlEditorStore = {
   addColumn: (tableId: string) => void;
   updateColumn: (tableId: string, index: number, patch: Partial<ErColumn>) => void;
   deleteColumn: (tableId: string, index: number) => void;
+  // ER のテーブルの説明(テーブル定義の注記。Phase 18)
+  updateTableDescription: (tableId: string, description: string) => void;
   validate: () => Promise<void>;
   // 承認(M7)。未保存の変更があれば先に保存してから承認する
   approve: () => Promise<void>;
@@ -288,6 +291,11 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
     deleteColumn: (tableId, index) => {
       const { model } = get();
       if (model) commit(deleteColumn(model, tableId, index));
+    },
+
+    updateTableDescription: (tableId, description) => {
+      const { model } = get();
+      if (model) commit(updateTableDescription(model, tableId, description));
     },
 
     approve: async () => {

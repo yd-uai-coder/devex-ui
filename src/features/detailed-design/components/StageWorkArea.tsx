@@ -5,6 +5,7 @@ import { H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { DataFlowPanel } from "@/features/detailed-design/components/DataFlowPanel";
+import { DataModelPanel } from "@/features/detailed-design/components/DataModelPanel";
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
 import {
   canApprove,
@@ -20,10 +21,11 @@ type StagePanelProps = {
   onDirtyChange: (dirty: boolean) => void;
 };
 
-// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階3以降は各段階の Phase で足す)。
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階4以降は各段階の Phase で足す)。
 const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   1: FunctionListPanel,
   2: DataFlowPanel,
+  3: DataModelPanel,
 };
 
 // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、

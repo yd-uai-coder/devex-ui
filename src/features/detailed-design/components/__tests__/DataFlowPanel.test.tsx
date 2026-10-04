@@ -150,12 +150,15 @@ describe("DataFlowPanel", () => {
             message: "DFD が承認されていません",
             target: "reservations",
           },
+          { severity: "error", code: "MISSING_SUMMARY", message: "F-02 が処理概要表にありません。", target: "F-02" },
         ],
       }),
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("利用上限");
-    expect(screen.getByText("エラー: DFD が承認されていません")).toBeInTheDocument();
+    expect(screen.getByText("エラー: F-02 が処理概要表にありません。")).toBeInTheDocument();
+    // DFD の未承認は、段階の承認を押したときに出す(Phase 18)
+    expect(screen.queryByText(/DFD が承認されていません/)).not.toBeInTheDocument();
   });
 });
 

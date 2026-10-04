@@ -6,6 +6,7 @@ import {
   saveDesignStage,
 } from "@/features/detailed-design/api/designStagesApi";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
+import { approvalBlockers } from "@/features/detailed-design/labels";
 import { ApiError } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
@@ -95,6 +96,17 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     approve: async (projectId, stage) => {
       const current = get().stages.find((s) => s.stage === stage);
       if (!current || current.version === null) return;
+      // 図(DFD・ER)が未承認なら、API を呼ばずに理由を出す(Phase 18)
+      const blockers = approvalBlockers(current);
+      if (blockers.length > 0) {
+        set({
+          actionError: [
+            ...blockers.map((issue) => issue.message),
+            "図のエディタで承認してから、段階を承認してください。",
+          ].join(" "),
+        });
+        return;
+      }
       set({ approving: true, actionError: null });
       try {
         await approveDesignStage(projectId, stage, current.version);
