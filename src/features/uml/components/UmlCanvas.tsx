@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Background,
   Controls,
@@ -37,6 +37,17 @@ export const NODE_TYPES: NodeTypes = {
   dfdStore: DfdNode,
 };
 export const EDGE_TYPES: EdgeTypes = { orthogonal: OrthogonalEdge };
+
+// 拡大・縮小などの操作ボタンは、ライト・ダークとも白地に黒字に固定する。React Flow の既定(ライト)は
+// 背景が白で文字色が inherit なので、ダークモードではページの白い文字色を受け継ぎ、白地に白になっていた
+// (Phase 18 の画面確認で見つかった)。CSS 変数を上書きする。
+export const CONTROLS_STYLE = {
+  "--xy-controls-button-background-color": "#fefefe",
+  "--xy-controls-button-background-color-hover": "#f4f4f4",
+  "--xy-controls-button-color": "#1a1a1a",
+  "--xy-controls-button-color-hover": "#000",
+  "--xy-controls-button-border-color": "#eee",
+} as CSSProperties;
 
 // React Flow のキャンバス。正本(意味モデル + 配置 + 選択)はストアにあり、ここでは
 // Adapter で nodes/edges に変換して表示する。ドラッグ中の途中経過だけは React Flow 側の
@@ -148,7 +159,7 @@ export function UmlCanvas() {
           fitView
         >
           <Background />
-          <Controls />
+          <Controls style={CONTROLS_STYLE} />
         </ReactFlow>
       </div>
     </>

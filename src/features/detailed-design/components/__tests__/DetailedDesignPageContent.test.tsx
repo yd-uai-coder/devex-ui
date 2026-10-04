@@ -73,4 +73,44 @@ describe("DetailedDesignPageContent", () => {
       "詳細設計モードではありません",
     );
   });
+
+  // ダイアログ内のボタンは jsdom ではロールのクエリで「隠れている」扱いになるため、aria-label で取る
+  it("承認できたら完了のダイアログを出し、「次の段階へ進む」で次の段階を選ぶ(Phase 18)", async () => {
+    const user = userEvent.setup();
+    useDetailedDesignStore.setState({ approve: vi.fn().mockResolvedValue(true) });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+
+    expect(await screen.findByText("段階1-機能一覧を承認しました。")).toBeInTheDocument();
+    expect(screen.getByLabelText("閉じる")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("次の段階へ進む"));
+    expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(2);
+  });
+
+  it("承認できなかったときはダイアログを出さない", async () => {
+    const user = userEvent.setup();
+    renderContent();
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+    expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument();
+  });
+
+  it("段階7の承認では次の段階が無いので、「閉じる」だけを出す", async () => {
+    const user = userEvent.setup();
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        7: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: { x: 1 } },
+      }),
+      selectedStage: 7,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+
+    expect(await screen.findByText("段階7-実装計画を承認しました。")).toBeInTheDocument();
+    expect(screen.queryByLabelText("次の段階へ進む")).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText("閉じる"));
+    expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();
+  });
 });

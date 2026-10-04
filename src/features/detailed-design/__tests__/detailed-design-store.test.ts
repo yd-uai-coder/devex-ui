@@ -84,8 +84,9 @@ describe("useDetailedDesignStore", () => {
       body: makeStages({ 1: { state: "approved", version: 3 } }),
     });
 
-    await useDetailedDesignStore.getState().approve("p1", 1);
+    const approved = await useDetailedDesignStore.getState().approve("p1", 1);
 
+    expect(approved).toBe(true);
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({
       version: 3,
     });
@@ -101,8 +102,9 @@ describe("useDetailedDesignStore", () => {
       }),
     });
 
-    await useDetailedDesignStore.getState().approve("p1", 1);
+    const approved = await useDetailedDesignStore.getState().approve("p1", 1);
 
+    expect(approved).toBe(false);
     expect(stub.requests).toHaveLength(0);
     expect(useDetailedDesignStore.getState().actionError).toBe(
       "ER が承認されていません。 図のエディタで承認してから、段階を承認してください。",

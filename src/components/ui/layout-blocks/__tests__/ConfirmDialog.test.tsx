@@ -49,4 +49,21 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("cancelLabel でキャンセルの文言を変え、null なら出さない(Phase 18)", () => {
+    const { rerender } = render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ConfirmDialog open title="承認しました" description="済み" confirmLabel="次へ" cancelLabel="閉じる" onConfirm={vi.fn()} onCancel={vi.fn()} />
+      </TamaguiProvider>,
+    );
+    expect(screen.getByLabelText("閉じる")).toBeInTheDocument();
+
+    rerender(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ConfirmDialog open title="承認しました" description="済み" confirmLabel="閉じる" cancelLabel={null} onConfirm={vi.fn()} onCancel={vi.fn()} />
+      </TamaguiProvider>,
+    );
+    expect(screen.getAllByLabelText("閉じる")).toHaveLength(1);
+    expect(screen.queryByLabelText("キャンセル")).not.toBeInTheDocument();
+  });
 });

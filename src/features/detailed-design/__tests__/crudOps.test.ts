@@ -66,4 +66,11 @@ describe("crudOps", () => {
     const model = { cells: [...makeCrud().cells, { ...makeCrud().cells[0], table: "logs" }] };
     expect(crudTables(["users", "Reservations"], model)).toEqual(["users", "Reservations", "logs"]);
   });
+
+  it("ER に同じ名前のテーブルが2つあっても、列は1つにする(Phase 18)", () => {
+    expect(crudTables(["new_table", "users", "New_Table "], { cells: [] })).toEqual([
+      "new_table",
+      "users",
+    ]);
+  });
 });

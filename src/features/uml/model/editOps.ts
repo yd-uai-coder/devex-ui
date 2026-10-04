@@ -27,6 +27,17 @@ export function nextId(model: SemanticModel, prefix: string): string {
   return `${prefix}${n}`;
 }
 
+// ER に足すテーブルの名前。使われていない new_table・new_table_2・new_table_3… にする。
+// 同じ名前のテーブルが2つあると、詳細設計モードの段階3の CRUD 図でどちらのテーブルのセルかが
+// 決まらないため(テーブル名がセルを引く鍵。Phase 18 の画面確認で見つかった)。
+export function nextTableName(model: SemanticModel): string {
+  const used = new Set(model.elements.map((el) => el.name.trim().toLowerCase()));
+  if (!used.has("new_table")) return "new_table";
+  let n = 2;
+  while (used.has(`new_table_${n}`)) n += 1;
+  return `new_table_${n}`;
+}
+
 const DFD_PREFIX: Record<DfdElementType, string> = {
   process: "p",
   external_entity: "e",
@@ -52,7 +63,7 @@ export function addElement(
     const id = nextId(model, "t");
     const element: ErElement = {
       id,
-      name: "new_table",
+      name: nextTableName(model),
       kind: "table",
       columns: [{ name: "id", type: "uuid", is_primary_key: true, is_foreign_key: false, nullable: false }],
     };
