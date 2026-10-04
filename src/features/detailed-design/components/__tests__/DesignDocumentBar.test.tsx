@@ -25,15 +25,15 @@ describe("DesignDocumentBar", () => {
     vi.restoreAllMocks();
   });
 
-  it("段階1〜6の未承認の件数を知らせる(段階7は数えない)", () => {
+  it("段階1〜7の未承認の件数を知らせる(段階7は07章と実装計画になる)", () => {
     renderBar(makeStages(approved([1, 2, 3, 4])));
 
-    expect(screen.getByRole("status")).toHaveTextContent("2 件が未承認");
+    expect(screen.getByRole("status")).toHaveTextContent("3 件が未承認");
     expect(screen.getByText(DOCUMENT_NOTICE)).toBeInTheDocument();
   });
 
-  it("段階1〜6がすべて承認済みなら、そう知らせる", () => {
-    renderBar(makeStages(approved([1, 2, 3, 4, 5, 6])));
+  it("段階1〜7がすべて承認済みなら、そう知らせる", () => {
+    renderBar(makeStages(approved([1, 2, 3, 4, 5, 6, 7])));
 
     expect(screen.getByRole("status")).toHaveTextContent("すべて承認済み");
   });
@@ -51,7 +51,7 @@ describe("DesignDocumentBar", () => {
     );
     renderBar(makeStages({}));
 
-    await userEvent.click(screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }));
+    await userEvent.click(screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }));
 
     await waitFor(() => expect(saveFile).toHaveBeenCalledTimes(1));
     const [filename, content, mime] = saveFile.mock.calls[0];
@@ -72,7 +72,7 @@ describe("DesignDocumentBar", () => {
     );
     renderBar(makeStages({}));
 
-    await userEvent.click(screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }));
+    await userEvent.click(screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("使えません");
   });

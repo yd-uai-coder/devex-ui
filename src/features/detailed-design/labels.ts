@@ -12,7 +12,7 @@ export const STAGE_TITLES: Record<number, string> = {
   4: "ソフトウェア構造",
   5: "主要処理の手順",
   6: "処理ロジックの詳細(任意)",
-  7: "実装計画",
+  7: "横断事項と実装計画",
 };
 
 export const STATE_LABELS: Record<StageState, string> = {

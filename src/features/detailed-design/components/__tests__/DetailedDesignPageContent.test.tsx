@@ -52,9 +52,9 @@ describe("DetailedDesignPageContent", () => {
     renderContent();
 
     expect(
-      screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }),
+      screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("6 件が未承認");
+    expect(screen.getByRole("status")).toHaveTextContent("7 件が未承認");
   });
 
   it("承認ボタンでapprove(projectId, 段階)を呼ぶ", async () => {
@@ -117,7 +117,7 @@ describe("DetailedDesignPageContent", () => {
 
     await user.click(screen.getByRole("button", { name: "承認する" }));
 
-    expect(await screen.findByText("段階7-実装計画を承認しました。")).toBeInTheDocument();
+    expect(await screen.findByText("段階7-横断事項と実装計画を承認しました。")).toBeInTheDocument();
     expect(screen.queryByLabelText("次の段階へ進む")).not.toBeInTheDocument();
     await user.click(screen.getByLabelText("閉じる"));
     expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();

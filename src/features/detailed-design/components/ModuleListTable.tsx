@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { ModuleListModel } from "@/features/detailed-design/api/types";
+import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
   CELL,
   HEAD,
@@ -15,9 +15,7 @@ import {
 import {
   addModule,
   duplicatePaths,
-  listToText,
   removeModule,
-  textToList,
   updateModule,
 } from "@/features/detailed-design/moduleListOps";
 
@@ -165,42 +163,5 @@ export function ModuleListTable({
         </StyledButton>
       </YStack>
     </YStack>
-  );
-}
-
-// 「,」区切りの入力欄。入力中の文字列(末尾の「, 」など)は手元に持ち、配列に直した値だけを返す。
-// 配列から作り直すと、区切りの「,」を打った瞬間に消えて次の項目を書けないため。外から値が変わった
-// (行の削除など)ときは、手元の文字列を作り直す。
-function ListInput({
-  label,
-  items,
-  disabled,
-  style,
-  onChange,
-}: {
-  label: string;
-  items: string[];
-  disabled: boolean;
-  style: CSSProperties;
-  onChange: (items: string[]) => void;
-}) {
-  const [text, setText] = useState(() => listToText(items));
-  const parsed = textToList(text);
-  const current =
-    parsed.length === items.length && parsed.every((item, i) => item === items[i])
-      ? text
-      : listToText(items);
-
-  return (
-    <input
-      style={style}
-      aria-label={label}
-      value={current}
-      disabled={disabled}
-      onChange={(e) => {
-        setText(e.target.value);
-        onChange(textToList(e.target.value));
-      }}
-    />
   );
 }

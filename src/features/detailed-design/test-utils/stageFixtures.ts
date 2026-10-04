@@ -6,6 +6,7 @@ import type {
   LogicModel,
   LogicRow,
   ModuleListModel,
+  PlanModel,
   ProcedureModel,
   ProcedureStep,
 } from "@/features/detailed-design/api/types";
@@ -109,6 +110,33 @@ export function makeLogic(patch: Partial<LogicRow> = {}): LogicRow {
 
 export function makeLogics(): LogicModel {
   return { logics: [makeLogic()] };
+}
+
+// makeFunctionList の F-01 と makeModuleList のパスを参照する、段階7の横断事項と実装計画(既定の
+// 横断事項4項目・マイルストーン1つ・リスク1件。段階7の検証を通る。テスト専用)。
+export function makePlan(): PlanModel {
+  const route = "app/api/routes/reservations.py";
+  return {
+    crosscutting: [
+      { topic: "例外と HTTP", policy: "ドメイン例外を共通の形に変換する", modules: [route] },
+      { topic: "認証", policy: "JWT で利用者を確かめる", modules: [] },
+      { topic: "トランザクション", policy: "commit はサービスだけ", modules: [] },
+      { topic: "ログ", policy: "JSON で出す", modules: [] },
+    ],
+    milestones: [
+      {
+        name: "予約の登録",
+        goal: "予約を登録できる",
+        priority: "Must",
+        function_ids: ["F-01"],
+        tasks: [
+          { area: "バックエンド", title: "予約の API を作る", modules: [route], function_ids: ["F-01"] },
+        ],
+      },
+    ],
+    environment: "Python 3.13 と PostgreSQL",
+    risks: [{ risk: "予約の重複", mitigation: "一意制約で防ぐ" }],
+  };
 }
 
 // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。

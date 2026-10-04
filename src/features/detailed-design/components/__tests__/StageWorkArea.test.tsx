@@ -105,11 +105,12 @@ describe("StageWorkArea", () => {
     expect(onApprove).toHaveBeenCalled();
   });
 
-  it("登録の無い段階は、開いていれば準備中を出す", () => {
+  it("開いた段階7には、横断事項と実装計画のパネルを出す(全段階にパネルがある)", () => {
     const stages = makeStages({ 7: { is_open: true, missing_inputs: [] } });
     renderArea(stages[6]);
 
-    expect(screen.getByText(/準備中/)).toBeInTheDocument();
+    expect(screen.getByText("07 横断事項")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
   it("開いていない段階は、足りない入力を示し、承認できない", () => {
