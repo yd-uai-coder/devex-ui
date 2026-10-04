@@ -4,6 +4,8 @@ import type {
   DesignStageRead,
   FunctionListModel,
   ModuleListModel,
+  ProcedureModel,
+  ProcedureStep,
 } from "@/features/detailed-design/api/types";
 
 // 段階1の検証を通る最小の機能一覧(処理1件・機能グループ1つ。テスト専用)。
@@ -53,6 +55,36 @@ export function makeModuleList(layer = "api"): ModuleListModel {
         functions: ["F-01"],
         all_functions: false,
       },
+    ],
+  };
+}
+
+// 手順の行(既定は利用者 → ルーター。テスト専用)。
+export function makeStep(patch: Partial<ProcedureStep> = {}): ProcedureStep {
+  return {
+    caller: "利用者",
+    callee: "app/api/routes/reservations.py",
+    call: "create_reservation",
+    data: "予約リクエスト",
+    action: "本文を検証する",
+    result: "予約",
+    db: "reservations C",
+    branch: "1a へ",
+    is_branch: false,
+    ...patch,
+  };
+}
+
+// 分岐の行(テスト専用)。
+export function makeBranch(action = "本文が不正", branch = "422"): ProcedureStep {
+  return makeStep({ caller: "", callee: "", call: "", data: "", result: "", db: "", action, branch, is_branch: true });
+}
+
+// makeFunctionList の F-01 の手順(手順1つと分岐1つ。段階5の検証を通る。テスト専用)。
+export function makeProcedures(): ProcedureModel {
+  return {
+    procedures: [
+      { function_id: "F-01", reason: "検証", note: "", steps: [makeStep(), makeBranch()] },
     ],
   };
 }

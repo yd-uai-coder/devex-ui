@@ -7,6 +7,7 @@ import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { DataFlowPanel } from "@/features/detailed-design/components/DataFlowPanel";
 import { DataModelPanel } from "@/features/detailed-design/components/DataModelPanel";
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
+import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
 import {
   canApprove,
@@ -22,12 +23,13 @@ type StagePanelProps = {
   onDirtyChange: (dirty: boolean) => void;
 };
 
-// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階5以降は各段階の Phase で足す)。
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(段階6以降は各段階の Phase で足す)。
 const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   1: FunctionListPanel,
   2: DataFlowPanel,
   3: DataModelPanel,
   4: StructurePanel,
+  5: ProcedurePanel,
 };
 
 // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、

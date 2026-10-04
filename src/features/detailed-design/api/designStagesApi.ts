@@ -37,13 +37,16 @@ export function approveDesignStage(
 }
 
 // 段階のAIの下書きの生成を受け付ける(202)。生成はバックグラウンドで進むので、完了は
-// listDesignStages のポーリング(generation_status)で待つ。Phase 18 の時点で段階1〜3。
+// listDesignStages のポーリング(generation_status)で待つ。Phase 20 の時点で段階1〜5。
 // 段階2は、保存した DFD を描くグループの数が上限を超えていると 409 DESIGN_STAGE_INVALID。
+// 段階5は functionIds で下書きを作る処理を選べる(省略すると、選んだ処理のうち手順の無いもの)。
 export function generateDesignStage(
   projectId: string,
   stage: number,
+  functionIds?: string[],
 ): Promise<DesignStageRead> {
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
     method: "POST",
+    ...(functionIds ? { body: JSON.stringify({ function_ids: functionIds }) } : {}),
   });
 }

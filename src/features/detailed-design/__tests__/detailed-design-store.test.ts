@@ -173,4 +173,19 @@ describe("useDetailedDesignStore", () => {
     expect(useDetailedDesignStore.getState().actionError).toContain("生成中");
     expect(useDetailedDesignStore.getState().requestingGeneration).toBe(false);
   });
+
+  it("generateは段階5の対象の処理を渡し、受け付けの 409 DESIGN_STAGE_INVALID はサーバーの理由を出す", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    stub.queue({
+      status: 409,
+      body: { detail: "選ばれていない処理です: F-09", code: "DESIGN_STAGE_INVALID" },
+    });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().generate("p1", 5, ["F-09"]);
+
+    expect(stub.requests[0].url).toContain("/design-stages/5/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-09"] });
+    expect(useDetailedDesignStore.getState().actionError).toBe("選ばれていない処理です: F-09");
+  });
 });

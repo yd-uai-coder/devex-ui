@@ -100,6 +100,16 @@ describe("designStagesApi", () => {
       "/api/v1/projects/p1/design-stages/1/generate",
     );
     expect(stub.requests[0].init?.method).toBe("POST");
+    expect(stub.requests[0].init?.body).toBeUndefined();
+  });
+
+  it("段階5は下書きを作る処理を本文の function_ids で渡す(指定が無ければ本文なし)", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 5, generation_status: "generating" } });
+
+    await generateDesignStage("p1", 5, ["F-02"]);
+
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/5/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-02"] });
   });
 
   it("段階3は CRUD 図を保存し、DFD から決まる R/W を受け取る", async () => {

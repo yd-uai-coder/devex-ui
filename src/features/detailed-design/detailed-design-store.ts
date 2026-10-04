@@ -34,7 +34,8 @@ type DetailedDesignStore = {
     stage: number,
     model: Record<string, unknown>,
   ) => Promise<boolean>;
-  generate: (projectId: string, stage: number) => Promise<void>;
+  // 段階5は functionIds で下書きを作る処理を選べる(Phase 20)
+  generate: (projectId: string, stage: number, functionIds?: string[]) => Promise<void>;
 };
 
 // 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階7)。
@@ -144,12 +145,18 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return saved;
     },
 
-    generate: async (projectId, stage) => {
+    generate: async (projectId, stage, functionIds) => {
       set({ requestingGeneration: true, actionError: null });
       try {
-        await generateDesignStage(projectId, stage);
+        await generateDesignStage(projectId, stage, functionIds);
       } catch (err) {
-        set({ actionError: messageOf(err, "下書きの生成を始められませんでした") });
+        // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
+        const invalid = err instanceof ApiError && err.code === "DESIGN_STAGE_INVALID";
+        set({
+          actionError: invalid
+            ? err.message
+            : messageOf(err, "下書きの生成を始められませんでした"),
+        });
       } finally {
         set({ requestingGeneration: false });
       }
