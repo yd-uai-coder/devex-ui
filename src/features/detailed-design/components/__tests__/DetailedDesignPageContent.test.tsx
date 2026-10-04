@@ -48,6 +48,15 @@ describe("DetailedDesignPageContent", () => {
     ).toHaveAttribute("href", "/projects/p1/documents");
   });
 
+  it("詳細設計書のダウンロードを上部に出す(Phase 22)", () => {
+    renderContent();
+
+    expect(
+      screen.getByRole("button", { name: "詳細設計書をダウンロード(.zip)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("6 件が未承認");
+  });
+
   it("承認ボタンでapprove(projectId, 段階)を呼ぶ", async () => {
     const user = userEvent.setup();
     renderContent();

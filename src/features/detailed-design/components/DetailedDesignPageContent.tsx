@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -59,6 +60,9 @@ export function DetailedDesignPageContent({
           {error}
         </Text>
       ) : null}
+
+      {/* 詳細設計書のダウンロード(いつでもできる。Phase 22) */}
+      {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">

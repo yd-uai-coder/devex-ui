@@ -1,7 +1,5 @@
-import { useAuthStore } from "@/components/auth/auth-store";
-import { API_BASE_URL } from "@/lib/api/base-url";
-import { apiFetch, toApiError } from "@/lib/api/client";
-import { parseFilename } from "@/lib/api/download";
+import { apiFetch } from "@/lib/api/client";
+import { fetchAttachment, parseFilename } from "@/lib/api/download";
 import type {
   DataItemRead,
   DataItemWrite,
@@ -137,18 +135,6 @@ export async function exportDiagram(
   const filename =
     parseFilename(res.headers.get("Content-Disposition")) ?? `${diagramId}.${format}`;
   return { filename, content, mimeType: EXPORT_MIME_TYPES[format] };
-}
-
-// ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
-// 失敗は apiFetch と同じ ApiError(code 付き)にする。
-async function fetchAttachment(path: string): Promise<Response> {
-  const accessToken = useAuthStore.getState().accessToken;
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-  });
-  if (!res.ok) throw await toApiError(res);
-  return res;
 }
 
 // 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。

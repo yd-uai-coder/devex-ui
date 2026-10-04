@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
+import { fetchAttachment, parseFilename } from "@/lib/api/download";
 import type { DesignStageRead, LogicTarget } from "./types";
 
 const base = (projectId: string) =>
@@ -55,4 +56,16 @@ export function generateDesignStage(
     method: "POST",
     ...(functionIds || logics ? { body: JSON.stringify(body) } : {}),
   });
+}
+
+export type DownloadedDocument = { filename: string; content: Blob };
+
+// 詳細設計書(HTML・md)と載せた図(SVG・draw.io)の zip(Phase 22)。いつでもダウンロードでき、
+// 承認していない段階の章は「未承認」になる。zip に入れた図は exported になる。
+// zip はバイナリなので text() ではなく blob() で受け取る。
+export async function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
+  const res = await fetchAttachment(`${base(projectId)}/document`);
+  const content = await res.blob();
+  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "detailed_design.zip";
+  return { filename, content };
 }

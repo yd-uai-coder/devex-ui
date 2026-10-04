@@ -1,4 +1,8 @@
-// ファイルのダウンロードに共通する部品(文書の .md ダウンロードと UML 図の出力で共有する)。
+// ファイルのダウンロードに共通する部品(文書の .md ダウンロードと UML 図の出力・詳細設計書の zip で共有する)。
+
+import { useAuthStore } from "@/components/auth/auth-store";
+import { API_BASE_URL } from "@/lib/api/base-url";
+import { toApiError } from "@/lib/api/client";
 
 // Content-Disposition: attachment; filename="..."; filename*=UTF-8''...
 // のfilename*(RFC 5987、UTF-8パーセントエンコード)を優先して取り出す
@@ -23,4 +27,18 @@ export function saveFile(filename: string, content: string | Blob, mimeType: str
   link.click();
   window.document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+// ファイルを返すエンドポイント(Content-Disposition 付き)を生の fetch で呼ぶ。
+// 本文は JSON ではないので、JSON 専用の apiFetch は使わない。失敗は apiFetch と同じ
+// ApiError(code 付き)にする。Phase 13 では umlApi.ts の中だけの関数だった。Phase 22 で
+// 詳細設計書の zip(designStagesApi.ts)も使うため、ここへ移した。
+export async function fetchAttachment(path: string): Promise<Response> {
+  const accessToken = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res;
 }

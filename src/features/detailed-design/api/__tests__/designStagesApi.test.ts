@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDesignStage,
+  downloadDetailedDesign,
   generateDesignStage,
   listDesignStages,
   saveDesignStage,
@@ -137,5 +138,33 @@ describe("designStagesApi", () => {
     });
     expect(saved.dfd_accesses).toEqual(accesses);
     expect(ER_SUBJECT).toBe("");
+  });
+});
+
+describe("downloadDetailedDesign", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("GET .../design-stages/document の zip を Blob のまま受け取り、ファイル名を返す", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="detailed_design.zip"',
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await downloadDetailedDesign("p1");
+
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(
+      /\/api\/v1\/projects\/p1\/design-stages\/document$/,
+    );
+    expect(result.filename).toBe("detailed_design.zip");
+    expect(result.content).toBeInstanceOf(Blob);
+    expect(result.content.size).toBe(4);
   });
 });
