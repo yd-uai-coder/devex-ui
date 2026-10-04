@@ -38,12 +38,13 @@ export function describeMissingInput(key: string): string {
   return key;
 }
 
-// 図の承認待ち(段階2の DFD・段階3の ER)。図のエディタで承認すれば消える指摘なので、検証の結果の
+// 図の承認待ち(段階2の DFD・段階3の ER・段階4の構成図)。図のエディタで承認すれば消える指摘なので、検証の結果の
 // 一覧には常に出さず、段階の承認を押したときに理由として出す(承認ボタンは押せるようにする)。
 // バックエンドは検証のエラーのまま残し、承認を 409 で断る(画面を通らない承認の守り。Phase 18)。
 export const APPROVAL_TIME_CODES: ReadonlySet<string> = new Set([
   "DFD_NOT_APPROVED",
   "ER_NOT_APPROVED",
+  "COMPONENT_NOT_APPROVED",
 ]);
 
 const isApprovalTime = (issue: StageIssue) =>

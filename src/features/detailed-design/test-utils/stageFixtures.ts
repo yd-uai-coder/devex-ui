@@ -3,6 +3,7 @@ import type {
   DataFlowModel,
   DesignStageRead,
   FunctionListModel,
+  ModuleListModel,
 } from "@/features/detailed-design/api/types";
 
 // 段階1の検証を通る最小の機能一覧(処理1件・機能グループ1つ。テスト専用)。
@@ -38,6 +39,22 @@ export function makeDataFlow(dfdGroups: string[] = []): DataFlowModel {
 // makeFunctionList の F-01 が reservations に書く、段階3の CRUD 図(セル1つ。テスト専用)。
 export function makeCrud(ops = "C", draft = false): CrudModel {
   return { cells: [{ function_id: "F-01", table: "reservations", ops, draft }] };
+}
+
+// makeFunctionList の F-01 に関わる、段階4のモジュール一覧(行1つ。テスト専用)。
+export function makeModuleList(layer = "api"): ModuleListModel {
+  return {
+    modules: [
+      {
+        path: "app/api/routes/reservations.py",
+        layer,
+        responsibility: "予約の API",
+        depends_on: [],
+        functions: ["F-01"],
+        all_functions: false,
+      },
+    ],
+  };
 }
 
 // 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。

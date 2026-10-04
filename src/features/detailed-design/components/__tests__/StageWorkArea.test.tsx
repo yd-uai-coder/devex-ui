@@ -53,6 +53,20 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
+  it("開いた段階4には、ソフトウェア構造のパネルを出す(Phase 19)", () => {
+    const stages = makeStages({
+      1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
+      2: { state: "approved", version: 3, approved_version: 3 },
+      3: { state: "approved", version: 1, approved_version: 1 },
+      4: { is_open: true, missing_inputs: [] },
+    });
+    useDetailedDesignStore.setState({ stages });
+    renderArea(stages[3]);
+
+    expect(screen.getByText("モジュール一覧")).toBeInTheDocument();
+    expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
+  });
+
   it("開いていない段階は、足りない入力を示し、承認できない", () => {
     const [, stage2] = makeStages();
     renderArea(stage2);

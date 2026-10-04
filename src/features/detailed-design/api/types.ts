@@ -104,3 +104,22 @@ export type CrudModel = {
 
 // 段階3の ER を uml_diagrams で識別するキー(devex-api の ER_SUBJECT と同じ。全体1枚)
 export const ER_SUBJECT = "";
+
+// 段階4 ソフトウェア構造の意味モデル(devex-api app/detailed_design/structure.py)。
+// 構成図は uml_diagrams(notation=component、subject='')が正本で、ここにはファイル単位のモジュール一覧
+// だけを持つ(Phase 19)。path は段階5の「処理 × モジュール」の関与表の列の鍵になる。
+export type ModuleRow = {
+  path: string; // ファイルのパス(似たファイルは {a,b}.py・* でまとめてよい)
+  layer: string; // 構成図の層(要素の layer)の名前
+  responsibility: string;
+  depends_on: string[]; // 一覧の他のモジュールはパスで、外部のライブラリは名前で書く
+  functions: string[]; // 関わる処理の処理ID(機能一覧の順)
+  all_functions: boolean; // 全処理が通る横断のモジュール(文書では「全処理」)
+};
+
+export type ModuleListModel = {
+  modules: ModuleRow[];
+};
+
+// 段階4の構成図を uml_diagrams で識別するキー(devex-api の STRUCTURE_SUBJECT と同じ。全体1枚)
+export const STRUCTURE_SUBJECT = "";

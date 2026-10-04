@@ -74,6 +74,7 @@ describe("図の未承認は承認時に出す(Phase 18)", () => {
     });
 
     expect(APPROVAL_TIME_CODES.has("DFD_NOT_APPROVED")).toBe(true);
+    expect(APPROVAL_TIME_CODES.has("COMPONENT_NOT_APPROVED")).toBe(true);
     expect(hasErrors(stage3)).toBe(false);
     expect(canApprove(stage3)).toBe(true);
     expect(visibleIssues(stage3.issues)).toEqual([]);
