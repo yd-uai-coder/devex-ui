@@ -40,7 +40,7 @@ export const EDGE_TYPES: EdgeTypes = { orthogonal: OrthogonalEdge };
 
 // 拡大・縮小などの操作ボタンは、ライト・ダークとも白地に黒字に固定する。React Flow の既定(ライト)は
 // 背景が白で文字色が inherit なので、ダークモードではページの白い文字色を受け継ぎ、白地に白になっていた
-// (Phase 18 の画面確認で見つかった)。CSS 変数を上書きする。
+// 。CSS 変数を上書きする。
 export const CONTROLS_STYLE = {
   "--xy-controls-button-background-color": "#fefefe",
   "--xy-controls-button-background-color-hover": "#f4f4f4",
@@ -107,7 +107,7 @@ export function UmlCanvas() {
   // (選択をストアへ戻す → 表示を作り直す → 選択イベント、の往復を止めるため)。
   // useCallback で参照を固定する。React Flow は onSelectionChange が変わるたびに選択を通知し直すので、
   // レンダーごとに作り直すと、要素の追加で選択が変わったとき(表示がまだ古い選択のうちに)古い選択が
-  // 通知され、ストアの選択と往復し続けた(Phase 18 の画面確認で見つかった)。
+  // 通知され、ストアの選択と往復し続けた。
   const onSelectionChange = useCallback<OnSelectionChangeFunc<UmlFlowNode, UmlFlowEdge>>(
     ({ nodes: selectedNodes, edges: selectedEdges }) => {
       const next = selectedNodes[0]

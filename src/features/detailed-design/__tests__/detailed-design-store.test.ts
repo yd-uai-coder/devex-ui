@@ -96,7 +96,7 @@ describe("useDetailedDesignStore", () => {
     expect(useDetailedDesignStore.getState().stages[0].state).toBe("approved");
   });
 
-  it("図が未承認なら、承認の API を呼ばずに理由を出す(Phase 18)", async () => {
+  it("図が未承認なら、承認の API を呼ばずに理由を出す", async () => {
     useDetailedDesignStore.setState({
       projectId: "p1",
       stages: makeStages({
@@ -191,7 +191,7 @@ describe("useDetailedDesignStore", () => {
     expect(useDetailedDesignStore.getState().actionError).toBe("選ばれていない処理です: F-09");
   });
 
-  it("generateは段階6の対象の関数を本文の logics で渡す(Phase 21)", async () => {
+  it("generateは段階6の対象の関数を本文の logics で渡す", async () => {
     useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
     stub.queue({ status: 202, body: makeStages()[5] });
     stub.queue({ status: 200, body: makeStages() });
@@ -203,7 +203,7 @@ describe("useDetailedDesignStore", () => {
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
   });
 
-  it("jumpToは段階を選んで移動先を覚え、clearFocus・selectStageで消える(Phase 21)", () => {
+  it("jumpToは段階を選んで移動先を覚え、clearFocus・selectStageで消える", () => {
     useDetailedDesignStore.setState({ selectedStage: 5, actionError: "前の失敗" });
 
     useDetailedDesignStore.getState().jumpTo(6, "app/api/routes/reservations.py::create_reservation");
@@ -221,7 +221,7 @@ describe("useDetailedDesignStore", () => {
     expect(useDetailedDesignStore.getState().focus).toBeNull();
   });
 
-  it("setTabはタブの選択を覚え、別のプロジェクトを開くと消える(Phase 21 の画面確認後)", async () => {
+  it("setTabはタブの選択を覚え、別のプロジェクトを開くと消える", async () => {
     useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
     useDetailedDesignStore.getState().setTab("6:outer", "F-02");
     expect(useDetailedDesignStore.getState().tabs).toEqual({ "6:outer": "F-02" });

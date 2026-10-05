@@ -14,7 +14,7 @@ import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 const SWITCH_CONFIRM = "保存していない DFD の編集は失われます。切り替えますか?";
 
 // 段階2の、機能グループごとの DFD のタブ。DFD は uml_diagrams の行(notation=dfd、subject=機能グループ名)
-// で、SCR-007 のエディタ(UmlDiagramEditor)でそのまま編集・自動レイアウト・承認する。
+// で、図のエディタ(UmlDiagramEditor)でそのまま編集・自動レイアウト・承認する。
 // エディタのストアは1つだけなので、開くのは選んだタブの1枚だけにする。
 // DFD を保存・承認すると段階2の検証の結果(DFD が未承認か)や段階2の状態(承認済みなら差し戻し)が
 // 変わるので、図の状態・版が変わるたびに段階の一覧を取り直す。

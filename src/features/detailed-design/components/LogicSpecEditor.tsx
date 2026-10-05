@@ -35,7 +35,7 @@ const SPEC_ROWS: { field: SpecField; label: string; mono?: boolean }[] = [
 // 段階6の、1つの関数の詳細(シグネチャ/引数/戻り値/例外/事前条件/事後条件の表と、番号付きの擬似
 // フロー)。見出しの下に「呼ばれる手順」のバッジを置く(段階5の手順から導いた手順ID)。編集した内容は
 // onChange で呼び出し元(LogicPanel)へ返し、保存は呼び出し元が行う。onStepPress を渡すと、バッジを
-// 押して段階5のその手順へ移れる(Phase 21)。擬似フローの下位の箇条は1行1箇条で書く。
+// 押して段階5のその手順へ移れる。擬似フローの下位の箇条は1行1箇条で書く。
 export function LogicSpecEditor({
   model,
   logicKey,

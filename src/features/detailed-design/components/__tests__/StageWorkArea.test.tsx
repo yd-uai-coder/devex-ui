@@ -45,7 +45,7 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
-  it("開いた段階3には、データモデルのパネルを出す(Phase 18)", () => {
+  it("開いた段階3には、データモデルのパネルを出す", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -58,7 +58,7 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
-  it("開いた段階4には、ソフトウェア構造のパネルを出す(Phase 19)", () => {
+  it("開いた段階4には、ソフトウェア構造のパネルを出す", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -72,7 +72,7 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
-  it("開いた段階5には主要処理の手順のパネルを出す(Phase 20)", () => {
+  it("開いた段階5には主要処理の手順のパネルを出す", () => {
     const stages = makeStages({
       1: { state: "approved", version: 2, approved_version: 2, model: makeFunctionList() },
       2: { state: "approved", version: 3, approved_version: 3 },
@@ -88,7 +88,7 @@ describe("StageWorkArea", () => {
     expect(screen.queryByText(/準備中/)).not.toBeInTheDocument();
   });
 
-  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる(Phase 21)", async () => {
+  it("開いた段階6には処理ロジックのパネルを出し、「飛ばす」から承認を始められる", async () => {
     const user = userEvent.setup();
     const stages = makeStages({
       5: { state: "approved", version: 1, approved_version: 1, model: makeProcedures() },

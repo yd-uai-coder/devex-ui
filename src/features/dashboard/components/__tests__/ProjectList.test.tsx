@@ -41,6 +41,7 @@ describe("ProjectList", () => {
           id: "p1",
           title: "Project 1",
           status: "interviewing",
+          mode: "simple",
           created_at: "2026-01-01T00:00:00Z",
           updated_at: "2026-01-01T00:00:00Z",
         },
@@ -48,6 +49,7 @@ describe("ProjectList", () => {
           id: "p2",
           title: "Project 2",
           status: "completed",
+          mode: "detailed",
           created_at: "2026-01-02T00:00:00Z",
           updated_at: "2026-01-02T00:00:00Z",
         },
@@ -57,6 +59,9 @@ describe("ProjectList", () => {
 
     expect(await screen.findByText("Project 1")).toBeInTheDocument();
     expect(screen.getByText("Project 2")).toBeInTheDocument();
+    // 作成時のモードを短いバッジで見分ける
+    expect(screen.getByText("簡易")).toBeInTheDocument();
+    expect(screen.getByText("詳細")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Project 1/ })).toHaveAttribute("href", "/projects/p1/chat");
     expect(screen.getByRole("link", { name: /Project 2/ })).toHaveAttribute(
       "href",

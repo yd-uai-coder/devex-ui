@@ -26,7 +26,7 @@ export function DetailedDesignPageContent({
   const fetchStages = useDetailedDesignStore((s) => s.fetchStages);
   const selectStage = useDetailedDesignStore((s) => s.selectStage);
   const approve = useDetailedDesignStore((s) => s.approve);
-  // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ。Phase 18)
+  // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ)
   const [approvedStage, setApprovedStage] = useState<number | null>(null);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function DetailedDesignPageContent({
         </Text>
       ) : null}
 
-      {/* 詳細設計書のダウンロード(いつでもできる。Phase 22) */}
+      {/* 詳細設計書のダウンロード(いつでもできる) */}
       {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
 
       {stages.length > 0 ? (
@@ -83,7 +83,7 @@ export function DetailedDesignPageContent({
         </XStack>
       ) : null}
 
-      {/* 段階を承認したら知らせ、次の段階へ進めるようにする(最後の段階は閉じるだけ。Phase 18) */}
+      {/* 段階を承認したら知らせ、次の段階へ進めるようにする(最後の段階は閉じるだけ) */}
       <ConfirmDialog
         open={approvedStage !== null}
         title="承認しました"

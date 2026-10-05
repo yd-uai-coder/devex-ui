@@ -2,7 +2,7 @@
 
 // 画面に出す6つの状態。DB に保存するのは draft / regenerated / reviewing / approved の4つで、
 // not_started(行が無い)と outdated(入力が承認時・生成時から変わった)はバックエンドが導く。
-// regenerated は、内容のある段階を AI が作り直した(未承認)状態(Phase 16)。
+// regenerated は、内容のある段階を AI が作り直した(未承認)状態。
 export type StageState =
   | "not_started"
   | "draft"
@@ -11,7 +11,7 @@ export type StageState =
   | "approved"
   | "outdated";
 
-// 段階ごとの検証の指摘(Phase 16)。error があると承認できない。warning は承認を止めない。
+// 段階ごとの検証の指摘。error があると承認できない。warning は承認を止めない。
 export type StageIssue = {
   severity: "error" | "warning";
   code: string;
@@ -22,7 +22,7 @@ export type StageIssue = {
 // AIの下書きの生成の状態。null はまだ生成していない。
 export type StageGenerationStatus = "generating" | "completed" | "failed";
 
-// 段階2の DFD の線から決まる、処理とテーブルの関わり(段階3の CRUD 図の固定部分。Phase 18)。
+// 段階2の DFD の線から決まる、処理とテーブルの関わり(段階3の CRUD 図の固定部分)。
 // table は ER のテーブル名(ER に無いデータストアは、小文字にしたデータストア名)。
 export type DfdAccess = {
   function_id: string;
@@ -44,7 +44,7 @@ export type DesignStageRead = {
   // 直近の生成が失敗した理由(ユーザー向けの文言)
   generation_error: string | null;
   issues: StageIssue[];
-  // 段階3だけが持つ、DFD から決まる R/W(バックエンドが導いた結果。Phase 18)
+  // 段階3だけが持つ、DFD から決まる R/W(バックエンドが導いた結果)
   dfd_accesses: DfdAccess[];
 };
 
@@ -71,7 +71,7 @@ export type FunctionListModel = {
 
 // 段階2 データフローの意味モデル(devex-api app/detailed_design/data_flow.py)。
 // DFD 本体は uml_diagrams(notation=dfd、subject=機能グループ名)、データ辞書は data_items が正本で、
-// ここには持たない(Phase 17)。
+// ここには持たない。
 export type ProcessSummaryRow = {
   function_id: string; // 段階1の処理ID
   input: string;
@@ -89,7 +89,7 @@ export const MAX_DFD_GROUPS = 5;
 
 // 段階3 データモデルの意味モデル(devex-api app/detailed_design/data_model.py)。
 // ER・テーブル定義は uml_diagrams(notation=er、subject='')が正本で、ここには CRUD 図のセルだけを
-// 持つ(Phase 18)。ops は C・R・U・D をこの順に並べた文字列(「CR」など)。draft は AI の下書きの
+// 持つ。ops は C・R・U・D をこの順に並べた文字列(「CR」など)。draft は AI の下書きの
 // まま人が確定していない印(人が直すと外れ、段階3の承認で残りも外れる)。
 export type CrudCell = {
   function_id: string; // 段階1の処理ID
@@ -107,7 +107,7 @@ export const ER_SUBJECT = "";
 
 // 段階4 ソフトウェア構造の意味モデル(devex-api app/detailed_design/structure.py)。
 // 構成図は uml_diagrams(notation=component、subject='')が正本で、ここにはファイル単位のモジュール一覧
-// だけを持つ(Phase 19)。path は段階5の「処理 × モジュール」の関与表の列の鍵になる。
+// だけを持つ。path は段階5の「処理 × モジュール」の関与表の列の鍵になる。
 export type ModuleRow = {
   path: string; // ファイルのパス(似たファイルは {a,b}.py・* でまとめてよい)
   layer: string; // 構成図の層(要素の layer)の名前
@@ -125,7 +125,7 @@ export type ModuleListModel = {
 export const STRUCTURE_SUBJECT = "";
 
 // 段階5 主要処理の手順の意味モデル(devex-api app/detailed_design/procedure.py)。人が選んだ処理ごとに
-// 手順の表を持つ(Phase 20)。手順番号は保存せず、並び順と is_branch から導く(procedureOps の
+// 手順の表を持つ。手順番号は保存せず、並び順と is_branch から導く(procedureOps の
 // numberSteps)。06(段階6)との紐づけは持たず、(callee, call) と段階6の (モジュール, 関数) の一致から導く。
 export type ProcedureStep = {
   caller: string; // 呼び出し元(モジュールのパスか外部の役者)。分岐の行は空
@@ -154,7 +154,7 @@ export type ProcedureModel = {
 export const MAX_PROCEDURE_TARGETS = 5;
 
 // 段階6 処理ロジックの詳細の意味モデル(devex-api app/detailed_design/logic.py)。人が選んだ関数ごとに
-// シグネチャ〜事後条件と擬似フローを持つ(Phase 21)。L-ID は保存せず並び順から導く(logicOps の logicId)。
+// シグネチャ〜事後条件と擬似フローを持つ。L-ID は保存せず並び順から導く(logicOps の logicId)。
 // 05 との紐づけは (module, function) と段階5の手順の (callee, call) の一致から導く。0件で承認 = 段階6を飛ばす。
 export type PseudoStep = {
   text: string; // この段で行うこと
@@ -183,7 +183,7 @@ export type LogicTarget = { module: string; function: string };
 // 1回の生成で下書きを作れる関数の数の上限(devex-api の MAX_LOGIC_TARGETS と同じ)
 export const MAX_LOGIC_TARGETS = 5;
 
-// 段階7 横断事項と実装計画の意味モデル(devex-api app/detailed_design/plan.py。Phase 23)。07 横断事項と
+// 段階7 横断事項と実装計画の意味モデル(devex-api app/detailed_design/plan.py)。07 横断事項と
 // 実装計画を1つの model に持つ。タスクはマイルストーンの中に入れ子にする(改名で参照が切れないため)。
 // マイルストーンの番号(M-01…)は保存せず並び順から導く(planOps の milestoneId)。
 export type Priority = "Must" | "Should" | "Could";

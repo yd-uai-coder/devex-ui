@@ -29,7 +29,7 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
     >
       <Text fontWeight="600">ヒアリング内容の確認</Text>
       <Text>{completion.summary}</Text>
-      {/* 生成は数分かかり、やり直すとAIの利用枠も使うため、押す前に確認する(気づき#4) */}
+      {/* 生成は数分かかり、やり直すとAIの利用枠も使うため、押す前に確認する */}
       <Button
         theme="green"
         disabled={projectStatus === "completed" || approving}

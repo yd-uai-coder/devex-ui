@@ -5,7 +5,7 @@ import { Text, XStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 
 // 段階の作業領域の保存の操作(保存ボタンと「保存していない編集があります。」)。各段階のパネルは、
-// 作業領域の先頭(状態表示の直下)と最下部の2か所に同じものを置く(Phase 21 の画面確認後)。チェックや
+// 作業領域の先頭(状態表示の直下)と最下部の2か所に同じものを置く。チェックや
 // 選択を変えた直後に、スクロールせずに保存して生成へ進めるようにするため。leading・trailing には、
 // 保存の前後に並べる段階ごとのボタン(段階1の「処理を追加」、段階6の「段階6を飛ばす」)を渡す。
 export function StageSaveBar({

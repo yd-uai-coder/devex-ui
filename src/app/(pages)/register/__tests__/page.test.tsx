@@ -1,4 +1,3 @@
-// 作成：Phase-3-2
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";

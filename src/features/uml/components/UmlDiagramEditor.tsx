@@ -9,7 +9,7 @@ import { UmlCanvas } from "@/features/uml/components/UmlCanvas";
 import { ValidationPanel } from "@/features/uml/components/ValidationPanel";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
-// 自動レイアウトの再実行は、手で動かした座標を置き換える(M6: 明示的な再実行のときだけ上書きする)。
+// 自動レイアウトの再実行は、手で動かした座標を置き換える(明示的な再実行のときだけ上書きする)。
 const RELAYOUT_CONFIRM = "現在の配置を自動レイアウトの結果で置き換えます。よろしいですか?";
 
 // DFD は要素の種類ごとに追加ボタンを分ける。component / ER は1種類だけ。
@@ -19,8 +19,8 @@ const DFD_ADD_BUTTONS: { type: DfdElementType; label: string }[] = [
   { type: "data_store", label: "データストアを追加" },
 ];
 
-// 図1枚のエディタ(ツールバー・キャンバス・検証・要素の編集)。SCR-007 のレビュー画面と、
-// SCR-008 の段階2(機能グループの DFD)で共有する(Phase 17 で UmlDiagramPageContent から切り出した)。
+// 図1枚のエディタ(ツールバー・キャンバス・検証・要素の編集)。SCR-008 の段階2〜4(DFD・ER・構成図)で
+// 使う。
 // ストア(useUmlEditorStore)は1つだけなので、同時に開けるのは1枚。マウント時に diagramId を読み込む。
 export function UmlDiagramEditor({
   projectId,

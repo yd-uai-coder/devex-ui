@@ -11,13 +11,16 @@ import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { AsyncStatus } from "@/lib/api/types";
 
 type HearingStore = {
+  // 今の内容がどのプロジェクトのものか。別のプロジェクトを開いたら、前の会話・完了判定を
+  // 捨ててから読む(ストアは画面をまたいで残るため)。
+  projectId: string | null;
   messages: ChatHistoryEntry[];
   historyStatus: AsyncStatus;
   sending: boolean;
   // ストリーミング中のAI応答本文。完了すると`messages`へ確定エントリとして追加され、
   // 空文字に戻る。
   streamingReply: string;
-  // SSE接続が完了前に切れた場合に立てるフラグ(#17: 冪等性キーが無いため自動再送はしない)。
+  // SSE接続が完了前に切れた場合に立てるフラグ(冪等性キーが無いため自動再送はしない)。
   connectionLost: boolean;
   // バックエンドがSSEの`event: error`で伝えた失敗の内容(クォータ超過など)。接続の切断
   // (connectionLost)と分けて、何が起きたかを利用者に見せる。
@@ -36,7 +39,20 @@ type HearingStore = {
   dismissConnectionLost: () => void;
 };
 
+// 別のプロジェクトを開いたときに戻す値
+const PROJECT_INITIAL = {
+  messages: [] as ChatHistoryEntry[],
+  sending: false,
+  streamingReply: "",
+  connectionLost: false,
+  streamError: null,
+  completion: null,
+  generationTriggered: false,
+  projectStatus: null,
+} as const;
+
 export const useHearingStore = create<HearingStore>((set, get) => ({
+  projectId: null,
   messages: [],
   historyStatus: "idle",
   sending: false,
@@ -48,12 +64,17 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   projectStatus: null,
 
   loadHistory: async (projectId) => {
+    if (get().projectId !== projectId) {
+      set({ projectId, ...PROJECT_INITIAL });
+    }
     set({ historyStatus: "loading" });
     try {
       const [messages, project] = await Promise.all([
         getChatHistory(projectId),
         getProject(projectId),
       ]);
+      // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
+      if (get().projectId !== projectId) return;
       const generationTriggered = project.status === "generating";
       set({ messages, historyStatus: "success", generationTriggered, projectStatus: project.status });
 

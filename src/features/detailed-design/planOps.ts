@@ -13,7 +13,7 @@ import {
 
 // 段階7(横断事項と実装計画)の編集操作(純粋関数)。どれも新しいモデルを返し、引数は変えない。
 // 行は名前で引かず並びの位置で扱う(名前は人が書き換える欄で、重複も検証のエラーとして一旦は許すため。
-// 段階4のモジュール一覧と同じ。Phase 23)。
+// 段階4のモジュール一覧と同じ)。
 
 const strings = (value: unknown) => (Array.isArray(value) ? value.map(String) : []);
 const pick = <T extends string>(value: unknown, choices: T[], fallback: T): T =>

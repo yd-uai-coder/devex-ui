@@ -9,7 +9,7 @@ import { useInterval } from "@/hooks/useInterval";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 
 // POST /design-stages/{stage}/generate は 202 を返すだけでプッシュ通知が無いため、生成中の段階が
-// ある間は段階の一覧を取り直して完了を検知する(UML図の useUmlGenerationPolling と同じ形)。
+// ある間は段階の一覧を取り直して完了を検知する(簡易モードの文書の useGenerationPolling と同じ形)。
 // 間隔と打ち切り時間は4文書生成のポーリングの値を再利用する。バックエンドは15分を超えた
 // 生成を一覧の取得時に失敗へ戻すので、打ち切った後も「再読み込み」で状態は正しくなる。
 export function useStageGenerationPolling(

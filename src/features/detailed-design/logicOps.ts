@@ -8,7 +8,7 @@ import type {
 import { isExternalActor, numberSteps, stepId } from "@/features/detailed-design/procedureOps";
 
 // 段階6(処理ロジックの詳細)の編集操作と、05↔06 の紐づけを導く表(候補・呼ばれる手順・逆引き・
-// L-ID の引き当て)。すべて純粋関数で、どれも新しいモデルを返し引数は変えない(Phase 21)。
+// L-ID の引き当て)。すべて純粋関数で、どれも新しいモデルを返し引数は変えない。
 // L-ID は保存せず並び順から導き、紐づけは (モジュール, 関数) と手順の (callee, call) の一致から導く
 // (バックエンドの app/detailed_design/logic.py と同じ規則)。
 
@@ -195,7 +195,7 @@ export function textToSub(text: string): string[] {
   return text === "" ? [] : text.split("\n");
 }
 
-// ── 処理ごとのタブ(Phase 21 の画面確認後) ──
+// ── 処理ごとのタブ ──
 // 候補が多いときに、段階5の処理ごとに候補と詳細を切り替えて見せる。データ(model)・L-ID・逆引きは
 // 全体のまま変えず、見せ方だけを処理ごとに分ける。
 

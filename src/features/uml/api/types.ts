@@ -35,7 +35,7 @@ export type ErColumn = {
   is_primary_key: boolean;
   is_foreign_key: boolean;
   nullable: boolean;
-  // テーブル定義の制約・説明(詳細設計モードの段階3。古い ER には無い。Phase 18)
+  // テーブル定義の制約・説明(詳細設計モードの段階3。古い ER には無い)
   constraints?: string;
   description?: string;
 };
@@ -44,7 +44,7 @@ export type ErElement = {
   name: string;
   kind: "table";
   columns: ErColumn[];
-  // テーブル単位の注記(複合一意制約・役割など。古い ER には無い。Phase 18)
+  // テーブル単位の注記(複合一意制約・役割など。古い ER には無い)
   description?: string;
 };
 export type ErRelationType = "one_to_one" | "one_to_many" | "many_to_many";
@@ -78,7 +78,7 @@ export type UmlElement = SemanticModel["elements"][number];
 export type UmlRelation = SemanticModel["relations"][number];
 
 // ---- 配置(app/uml/layout/model.py の出力スキーマ) ----
-// x, y はノードの左上。points は端点を含む直交折れ線。空リストは「折れ点なし」(D2)。
+// x, y はノードの左上。points は端点を含む直交折れ線。空リストは「折れ点なし」。
 export type LayoutBox = { x: number; y: number; w: number; h: number; lane: number; row: number };
 // label_pos: 辺ラベルの中心(出力の draw.io/SVG が使う。レビュー画面は React Flow が自前で置く)。
 // ラベルの無い辺・手で動かしたノードにつながる辺(points=[])では null か省略。
@@ -131,44 +131,6 @@ export type UmlDiagramApprove = { version: number };
 // 出力の形式(GET .../export/drawio | .../export/svg)
 export type ExportFormat = "drawio" | "svg";
 
-// ---- 生成(app/schemas/uml_generation.py) ----
-export type UmlSubjectSpec = { subject?: string; tables?: string[] | null };
-export type UmlGenerateRequest = { notation: NotationType; subjects?: UmlSubjectSpec[] };
-export type DfdSubjectRead = { code: string; title: string };
-export type UmlCandidatesRead = {
-  // 内部設計書が無いときは null
-  internal_design_version: number | null;
-  dfd_subjects: DfdSubjectRead[];
-  er_tables: string[];
-};
-export type GenerationOutcome = "succeeded" | "failed" | "skipped";
-// app/uml/generation/failures.py
-export type GenerationReasonCode =
-  | "QUOTA_EXCEEDED"
-  | "TOKEN_LIMIT"
-  | "INVALID_OUTPUT"
-  | "GENERATION_FAILED"
-  // 生成中のまま止まった(15分超)ものを、一覧の取得時にバックエンドが失敗へ戻した
-  | "STALE_GENERATION";
-export type UmlGenerationResultRead = {
-  subject: string;
-  diagram_id: string;
-  outcome: GenerationOutcome;
-  reason_code: GenerationReasonCode | null;
-  message: string | null;
-};
-export type GenerationRunStatus = "running" | "completed" | "partial" | "failed";
-export type UmlGenerationRunRead = {
-  id: string;
-  notation: NotationType;
-  status: GenerationRunStatus;
-  requested: { subject: string; diagram_id: string }[];
-  // 202 の応答では空。対象ごとに処理が終わるたびに追加される
-  results: UmlGenerationResultRead[];
-  started_at: string;
-  finished_at: string | null;
-};
-
 // ---- データ辞書(app/schemas/data_item.py) ----
 export type DataItemField = { name: string; type?: string | null; required?: boolean | null };
 export type DataItemRead = {
@@ -178,31 +140,9 @@ export type DataItemRead = {
   created_at: string;
   updated_at: string;
 };
-// 作成・更新の本文(更新は name・fields を丸ごと置き換える。Phase 17)
+// 作成・更新の本文(更新は name・fields を丸ごと置き換える)
 export type DataItemWrite = { name: string; fields: DataItemField[] };
 
 // ---- 検証(app/uml/validation/base.py) ----
 export type ValidationIssue = { code: string; message: string; element_id: string | null };
 export type ValidationResult = { errors: ValidationIssue[]; warnings: ValidationIssue[] };
-
-// ---- 内部設計書への反映(app/schemas/uml_diagram.py UmlReflectRead / UmlEmbedRead) ----
-// 文書に反映した内容と、図の今の状態の関係(app/uml/sync/staleness.py)
-//   reflected: 反映済み / not_reflected: 承認済みだが文書に無い(再生成・復元で消えた)
-//   outdated: 文書の内容が古い(承認後に編集された) / not_applicable: まだ承認されていない
-export type DocState = "reflected" | "not_reflected" | "outdated" | "not_applicable";
-
-export type UmlReflectRead = { reflected: number };
-
-export type UmlEmbedRead = {
-  diagram_id: string;
-  notation: NotationType;
-  subject: string;
-  title: string;
-  status: DiagramStatus;
-  version: number;
-  // 図を生成した後に、内部設計書が再生成・復元された(図が古い)
-  source_outdated: boolean;
-  doc_state: DocState;
-  // 承認済みの図だけ。プレビューでは img の data URI にして表示する(スクリプトを実行させない)
-  svg: string | null;
-};

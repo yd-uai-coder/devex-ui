@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { ApiError } from "@/lib/api/client";
-import { useDocumentsStore } from "@/features/documents/documents-store";
 import {
   approveDiagram,
   computeLayout,
@@ -87,12 +86,12 @@ type UmlEditorStore = {
   addColumn: (tableId: string) => void;
   updateColumn: (tableId: string, index: number, patch: Partial<ErColumn>) => void;
   deleteColumn: (tableId: string, index: number) => void;
-  // ER のテーブルの説明(テーブル定義の注記。Phase 18)
+  // ER のテーブルの説明(テーブル定義の注記)
   updateTableDescription: (tableId: string, description: string) => void;
   validate: () => Promise<void>;
-  // 承認(M7)。未保存の変更があれば先に保存してから承認する
+  // 承認。未保存の変更があれば先に保存してから承認する
   approve: () => Promise<void>;
-  // 出力(M8)。ファイルを保存させた後、図を取り直す(状態が exported になるため)
+  // 出力。ファイルを保存させた後、図を取り直す(状態が exported になるため)
   exportDiagram: (format: ExportFormat) => Promise<void>;
 };
 
@@ -159,7 +158,7 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
           listDataItems(projectId),
         ]);
         set({ ...fromServer(diagram), dataItems, status: "success" });
-        // 自動レイアウトの「初回」(M6): 生成直後は layout_model が null なので1回だけ実行する。
+        // 自動レイアウトの「初回」: 生成直後は layout_model が null なので1回だけ実行する。
         // 以降は明示的な再実行のときだけ(手動で動かした座標を上書きしない)。
         if (
           diagram.layout_model === null &&
@@ -184,7 +183,7 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
       if (!projectId || !diagram || !model) return false;
       set({ saving: true, error: null });
       try {
-        // 意味モデルと座標を1回の保存・1つの version で送る(Phase 11-1 で PUT を拡張)
+        // 意味モデルと座標を1回の保存・1つの version で送る
         const saved = await updateDiagram(projectId, diagram.id, {
           version: diagram.version,
           semantic_model: model,
@@ -308,8 +307,6 @@ export const useUmlEditorStore = create<UmlEditorStore>((set, get) => {
         // 保存した場合は version が変わっているので、get() で取り直した版を送る
         const current = get().diagram ?? diagram;
         set(fromServer(await approveDiagram(projectId, current.id, current.version)));
-        // 承認と同時に内部設計書へ反映される(本文が変わる)ので、文書一覧のキャッシュを捨てる
-        useDocumentsStore.setState({ fetchedAt: null });
       } catch (err) {
         if (err instanceof ApiError && err.code === "VERSION_CONFLICT") {
           set({ conflict: true });

@@ -6,7 +6,6 @@ import tamaguiConfig from "@/tamagui.config";
 import { DocumentMarkdownView } from "../DocumentMarkdownView";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
-import { makeEmbed } from "@/features/uml/test-utils/umlFixtures";
 
 const SAMPLE_DOC = {
   id: "d1",
@@ -116,12 +115,11 @@ describe("DocumentMarkdownView", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("ダウンロードに失敗しました");
   });
 
-  it("内部設計書では、アンカーの位置に図を差し込み、要素表も描く", async () => {
+  it("内部設計書も普通の Markdown として描き、設計図の埋め込みは取得しない", () => {
+    // 以前に図を反映した内部設計書には
+    // アンカー(HTML コメント)が残る。skipHtml で生の HTML を描かないので、本文だけが出る
     const stub = stubFetch();
-    stub.queue({ body: [makeEmbed()] });
     const content = [
-      "## 3.3 バックエンド処理",
-      "",
       "<!-- uml:diagram:d1:start v=2 -->",
       "",
       "| 名称 | 種別 |",
@@ -129,8 +127,6 @@ describe("DocumentMarkdownView", () => {
       "| 認証API | モジュール |",
       "",
       "<!-- uml:diagram:d1:end -->",
-      "",
-      "- 主要処理ロジック",
     ].join("\n");
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
@@ -141,19 +137,8 @@ describe("DocumentMarkdownView", () => {
       </TamaguiProvider>,
     );
 
-    expect(await screen.findByRole("img", { name: "コンポーネント図(全体)" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "認証API" })).toBeInTheDocument();
-    expect(screen.getByText("主要処理ロジック")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "図を再反映" })).toBeInTheDocument();
-    expect(stub.requests[0].url).toMatch(/\/projects\/p1\/uml\/embeds$/);
-    stub.restore();
-  });
-
-  it("内部設計書以外では図の埋め込みを取得しない", () => {
-    const stub = stubFetch();
-    renderView();
-
-    expect(screen.queryByRole("button", { name: "図を再反映" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/uml:diagram/)).not.toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });

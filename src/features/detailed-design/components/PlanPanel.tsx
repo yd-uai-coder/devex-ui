@@ -19,7 +19,7 @@ import { hasPlanDraft, toPlan } from "@/features/detailed-design/planOps";
 
 // 段階7(横断事項と実装計画)の作業領域の中身。AIの下書きの生成、07 横断事項・マイルストーンとタスク・
 // 開発環境・リスクの編集、検証の結果、保存を持つ。編集中の内容はこのコンポーネントの中だけに持ち、
-// 保存して初めてサーバーへ送る(段階4の StructurePanel と同じ形。Phase 23)。下書きは、要件定義・
+// 保存して初めてサーバーへ送る(段階4の StructurePanel と同じ形)。下書きは、要件定義・
 // 外部設計と、段階1〜6から組み立てた詳細設計書を入力に作る(作り直しは全体の置き換え)。
 export function PlanPanel({
   projectId,

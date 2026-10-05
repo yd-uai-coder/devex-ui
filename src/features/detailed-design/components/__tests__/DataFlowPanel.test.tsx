@@ -157,7 +157,7 @@ describe("DataFlowPanel", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("利用上限");
     expect(screen.getByText("エラー: F-02 が処理概要表にありません。")).toBeInTheDocument();
-    // DFD の未承認は、段階の承認を押したときに出す(Phase 18)
+    // DFD の未承認は、段階の承認を押したときに出す
     expect(screen.queryByText(/DFD が承認されていません/)).not.toBeInTheDocument();
   });
 });

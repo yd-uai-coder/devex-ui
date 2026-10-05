@@ -17,12 +17,12 @@ import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useS
 import type { ErSemanticModel } from "@/features/uml/api/types";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
-// 段階3(データモデル)の作業領域の中身。AIの下書きの生成、ER(SCR-007 のエディタ)、テーブル定義の表、
+// 段階3(データモデル)の作業領域の中身。AIの下書きの生成、ER(図のエディタ)、テーブル定義の表、
 // CRUD 図の編集、検証の結果、保存を持つ。ER とテーブル定義は段階の model の外(uml_diagrams)に
 // 正本があり、ER のエディタが自分で保存する。この部品の「保存する」は CRUD 図だけを保存する。
 // 入力の段階1(承認済みの機能一覧)はストアの段階の一覧から読む。編集中の内容はこのコンポーネントの
 // 中だけに持ち、保存して初めてサーバーへ送る(保存・生成のたびに呼び出し元が key を変えて作り直す。
-// 段階1・2のパネルと同じ形。Phase 18)。
+// 段階1・2のパネルと同じ形)。
 export function DataModelPanel({
   projectId,
   stage,

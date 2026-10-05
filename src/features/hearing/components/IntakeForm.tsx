@@ -28,7 +28,7 @@ const LANGUAGE_OPTIONS: CheckboxGroupOption[] = [
 ];
 
 // フレームワークは言語ごとに<fieldset><legend>で静的グルーピングする(動的な絞り込み
-// コンボボックスは採用しない、docs/external_design.md 2.3節SCR-004・Phase-0-3.md参照)。
+// コンボボックスは採用しない、docs/external_design.md 2.3節SCR-004参照)。
 // 選択結果自体は言語をまたいだ1つのフラットな配列(environment.frameworks)にまとめる。
 const FRAMEWORK_OPTIONS_BY_LANGUAGE: { language: string; items: CheckboxGroupOption[] }[] = [
   {
@@ -80,7 +80,7 @@ const DEFAULT_VALUES: IntakeValues = {
   systemOverview: "",
   goalsRaw: "",
   notesRaw: "",
-  templateId: null, // Phase-6-4:追記
+  templateId: null,
   environment: { languages: [], frameworks: [], databases: [], deployTargets: [] },
   files: [],
 };

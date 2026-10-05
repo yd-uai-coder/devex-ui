@@ -34,7 +34,7 @@ describe("PlanTables", () => {
     expect(screen.getByLabelText("M-01 の処理")).toHaveValue("F-01");
     expect(screen.getByLabelText("M-01 のタスク1 の区分")).toHaveValue("バックエンド");
     expect(screen.getByLabelText("リスク1 の対策")).toHaveValue("一意制約で防ぐ");
-    // ファイルの欄は例として見せる(検証しない。Phase 23 の画面確認後)
+    // ファイルの欄は例として見せる(検証しない)
     expect(screen.getByRole("columnheader", { name: "作成・変更するファイル(例)" })).toBeInTheDocument();
     // 既定の項目はそろっているので、足すボタンは出ない
     expect(screen.queryByRole("button", { name: "「ログ」を追加" })).not.toBeInTheDocument();

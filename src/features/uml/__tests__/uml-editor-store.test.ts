@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useUmlEditorStore } from "../uml-editor-store";
-import { useDocumentsStore } from "@/features/documents/documents-store";
 import * as download from "@/lib/api/download";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { placeMissingNodes } from "@/features/uml/adapters/reactFlowAdapter";
@@ -42,7 +41,7 @@ describe("useUmlEditorStore", () => {
     expect(stub.requests).toHaveLength(2);
   });
 
-  it("load は配置が null の図で自動レイアウトを1回実行する(M6 の初回)", async () => {
+  it("load は配置が null の図で自動レイアウトを1回実行する(初回)", async () => {
     stub.queue({ body: makeDiagram({ layout_model: null }) });
     stub.queue({ body: [] });
     stub.queue({ body: makeDiagram() });
@@ -239,16 +238,6 @@ describe("useUmlEditorStore", () => {
       expect(stub.requests[3].url).toMatch(/\/validate$/);
       expect(state.validation?.errors).toHaveLength(1);
       expect(state.diagram?.status).toBe("draft");
-    });
-
-    it("承認すると内部設計書へ反映されるので、文書一覧のキャッシュを捨てる", async () => {
-      useDocumentsStore.setState({ fetchedAt: Date.now() });
-      await loadDiagram();
-      stub.queue({ body: makeDiagram({ status: "approved" }) });
-
-      await useUmlEditorStore.getState().approve();
-
-      expect(useDocumentsStore.getState().fetchedAt).toBeNull();
     });
 
     it("承認で version が合わなければ競合として扱う", async () => {

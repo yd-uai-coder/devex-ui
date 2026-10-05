@@ -41,7 +41,7 @@ describe("canApprove", () => {
   });
 });
 
-describe("canApprove(Phase 16)", () => {
+describe("canApprove", () => {
   it("生成中・内容が空・検証のエラーがある段階は承認できない", () => {
     const [stage1] = makeStages({
       1: { state: "draft", version: 2, model: MODEL },
@@ -64,7 +64,7 @@ describe("canApprove(Phase 16)", () => {
   });
 });
 
-describe("図の未承認は承認時に出す(Phase 18)", () => {
+describe("図の未承認は承認時に出す", () => {
   const ER_PENDING = { severity: "error" as const, code: "ER_NOT_APPROVED", message: "ER が承認されていません。", target: null };
   const OTHER = { ...ER_PENDING, code: "DFD_WRITE_MISSING", message: "C/U/D がありません" };
 

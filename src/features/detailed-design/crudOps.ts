@@ -2,7 +2,7 @@ import type { CrudCell, CrudModel, DfdAccess } from "@/features/detailed-design/
 
 // 段階3(データモデル)の CRUD 図の編集操作(純粋関数)。どれも新しいモデルを返し、引数は変えない。
 // DFD の線から決まる部分(読みの R)はバックエンドの merge_crud と同じ規則で守り、人の編集でも外させない。
-// 人が編集したセルは、AI の下書きの印(draft)を外す(段階3の承認で残りの印も外れる。Phase 18)。
+// 人が編集したセルは、AI の下書きの印(draft)を外す(段階3の承認で残りの印も外れる)。
 
 const CRUD_OPS = "CRUD";
 
@@ -88,7 +88,7 @@ export function setCellOps(
 
 // CRUD 図の列。ER のテーブルの並びに、ER に無いテーブルのセル(直す必要がある)を後ろに足す。
 // ER に同じ名前のテーブルが2つあっても、列は1つにする(列の key が重ならないように。名前の重複は
-// 段階3の検証のエラー DUPLICATE_TABLE で知らせる。Phase 18)。
+// 段階3の検証のエラー DUPLICATE_TABLE で知らせる)。
 export function crudTables(erTables: string[], model: CrudModel): string[] {
   const keys = new Set<string>();
   const unique: string[] = [];

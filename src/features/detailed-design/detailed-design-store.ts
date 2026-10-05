@@ -10,7 +10,7 @@ import { approvalBlockers } from "@/features/detailed-design/labels";
 import { ApiError } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
-// 段階をまたいで移動した先(Phase 21)。target は、段階5なら手順ID(F-01#4)、段階6なら関数の鍵
+// 段階をまたいで移動した先。target は、段階5なら手順ID(F-01#4)、段階6なら関数の鍵
 // (logicOps の logicKey)。移動先のパネルが開いたときに読み、そのタブを開いて行を強調してから消す。
 export type StageFocus = { stage: number; target: string };
 
@@ -29,12 +29,12 @@ type DetailedDesignStore = {
   requestingGeneration: boolean;
   focus: StageFocus | null;
   // パネルのタブの選択(鍵 → タブ)。保存・生成でパネルが作り直されても、開いていたタブに戻すため
-  // (Phase 21 の画面確認後)。鍵は "5:procedure"・"6:outer"・"6:inner" など、段階と場所で決める。
+  // 。鍵は "5:procedure"・"6:outer"・"6:inner" など、段階と場所で決める。
   tabs: Record<string, string | null>;
 
   fetchStages: (projectId: string) => Promise<void>;
   selectStage: (stage: number) => void;
-  // 承認できたら true(画面は承認の完了ダイアログを出す。Phase 18)
+  // 承認できたら true(画面は承認の完了ダイアログを出す)
   approve: (projectId: string, stage: number) => Promise<boolean>;
   // 保存に成功したら true(画面は編集中の内容を保存済みとして扱う)
   save: (
@@ -42,14 +42,14 @@ type DetailedDesignStore = {
     stage: number,
     model: Record<string, unknown>,
   ) => Promise<boolean>;
-  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を選べる(Phase 20・21)
+  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を選べる
   generate: (
     projectId: string,
     stage: number,
     functionIds?: string[],
     logics?: LogicTarget[],
   ) => Promise<void>;
-  // 05↔06 のバッジから、相手の段階のタブ・行へ移る(Phase 21)
+  // 05↔06 のバッジから、相手の段階のタブ・行へ移る
   jumpTo: (stage: number, target: string) => void;
   clearFocus: () => void;
   setTab: (key: string, value: string | null) => void;
@@ -117,7 +117,7 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     approve: async (projectId, stage) => {
       const current = get().stages.find((s) => s.stage === stage);
       if (!current || current.version === null) return false;
-      // 図(DFD・ER)が未承認なら、API を呼ばずに理由を出す(Phase 18)
+      // 図(DFD・ER)が未承認なら、API を呼ばずに理由を出す
       const blockers = approvalBlockers(current);
       if (blockers.length > 0) {
         set({

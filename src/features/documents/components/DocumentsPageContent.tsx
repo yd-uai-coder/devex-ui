@@ -26,7 +26,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
     void fetchProjectMode(projectId);
   }, [projectId, fetchDocuments, fetchProjectMode]);
 
-  // 再生成トリガー後の完了検知はPhase 3-5と同じuseGenerationPollingを再利用する。
+  // 再生成トリガー後の完了検知は、ヒアリング画面と同じuseGenerationPollingを使う。
   useGenerationPolling(projectId, regenerating, () => {
     onRegenerationCompleted(projectId);
   });
@@ -39,13 +39,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           <Link href={`/projects/${projectId}/chat`}>
             <Text color="$blue10">チャットに戻る</Text>
           </Link>
-          {/* 詳細設計モードには内部設計書が無い(段階で組み立てる)ため、設計図の生成ではなく
-              詳細設計画面(SCR-008)へ進ませる */}
-          {projectMode === "simple" ? (
-            <Link href={`/projects/${projectId}/uml`}>
-              <Text color="$blue10">設計図を生成する →</Text>
-            </Link>
-          ) : null}
+          {/* 詳細設計モードは、ここから詳細設計画面(SCR-008)へ進む(内部設計書は段階で組み立てる) */}
           {projectMode === "detailed" ? (
             <Link href={`/projects/${projectId}/detailed-design`}>
               <Text color="$blue10">詳細設計へ進む →</Text>

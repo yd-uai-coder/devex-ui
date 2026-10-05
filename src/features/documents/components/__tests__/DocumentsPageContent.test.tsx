@@ -81,16 +81,15 @@ describe("DocumentsPageContent", () => {
     expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
   });
 
-  it("設計図の生成・一覧画面へのリンクを表示する", () => {
+  it("簡易ドキュメントモードでは、詳細設計へ進むリンクを出さない", () => {
+    useDocumentsStore.setState({ projectMode: "simple" });
+
     renderContent();
 
-    expect(screen.getByRole("link", { name: "設計図を生成する →" })).toHaveAttribute(
-      "href",
-      "/projects/p1/uml",
-    );
+    expect(screen.queryByRole("link", { name: "詳細設計へ進む →" })).not.toBeInTheDocument();
   });
 
-  it("詳細設計モードでは、設計図の生成ではなく詳細設計へ進むリンクを表示する", () => {
+  it("詳細設計モードでは、詳細設計へ進むリンクを表示する", () => {
     useDocumentsStore.setState({ projectMode: "detailed" });
 
     renderContent();
@@ -99,7 +98,6 @@ describe("DocumentsPageContent", () => {
       "href",
       "/projects/p1/detailed-design",
     );
-    expect(screen.queryByRole("link", { name: "設計図を生成する →" })).not.toBeInTheDocument();
   });
 
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {

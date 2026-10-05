@@ -41,7 +41,7 @@ describe("addElement", () => {
     expect(store.model.elements.at(-1)).toMatchObject({ element_type: "data_store" });
   });
 
-  it("ER のテーブルは、使われていない名前で足す(Phase 18)", () => {
+  it("ER のテーブルは、使われていない名前で足す", () => {
     const first = addElement(ER_MODEL);
     const second = addElement(first.model);
     const names = second.model.elements.map((el) => el.name);
@@ -121,7 +121,7 @@ describe("ER のカラム表", () => {
     expect(columnsOf(deleted as typeof ER_MODEL).map((c) => c.name)).toEqual(["email"]);
   });
 
-  it("テーブルの説明を書き換える(古い ER のテーブルにも足す。Phase 18)", () => {
+  it("テーブルの説明を書き換える(古い ER のテーブルにも足す)", () => {
     const updated = updateTableDescription(ER_MODEL, "t1", "利用者") as typeof ER_MODEL;
 
     expect(updated.elements[0].description).toBe("利用者");

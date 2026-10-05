@@ -19,7 +19,7 @@ import {
 } from "@/features/detailed-design/labels";
 
 // 段階ごとの中身のパネルが受け取る値(どの段階のパネルも同じ形にする)。onApprove は、パネルの中から
-// 段階の承認を始めるときに使う(段階6の「飛ばす」。承認の完了ダイアログは画面が出す。Phase 21)。
+// 段階の承認を始めるときに使う(段階6の「飛ばす」。承認の完了ダイアログは画面が出す)。
 type StagePanelProps = {
   projectId: string;
   stage: DesignStageRead;
@@ -27,8 +27,7 @@ type StagePanelProps = {
   onApprove?: () => void;
 };
 
-// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す(Phase 23 で段階1〜7のすべてを
-// 登録した)。
+// 段階番号 → その段階の中身のパネル。登録の無い段階は「準備中」を出す。
 const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   1: FunctionListPanel,
   2: DataFlowPanel,

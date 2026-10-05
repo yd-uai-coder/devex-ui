@@ -89,7 +89,7 @@ export function toReactFlow(
       id: relation.id,
       source: relation.source_id,
       target: relation.target_id,
-      // 折れ点があればエンジンの経路をそのまま描き、無ければ smoothstep に任せる(D2)
+      // 折れ点があればエンジンの経路をそのまま描き、無ければ smoothstep に任せる
       type: points.length > 0 ? "orthogonal" : "smoothstep",
       label: edgeLabelOf(relation, options.dataItemNames),
       // 依存(component)とデータの流れ(DFD)は向きを矢印で示す。ER は多重度のラベルで表すので付けない
@@ -101,7 +101,7 @@ export function toReactFlow(
 }
 
 // React Flow でドラッグし終えたノードの位置を配置へ戻す。
-// 動かしたノードにつながる辺は、エンジンの経路が合わなくなるため折れ点を捨てる(D2)。
+// 動かしたノードにつながる辺は、エンジンの経路が合わなくなるため折れ点を捨てる。
 export function applyMovedPositions(
   layout: LayoutModel,
   model: SemanticModel,
@@ -136,7 +136,7 @@ const GRID_COLUMNS = 4;
 const GRID_GAP = 40;
 
 // 配置に無い要素(編集で追加した要素、30件超で自動レイアウトできない図の全要素)を、
-// 既存の配置の下へ格子状に並べる。既に配置のある要素は動かさない(M6)。
+// 既存の配置の下へ格子状に並べる。既に配置のある要素は動かさない。
 // lane/row は自動レイアウトの結果ではないため 0 にする(意味を持たない)。
 export function placeMissingNodes(model: SemanticModel, layout: LayoutModel | null): LayoutModel {
   const base = layout ?? EMPTY_LAYOUT;

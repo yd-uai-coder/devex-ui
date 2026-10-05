@@ -9,13 +9,13 @@ import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 const APPROVABLE: DiagramStatus[] = ["draft", "reviewing"];
 const EXPORTABLE: DiagramStatus[] = ["approved", "exported"];
 
-// 承認済みの図を保存すると承認をやり直す(M7)ことを、編集する前に知らせる
+// 承認済みの図を保存すると承認をやり直すことを、編集する前に知らせる
 const REAPPROVAL_NOTICE = "承認済みの図を保存すると、レビュー中に戻ります(承認し直してください)。";
-// ダウンロードしたファイルは最終成果物で、Devex に読み戻さない(D6)
+// ダウンロードしたファイルは最終成果物で、Devex に読み戻さない
 const EXPORT_NOTICE =
   "ダウンロードしたファイルを直接編集しても、Devex には反映されません。修正はこの画面で行い、承認し直してから出力してください。";
 
-// レビュー画面の状態表示と、承認(M7)・出力(M8)の操作。
+// レビュー画面の状態表示と、承認・出力の操作。
 export function DiagramReviewActions() {
   const diagram = useUmlEditorStore((s) => s.diagram);
   const dirty = useUmlEditorStore((s) => s.dirty);

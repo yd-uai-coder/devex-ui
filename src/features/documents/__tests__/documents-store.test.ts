@@ -4,6 +4,7 @@ import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 function resetStore() {
   useDocumentsStore.setState({
+    projectId: null,
     documents: [],
     status: "idle",
     error: null,
@@ -55,6 +56,23 @@ describe("useDocumentsStore", () => {
     stub.queue({ status: 200, body: [] });
     await useDocumentsStore.getState().fetchDocuments("p1", { force: true });
     expect(stub.requests).toHaveLength(2);
+  });
+
+  it("別のプロジェクトを開くと、TTL以内でも前の文書・モードを捨てて取り直す", async () => {
+    stub.queue({ status: 200, body: [SAMPLE_DOC, { ...SAMPLE_DOC, id: "d2", doc_type: "internal_design" }] });
+    await useDocumentsStore.getState().fetchDocuments("p1");
+    useDocumentsStore.setState({ projectMode: "simple" });
+
+    stub.queue({ status: 200, body: [SAMPLE_DOC] });
+    const pending = useDocumentsStore.getState().fetchDocuments("p2");
+    // 取得を待つ間も、前のプロジェクトの文書・モードは見せない
+    expect(useDocumentsStore.getState().documents).toEqual([]);
+    expect(useDocumentsStore.getState().projectMode).toBeNull();
+    await pending;
+
+    expect(stub.requests).toHaveLength(2);
+    expect(useDocumentsStore.getState().projectId).toBe("p2");
+    expect(useDocumentsStore.getState().documents).toEqual([SAMPLE_DOC]);
   });
 
   it("regenerate()はtriggerGenerationを呼びregeneratingを立てる", async () => {

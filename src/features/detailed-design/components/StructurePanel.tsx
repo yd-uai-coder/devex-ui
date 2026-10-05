@@ -23,11 +23,10 @@ import {
 import type { ComponentSemanticModel } from "@/features/uml/api/types";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
-// 段階4(ソフトウェア構造)の作業領域の中身。AIの下書きの生成、構成図(SCR-007 のエディタ)、モジュール
+// 段階4(ソフトウェア構造)の作業領域の中身。AIの下書きの生成、構成図(図のエディタ)、モジュール
 // 一覧の編集、検証の結果、保存を持つ。構成図は段階の model の外(uml_diagrams)に正本があり、図の
 // エディタが自分で保存する。この部品の「保存する」はモジュール一覧だけを保存する。編集中の内容は
-// このコンポーネントの中だけに持ち、保存して初めてサーバーへ送る(段階3の DataModelPanel と同じ形。
-// Phase 19)。
+// このコンポーネントの中だけに持ち、保存して初めてサーバーへ送る(段階3の DataModelPanel と同じ形)。
 export function StructurePanel({
   projectId,
   stage,

@@ -4,14 +4,9 @@ import type {
   DataItemRead,
   DataItemWrite,
   ExportFormat,
-  UmlCandidatesRead,
   UmlDiagramApprove,
   UmlDiagramRead,
   UmlDiagramUpdate,
-  UmlEmbedRead,
-  UmlGenerateRequest,
-  UmlGenerationRunRead,
-  UmlReflectRead,
   ValidationResult,
 } from "@/features/uml/api/types";
 
@@ -39,25 +34,6 @@ export function updateDiagram(
   });
 }
 
-// 202 で受け付けるだけ。完了は listDiagrams の generation_status をポーリングして判定する。
-export function generateDiagrams(
-  projectId: string,
-  payload: UmlGenerateRequest,
-): Promise<UmlGenerationRunRead> {
-  return apiFetch<UmlGenerationRunRead>(umlPath(projectId, "/diagrams"), {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function getCandidates(projectId: string): Promise<UmlCandidatesRead> {
-  return apiFetch<UmlCandidatesRead>(umlPath(projectId, "/candidates"));
-}
-
-export function listGenerationRuns(projectId: string): Promise<UmlGenerationRunRead[]> {
-  return apiFetch<UmlGenerationRunRead[]>(umlPath(projectId, "/generation-runs"));
-}
-
 export function validateDiagram(projectId: string, diagramId: string): Promise<ValidationResult> {
   return apiFetch<ValidationResult>(umlPath(projectId, `/diagrams/${diagramId}/validate`), {
     method: "POST",
@@ -75,7 +51,7 @@ export function listDataItems(projectId: string): Promise<DataItemRead[]> {
   return apiFetch<DataItemRead[]>(umlPath(projectId, "/data-items"));
 }
 
-// データ辞書の作成・更新・削除(Phase 17。段階2の画面のデータ辞書の表が使う)。
+// データ辞書の作成・更新・削除。
 // 409: DATA_ITEM_NAME_CONFLICT(同じ名前がある)。詳細設計モードでは、承認済みの段階2が差し戻される
 export function createDataItem(projectId: string, payload: DataItemWrite): Promise<DataItemRead> {
   return apiFetch<DataItemRead>(umlPath(projectId, "/data-items"), {
@@ -99,7 +75,7 @@ export function deleteDataItem(projectId: string, itemId: string): Promise<void>
   return apiFetch<void>(umlPath(projectId, `/data-items/${itemId}`), { method: "DELETE" });
 }
 
-// 承認(M7)。version は画面で見ていた版。409: VERSION_CONFLICT / UML_DIAGRAM_NOT_APPROVABLE、
+// 承認。version は画面で見ていた版。409: VERSION_CONFLICT / UML_DIAGRAM_NOT_APPROVABLE、
 // 400: UML_LAYOUT_REQUIRED / UML_APPROVAL_VALIDATION_FAILED(一覧は validateDiagram で取り直す)
 export function approveDiagram(
   projectId: string,
@@ -120,7 +96,7 @@ const EXPORT_MIME_TYPES: Record<ExportFormat, string> = {
   svg: "image/svg+xml",
 };
 
-// 承認済みの図を出力する(M8)。出力に成功すると図の状態は exported になる。
+// 承認済みの図を出力する。出力に成功すると図の状態は exported になる。
 // 本文は JSON ではなくファイルそのもの(ファイル名は Content-Disposition)なので、
 // JSON 専用の apiFetch は使わず生の fetch で受け取る(文書のダウンロードと同じ)。
 // 失敗は apiFetch と同じ ApiError(code 付き)にする。409 UML_DIAGRAM_NOT_APPROVED など。
@@ -135,25 +111,4 @@ export async function exportDiagram(
   const filename =
     parseFilename(res.headers.get("Content-Disposition")) ?? `${diagramId}.${format}`;
   return { filename, content, mimeType: EXPORT_MIME_TYPES[format] };
-}
-
-// 文書のプレビューに差し込む図と、図と文書の食い違い(M9a)。状態は変えない。
-export function listEmbeds(projectId: string): Promise<UmlEmbedRead[]> {
-  return apiFetch<UmlEmbedRead[]>(umlPath(projectId, "/embeds"));
-}
-
-// 承認済みの図すべてを内部設計書へ反映し直す。404: 内部設計書が無い
-export function reflectDiagrams(projectId: string): Promise<UmlReflectRead> {
-  return apiFetch<UmlReflectRead>(umlPath(projectId, "/reflect"), { method: "POST" });
-}
-
-export type DownloadedBundle = { filename: string; content: Blob };
-
-// 内部設計書の md と、反映済みの図(SVG・draw.io)の zip(D8)。入れた図は exported になる。
-// zip はバイナリなので text() ではなく blob() で受け取る。
-export async function downloadBundle(projectId: string): Promise<DownloadedBundle> {
-  const res = await fetchAttachment(umlPath(projectId, "/bundle"));
-  const content = await res.blob();
-  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "internal_design.zip";
-  return { filename, content };
 }

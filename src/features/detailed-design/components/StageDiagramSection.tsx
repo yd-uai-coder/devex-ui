@@ -9,9 +9,8 @@ import { UmlDiagramEditor } from "@/features/uml/components/UmlDiagramEditor";
 import { DIAGRAM_STATUS_LABELS } from "@/features/uml/labels";
 import { useUmlEditorStore } from "@/features/uml/uml-editor-store";
 
-// 段階の図(全体1枚)の埋め込み。段階3の ER と段階4の構成図が使う(Phase 19 で ErEditorSection から
-// 共通化した。#17: 消費者は段階4の構成図)。図は uml_diagrams の行(notation と subject で選ぶ)で、
-// SCR-007 のエディタ(UmlDiagramEditor)でそのまま編集・自動レイアウト・承認する。
+// 段階の図(全体1枚)の埋め込み。段階3の ER と段階4の構成図が使う。図は uml_diagrams の行(notation と subject で選ぶ)で、
+// 図のエディタ(UmlDiagramEditor)でそのまま編集・自動レイアウト・承認する。
 // 図を保存・承認すると段階の検証の結果(図が未承認か)や段階の状態(承認済みなら差し戻し)が変わるので、
 // 図の状態・版が変わるたびに段階の一覧を取り直す(段階2の DfdEditorTabs と同じ)。
 export function StageDiagramSection({

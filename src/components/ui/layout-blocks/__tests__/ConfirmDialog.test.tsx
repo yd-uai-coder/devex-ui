@@ -50,7 +50,7 @@ describe("ConfirmDialog", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("cancelLabel でキャンセルの文言を変え、null なら出さない(Phase 18)", () => {
+  it("cancelLabel でキャンセルの文言を変え、null なら出さない", () => {
     const { rerender } = render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <ConfirmDialog open title="承認しました" description="済み" confirmLabel="次へ" cancelLabel="閉じる" onConfirm={vi.fn()} onCancel={vi.fn()} />

@@ -35,8 +35,8 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
-// ダッシュボードからモードを選んでプロジェクトを作り、チャット画面まで進む(Phase 15 の
-// モード選択ダイアログ。各カードのボタンは「{モード}で作成する」という aria-label を持つ)。
+// ダッシュボードからモードを選んでプロジェクトを作り、チャット画面まで進む(モード選択ダイアログの
+// 各カードのボタンは「{モード}で作成する」という aria-label を持つ)。
 export async function createProject(
   page: Page,
   mode: ProjectMode,
@@ -64,7 +64,7 @@ export async function completeHearing(page: Page, messages: string[]) {
     await expect(page.getByText("E2E Fake", { exact: false }).first()).toBeVisible();
   }
 
-  // 生成の前に確認ダイアログが出る(Phase 15 の気づき#4)
+  // 生成の前に確認ダイアログが出る
   await page.getByRole("button", { name: "この内容で設計書を生成する" }).click();
   await page.getByRole("button", { name: "生成する", exact: true }).click();
 

@@ -17,6 +17,7 @@ async function* fakeStream(deltas: string[]) {
 
 function resetStore() {
   useHearingStore.setState({
+    projectId: null,
     messages: [],
     historyStatus: "idle",
     sending: false,
@@ -55,6 +56,24 @@ describe("useHearingStore", () => {
 
     expect(useHearingStore.getState().messages).toHaveLength(1);
     expect(useHearingStore.getState().historyStatus).toBe("success");
+  });
+
+  it("loadHistory()は別のプロジェクトを開くと、前の会話と完了判定を捨ててから読む", async () => {
+    useHearingStore.setState({
+      projectId: "p1",
+      messages: [{ id: "1", sender: "user", message: "hi", created_at: "2026-01-01T00:00:00Z" }],
+      completion: { is_sufficient: true, summary: "前のプロジェクト", missing_points: [] },
+    });
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p2", status: "completed" } });
+
+    const pending = useHearingStore.getState().loadHistory("p2");
+    expect(useHearingStore.getState().messages).toEqual([]);
+    expect(useHearingStore.getState().completion).toBeNull();
+    await pending;
+
+    expect(useHearingStore.getState().projectId).toBe("p2");
+    expect(useHearingStore.getState().completion).toBeNull();
   });
 
   it("loadHistory()はstatus==='interviewing'のとき完了判定を取り直し、"

@@ -17,7 +17,7 @@ const FIXED_CELL: CSSProperties = { boxShadow: "inset 0 0 0 2px var(--blue8, #5b
 
 // 段階3の CRUD 図(処理 × テーブル)。行は段階1の機能一覧、列は ER のテーブル。
 // セルには C・R・U・D を書く(並びは自動で C→R→U→D にそろえる)。DFD に読みの線があるセルの R は
-// 外せない。人が書き換えたセルは AI の下書きの印が外れ、段階3の承認で残りの印も外れる(Phase 18)。
+// 外せない。人が書き換えたセルは AI の下書きの印が外れ、段階3の承認で残りの印も外れる。
 export function CrudMatrix({
   functions,
   tables,

@@ -8,8 +8,7 @@ import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 
 // POST /generateは202のみ返す(プッシュ通知が無い)ため、生成完了検知は
-// useGenerationPolling(元はここに直接書かれていたが、ドキュメントプレビュー画面の
-// 再生成でも同じロジックが必要になったため共通フックへ切り出した)に委ねる。
+// useGenerationPolling(ドキュメントプレビュー画面の再生成と共有)に委ねる。
 export function ChatPageContent({ projectId }: { projectId: string }) {
   const router = useRouter();
   const generationTriggered = useHearingStore((s) => s.generationTriggered);

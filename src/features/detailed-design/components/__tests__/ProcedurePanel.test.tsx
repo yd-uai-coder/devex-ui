@@ -197,7 +197,7 @@ describe("ProcedurePanel", () => {
     expect(screen.getByText("エラー: 呼び出し先が無い")).toBeInTheDocument();
   });
 
-  // 段階6との行き来(Phase 21)
+  // 段階6との行き来
   it("段階6に詳細がある手順のバッジから段階6へ移り、保存していない編集があれば確かめる", async () => {
     const user = userEvent.setup();
     const stage = setup({ state: "reviewing", version: 2, model: makeProcedures() });
@@ -241,7 +241,7 @@ describe("ProcedurePanel", () => {
     expect(useDetailedDesignStore.getState().focus).toBeNull();
   });
 
-  it("保存・生成でパネルが作り直されても、開いていた処理のタブのまま(Phase 21 の画面確認後)", async () => {
+  it("保存・生成でパネルが作り直されても、開いていた処理のタブのまま", async () => {
     const user = userEvent.setup();
     const procedures = {
       procedures: [

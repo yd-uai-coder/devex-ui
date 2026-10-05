@@ -65,7 +65,7 @@ function ElementForm({ model, element }: { model: SemanticModel; element: UmlEle
         value={element.name}
         onChangeText={(name) => updateElement(element.id, { name })}
       />
-      {/* ER のテーブルの説明は、カラム表の上の「テーブルの説明」で直す(null を入れないため。Phase 18) */}
+      {/* ER のテーブルの説明は、カラム表の上の「テーブルの説明」で直す(null を入れないため) */}
       {"description" in element && model.notation !== "er" ? (
         <Input
           aria-label="説明"
@@ -93,7 +93,7 @@ function ElementForm({ model, element }: { model: SemanticModel; element: UmlEle
 }
 
 // ER のカラム表。PK/FK/NULL 許可は小さなチェックボックスで切り替える。
-// 制約・説明とテーブルの説明は、詳細設計モードの段階3でテーブル定義の表に出す(Phase 18)。
+// 制約・説明とテーブルの説明は、詳細設計モードの段階3でテーブル定義の表に出す。
 function ColumnTable({ table }: { table: ErElement }) {
   const addColumn = useUmlEditorStore((s) => s.addColumn);
   const updateColumn = useUmlEditorStore((s) => s.updateColumn);
@@ -195,7 +195,7 @@ function RelationForm({
       <H3>線の属性</H3>
       <Text>{`${nameOf(relation.source_id)} → ${nameOf(relation.target_id)}`}</Text>
       {"data_item_id" in relation ? (
-        // DFD のフローはデータ辞書の項目から選ぶ(自由記述のラベルにしない。M2b)
+        // DFD のフローはデータ辞書の項目から選ぶ(自由記述のラベルにしない)
         <select
           aria-label="データ項目"
           style={SELECT_STYLE}

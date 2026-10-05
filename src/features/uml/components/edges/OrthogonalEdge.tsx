@@ -3,9 +3,9 @@
 import { BaseEdge, type EdgeProps } from "@xyflow/react";
 import type { UmlFlowEdge } from "@/features/uml/adapters/reactFlowAdapter";
 
-// レイアウトエンジン(Phase 9)が計算した直交折れ線(points)をそのまま描く辺。
+// レイアウトエンジンが計算した直交折れ線(points)をそのまま描く辺。
 // points は絶対座標で、ノードの位置が配置と一致している間だけ正しい。
-// ノードを手で動かすと Adapter が points を空にし、辺の type が smoothstep に替わる(D2)。
+// ノードを手で動かすと Adapter が points を空にし、辺の type が smoothstep に替わる。
 export function OrthogonalEdge({ id, data, label, markerEnd, style }: EdgeProps<UmlFlowEdge>) {
   const points = data?.points ?? [];
   const path = points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x} ${y}`).join(" ");

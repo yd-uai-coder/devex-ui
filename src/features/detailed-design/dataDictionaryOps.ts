@@ -1,6 +1,6 @@
 import type { DataItemField } from "@/features/uml/api/types";
 
-// データ辞書の表の編集操作(純粋関数。Phase 17)。フィールドは表の1つの入力欄で
+// データ辞書の表の編集操作(純粋関数)。フィールドは表の1つの入力欄で
 // 「name:型, name2」の形で編集する(型は任意。必須の指定は表では扱わず、元の値を保つ)。
 
 export function fieldsToText(fields: DataItemField[]): string {

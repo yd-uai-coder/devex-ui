@@ -117,7 +117,7 @@ describe("ProcedureStepTable", () => {
     expect(container.querySelector("table")).toBeNull();
   });
 
-  // 段階6の詳細バッジと、段階6から移ってきた行の強調(Phase 21)
+  // 段階6の詳細バッジと、段階6から移ってきた行の強調
   it("段階6に詳細がある手順には詳細バッジを出し、押すと関数の鍵を返す。強調する行に印を付ける", async () => {
     const user = userEvent.setup();
     const onDetailPress = vi.fn();

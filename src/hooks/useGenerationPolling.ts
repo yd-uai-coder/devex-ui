@@ -9,8 +9,7 @@ export const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
 // POST /generateは202のみ返しプッシュ通知が無いため、生成完了はGET /projects/{id}のstatusを
 // ポーリングして検知する。チャット画面(ヒアリング完了承認後)とドキュメントプレビュー画面
-// (再生成後)の両方で使う共通ロジック(元はChatPageContent.tsxに直接書かれていたが、
-// ドキュメントプレビュー画面という2つ目の実消費者ができたためこのフックに切り出した)。
+// (再生成後)の両方で使う共通ロジック。
 export function useGenerationPolling(
   projectId: string,
   active: boolean,

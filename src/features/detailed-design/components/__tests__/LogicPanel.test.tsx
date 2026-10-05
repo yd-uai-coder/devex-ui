@@ -200,7 +200,7 @@ describe("LogicPanel", () => {
     expect(screen.getByText(/を呼ぶ手順が、段階5にありません/)).toBeInTheDocument();
   });
 
-  // 段階5との行き来(Phase 21)
+  // 段階5との行き来
   it("呼ばれる手順のバッジから段階5のその手順へ移る", async () => {
     const user = userEvent.setup();
     renderPanel(setup({ state: "reviewing", version: 1, model: { logics: [makeLogic({ ...CREATE })] } }));
@@ -241,7 +241,7 @@ describe("LogicPanel", () => {
     expect(useDetailedDesignStore.getState().focus).toBeNull();
   });
 
-  // 処理ごとのタブ(Phase 21 の画面確認後)
+  // 処理ごとのタブ
   describe("処理ごとのタブ", () => {
     // F-01 と F-02 が共通の関数(ReservationService.create)を呼び、F-02 は自分だけの関数を3つ呼ぶ
     function twoProcedures(): ProcedureModel {

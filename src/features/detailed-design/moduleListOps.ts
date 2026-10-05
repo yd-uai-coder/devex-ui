@@ -3,7 +3,7 @@ import type { ComponentSemanticModel } from "@/features/uml/api/types";
 
 // 段階4(ソフトウェア構造)のモジュール一覧の編集操作(純粋関数)。どれも新しいモデルを返し、引数は
 // 変えない。行はパスで引かず並びの位置で扱う(パスは人が書き換える欄で、重複も検証のエラーとして
-// 一旦は許すため。Phase 19)。
+// 一旦は許すため)。
 
 // 保存されている model(形の保証の無い JSON)を、編集できる形にそろえる。
 export function toModuleList(model: Record<string, unknown> | null): ModuleListModel {

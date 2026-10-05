@@ -23,7 +23,7 @@ describe("StageStepper", () => {
 
     expect(screen.getAllByRole("button")).toHaveLength(7);
     expect(
-      // 作り直した段階(Phase 16)
+      // 作り直した段階
       screen.getByRole("button", { name: "段階1 機能一覧(再生成済(未承認))" }),
     ).toBeInTheDocument();
     expect(

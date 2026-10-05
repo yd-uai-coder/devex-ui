@@ -59,12 +59,12 @@ const PENDING: CSSProperties = { ...LABEL, color: "var(--orange11)", background:
 // AIの下書きの生成(処理のタブの未生成をまとめて・関数のタブごとに1関数)、逆引き(L-ID/関数/モジュール/
 // 呼ばれる手順)、関数ごとの詳細(タブ)、保存、段階6を飛ばす操作、検証の結果を持つ。入力の段階5の手順は
 // ストアの段階の一覧から読む。編集中の内容はこのコンポーネントの中だけに持つ(段階5の ProcedurePanel と
-// 同じ形)。「段階6を飛ばす」は、0件を保存して承認する(Phase 21 の決定)。
+// 同じ形)。「段階6を飛ばす」は、0件を保存して承認する。
 // 「呼ばれる手順」のバッジを押すと段階5のその手順へ移る(保存していない編集があれば確かめる)。段階5の
 // 「詳細」バッジから移ってきたときは、その関数を最初に呼ぶ処理のタブとその関数のタブを開いて強調する。
 // 候補が多くても扱えるよう、段階5の処理ごとの外側のタブで候補と詳細を切り替える(詳細は 処理 → 関数 の
 // 二重のタブ)。共通の関数は呼ぶ処理すべてのタブに出し、どこで編集しても同じ1件を編集する。L-ID・逆引きは
-// 全体の並び順のまま(Phase 21 の画面確認後)。
+// 全体の並び順のまま。
 export function LogicPanel({
   projectId,
   stage,
@@ -166,7 +166,7 @@ export function LogicPanel({
   const tabPending = pendingInTab(saved, tabCandidates);
   const tabTargets = tabPending.slice(0, MAX_LOGIC_TARGETS);
   // タブの生成ボタンの出し分け: 編集中にチェック済みの未生成があれば「生成前に保存する」、保存済みで
-  // 未生成があれば生成、どちらも無ければ (0件) で押せない(Phase 21 の2回目の画面確認後)
+  // 未生成があれば生成、どちらも無ければ (0件) で押せない
   const draftPendingInTab = pendingInTab(draft, tabCandidates).length;
   const tabAction: "save" | "generate" | "none" =
     dirty && draftPendingInTab > 0 ? "save" : !dirty && tabPending.length > 0 ? "generate" : "none";

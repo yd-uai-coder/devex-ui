@@ -40,7 +40,7 @@ export function describeMissingInput(key: string): string {
 
 // 図の承認待ち(段階2の DFD・段階3の ER・段階4の構成図)。図のエディタで承認すれば消える指摘なので、検証の結果の
 // 一覧には常に出さず、段階の承認を押したときに理由として出す(承認ボタンは押せるようにする)。
-// バックエンドは検証のエラーのまま残し、承認を 409 で断る(画面を通らない承認の守り。Phase 18)。
+// バックエンドは検証のエラーのまま残し、承認を 409 で断る(画面を通らない承認の守り)。
 export const APPROVAL_TIME_CODES: ReadonlySet<string> = new Set([
   "DFD_NOT_APPROVED",
   "ER_NOT_APPROVED",
@@ -66,7 +66,7 @@ export function hasErrors(stage: DesignStageRead): boolean {
 }
 
 // 承認ボタンを押せるか。古い段階は、内容を変えずに承認し直せる(入力の版を記録し直す)。
-// 生成中・内容が空・検証のエラーがある段階は承認できない(バックエンドも409で断る。Phase 16)。
+// 生成中・内容が空・検証のエラーがある段階は承認できない(バックエンドも409で断る)。
 export function canApprove(stage: DesignStageRead): boolean {
   return (
     stage.is_open &&

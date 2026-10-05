@@ -7,7 +7,7 @@ import type {
 } from "@/features/detailed-design/api/types";
 
 // 段階5(主要処理の手順)の編集操作と、表示に導く表(索引・関与表)。すべて純粋関数で、どれも新しい
-// モデルを返し引数は変えない(Phase 20)。手順番号は保存せず、並び順と is_branch から導く
+// モデルを返し引数は変えない。手順番号は保存せず、並び順と is_branch から導く
 // (バックエンドの number_steps と同じ規則)。
 
 const STEP_FIELDS = [
@@ -196,7 +196,7 @@ export type IndexRow = {
   stepCount: number;
 };
 
-// 05 章の冒頭の索引(処理ID/名称/トリガー/選定理由/手順数)。紐づく 06 の項目は段階6(Phase 21)で足す。
+// 05 章の冒頭の索引(処理ID/名称/トリガー/選定理由/手順数)。紐づく 06 の項目は段階6で足す。
 export function buildIndex(model: ProcedureModel, functionList: FunctionListModel): IndexRow[] {
   const functions = new Map(functionList.functions.map((fn) => [fn.id, fn]));
   return model.procedures.map((procedure) => ({

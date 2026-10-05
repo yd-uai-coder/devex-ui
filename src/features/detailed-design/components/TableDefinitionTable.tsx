@@ -7,7 +7,7 @@ import type { ErSemanticModel } from "@/features/uml/api/types";
 const mark = (on: boolean) => (on ? "○" : "");
 
 // 段階3のテーブル定義の表。ER(テーブル定義の正本)から組み立てる表示だけで、ここでは編集しない。
-// 制約・説明は ER のエディタの属性パネルで直す(二重に持たないため。Phase 18)。
+// 制約・説明は ER のエディタの属性パネルで直す(二重に持たないため)。
 // 渡す ER はエディタで編集中の内容なので、保存していない手直しもすぐ表に出る。
 export function TableDefinitionTable({ model }: { model: ErSemanticModel | null }) {
   if (model === null) return null;

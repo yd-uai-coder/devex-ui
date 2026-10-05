@@ -29,7 +29,7 @@ export function nextId(model: SemanticModel, prefix: string): string {
 
 // ER に足すテーブルの名前。使われていない new_table・new_table_2・new_table_3… にする。
 // 同じ名前のテーブルが2つあると、詳細設計モードの段階3の CRUD 図でどちらのテーブルのセルかが
-// 決まらないため(テーブル名がセルを引く鍵。Phase 18 の画面確認で見つかった)。
+// 決まらないため(テーブル名がセルを引く鍵)。
 export function nextTableName(model: SemanticModel): string {
   const used = new Set(model.elements.map((el) => el.name.trim().toLowerCase()));
   if (!used.has("new_table")) return "new_table";
@@ -227,7 +227,7 @@ export function deleteColumn(model: SemanticModel, tableId: string, index: numbe
 }
 
 // ER のテーブルの説明(複合一意制約・役割など)を書き換える。古い ER のテーブルには description が
-// 無いので、updateElement(記法に無い属性は足さない)ではなくこちらで足す(Phase 18)。
+// 無いので、updateElement(記法に無い属性は足さない)ではなくこちらで足す。
 export function updateTableDescription(
   model: SemanticModel,
   tableId: string,

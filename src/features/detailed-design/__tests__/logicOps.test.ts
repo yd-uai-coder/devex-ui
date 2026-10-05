@@ -157,7 +157,7 @@ describe("logicOps", () => {
     expect(textToSub("")).toEqual([]);
   });
 
-  // 処理ごとのタブ(Phase 21 の画面確認後)
+  // 処理ごとのタブ
   it("candidatesByProcedureは処理ごとに候補を並べ、共通の関数は両方のタブに印を付けて出す", () => {
     const [f01, f02] = candidatesByProcedure(procedures());
     expect(f01.functionId).toBe("F-01");

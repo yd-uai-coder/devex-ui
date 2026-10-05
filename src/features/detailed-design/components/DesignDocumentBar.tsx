@@ -7,14 +7,14 @@ import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { saveFile } from "@/lib/api/download";
 
 // zip に入る文書の元になる段階(詳細設計書の01〜07章と、実装計画。段階7が07章と実装計画の両方を
-// 作る。Phase 23)
+// 作る)
 const DOCUMENT_STAGES = [1, 2, 3, 4, 5, 6, 7];
 
-// 出力したファイルは最終成果物。直接編集しても Devex には戻らない(ステージ3の zip と同じ)
+// 出力したファイルは最終成果物。直接編集しても Devex には戻らない
 export const DOCUMENT_NOTICE =
   "ダウンロードしたファイルを直接編集しても、Devex には反映されません。修正は Devex の画面で行ってください。";
 
-// SCR-008 の上部に置く、詳細設計書と実装計画(HTML+md+図の zip)のダウンロード(Phase 22・23)。
+// SCR-008 の上部に置く、詳細設計書と実装計画(HTML+md+図の zip)のダウンロード。
 // いつでもダウンロードでき、承認していない段階の章は「未承認」になるので、その件数を先に知らせる。
 export function DesignDocumentBar({
   projectId,

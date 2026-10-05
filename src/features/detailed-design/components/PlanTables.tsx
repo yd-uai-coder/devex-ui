@@ -37,7 +37,7 @@ import {
 } from "@/features/detailed-design/planOps";
 
 // 段階7の表(横断事項・マイルストーンとタスク・リスク)。どれも編集した PlanModel 全体を onChange で
-// 呼び出し元(PlanPanel)へ返し、保存は呼び出し元が行う(段階4の ModuleListTable と同じ形。Phase 23)。
+// 呼び出し元(PlanPanel)へ返し、保存は呼び出し元が行う(段階4の ModuleListTable と同じ形)。
 type TableProps = {
   model: PlanModel;
   disabled: boolean;

@@ -4,9 +4,8 @@ import { Text, YStack } from "tamagui";
 import type { StageIssue } from "@/features/detailed-design/api/types";
 import { visibleIssues } from "@/features/detailed-design/labels";
 
-// 保存した内容の検証の結果(エラー・警告)の一覧。段階1・2のパネルで共有する(Phase 17 で
-// FunctionListPanel から切り出した)。指摘が無ければ何も出さない。図の未承認は承認を押したときに
-// 出すので、ここには出さない(Phase 18)。
+// 保存した内容の検証の結果(エラー・警告)の一覧。段階1・2のパネルで共有する。指摘が無ければ何も出さない。図の未承認は承認を押したときに
+// 出すので、ここには出さない。
 export function StageIssueList({ issues: all }: { issues: StageIssue[] }) {
   const issues = visibleIssues(all);
   if (issues.length === 0) return null;
