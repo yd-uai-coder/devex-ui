@@ -5,7 +5,8 @@ import {
   listDocuments,
   listDocumentVersions,
   restoreDocumentVersion,
-} from "../documentsApi";import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+} from "../documentsApi";
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import { useAuthStore } from "@/components/auth/auth-store";
 
 describe("listDocuments", () => {
