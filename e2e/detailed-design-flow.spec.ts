@@ -80,6 +80,7 @@ test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装
 
   await registerAndLogin(page, "e2e-detailed", "E2E Designer");
   await createProject(page, "detailed", {
+    name: "備品予約",
     overview: "備品の予約システムを作りたい",
     goal: "備品の貸し出しの重複をなくしたい",
   });

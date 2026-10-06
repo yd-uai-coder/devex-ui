@@ -109,7 +109,7 @@ describe("ChatPanel", () => {
 
     renderPanel();
 
-    expect(screen.getByText("要約です")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
   it("生成トリガーが失敗したらエラーを表示し、承認ボタンを再度押せる状態に戻す", async () => {
     const approveAndGenerate = vi.fn().mockRejectedValue(new ApiError(500, "生成の開始に失敗しました"));

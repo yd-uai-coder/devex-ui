@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { Text } from "tamagui";
 import FormGeneral from "@/components/ui/form/FormGeneral";
+import InputSimpleText from "@/components/ui/form/InputSimpleText";
 import TextAreaWithLabel from "@/components/ui/form/TextAreaWithLabel";
 import CheckboxGroupWithLabel from "@/components/ui/form/CheckboxGroupWithLabel";
 import type { CheckboxGroupOption } from "@/components/ui/form/CheckboxGroup";
@@ -77,6 +78,7 @@ const DEPLOY_TARGET_OPTIONS: CheckboxGroupOption[] = [
 ];
 
 const DEFAULT_VALUES: IntakeValues = {
+  projectName: "",
   systemOverview: "",
   goalsRaw: "",
   notesRaw: "",
@@ -131,6 +133,22 @@ export function IntakeForm({ mode = "simple" }: { mode?: ProjectMode }) {
       onBeforeSubmit={handleBeforeSubmit}
       onSubmitted={handleSubmitted}
     >
+      <Controller
+        name="projectName"
+        control={control}
+        render={({ field, fieldState }) => (
+          <InputSimpleText
+            label="プロジェクト名"
+            width="100%"
+            name="projectName"
+            placeholder="一覧や設計書の表題に使う短い名前(40文字以内)"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            errorMessage={fieldState.error?.message}
+          />
+        )}
+      />
       <Controller
         name="systemOverview"
         control={control}

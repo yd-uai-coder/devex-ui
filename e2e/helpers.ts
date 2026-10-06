@@ -40,11 +40,12 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
 export async function createProject(
   page: Page,
   mode: ProjectMode,
-  intake: { overview: string; goal: string },
+  intake: { name: string; overview: string; goal: string },
 ) {
   await page.getByRole("button", { name: "新規プロジェクトを作成" }).click();
   await page.getByRole("button", { name: `${MODE_TITLES[mode]}で作成する` }).click();
   await expect(page).toHaveURL(new RegExp(`/projects/new\\?mode=${mode}`));
+  await page.getByLabel("プロジェクト名").fill(intake.name);
   await page.getByLabel("システム概要").fill(intake.overview);
   await page.getByLabel("実現したいこと").fill(intake.goal);
   await page.getByRole("button", { name: "ヒアリングを始める" }).click();

@@ -3,6 +3,7 @@ import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects
 import type { EnvironmentValues } from "@/features/hearing/schemas";
 
 export type CreateProjectInput = {
+  projectName: string;
   systemOverview: string;
   goalsRaw: string;
   notesRaw: string;
@@ -18,6 +19,7 @@ export type CreateProjectInput = {
 // 送信する(devex-api app/api/routes/projects.py の_parse_environment参照)。
 export function createProject(input: CreateProjectInput): Promise<ProjectRead> {
   const formData = new FormData();
+  formData.set("name", input.projectName);
   formData.set("system_overview", input.systemOverview);
   formData.set("goals_raw", input.goalsRaw);
   if (input.notesRaw) {

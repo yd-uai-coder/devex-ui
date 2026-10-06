@@ -27,6 +27,7 @@ describe("createProject", () => {
     const file = new File(["hello"], "notes.txt", { type: "text/plain" });
 
     const project = await createProject({
+      projectName: "備品予約",
       systemOverview: "備品予約を一元管理したい",
       goalsRaw: "重複予約を防ぎたい",
       notesRaw: "",
@@ -41,6 +42,7 @@ describe("createProject", () => {
     expect(request.init?.method).toBe("POST");
 
     const body = request.init?.body as FormData;
+    expect(body.get("name")).toBe("備品予約");
     expect(body.get("system_overview")).toBe("備品予約を一元管理したい");
     expect(body.get("goals_raw")).toBe("重複予約を防ぎたい");
     // 空文字のnotes_rawはフィールド自体を送らない
@@ -62,6 +64,7 @@ describe("createProject", () => {
     stub.queue({ status: 201, body: { ...SAMPLE_PROJECT_RESPONSE, mode: "detailed" } });
 
     const project = await createProject({
+      projectName: "備品予約",
       systemOverview: "x",
       goalsRaw: "y",
       notesRaw: "",
@@ -80,6 +83,7 @@ describe("createProject", () => {
     stub.queue({ status: 201, body: SAMPLE_PROJECT_RESPONSE });
 
     await createProject({
+      projectName: "備品予約",
       systemOverview: "x",
       goalsRaw: "y",
       notesRaw: "",
@@ -96,6 +100,7 @@ describe("createProject", () => {
     stub.queue({ status: 201, body: SAMPLE_PROJECT_RESPONSE });
 
     await createProject({
+      projectName: "備品予約",
       systemOverview: "x",
       goalsRaw: "y",
       notesRaw: "",

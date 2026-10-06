@@ -10,8 +10,9 @@ type HearingCompletionBannerProps = {
   approving: boolean;
 };
 
-// is_sufficient=trueでも即座に生成へは進まない。構造化サマリを提示しユーザーの明示的な
-// 承認を得てから/generateを呼ぶ(docs/external_design.md 2.3節)。
+// is_sufficient=trueでも即座に生成へは進まない。ユーザーの明示的な承認を得てから/generateを
+// 呼ぶ(docs/external_design.md 2.3節)。まとめ(summary)は、同じ判定から作ったAIの返信として
+// チャットに出るので、ここでは繰り返さない。
 export function HearingCompletionBanner({ completion, onApprove, approving }: HearingCompletionBannerProps) {
   const projectStatus = useHearingStore((s) => s.projectStatus);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -28,7 +29,7 @@ export function HearingCompletionBanner({ completion, onApprove, approving }: He
       backgroundColor="$color2"
     >
       <Text fontWeight="600">ヒアリング内容の確認</Text>
-      <Text>{completion.summary}</Text>
+      <Text>チャットのまとめの内容で、設計書を生成できます。</Text>
       {/* 生成は数分かかり、やり直すとAIの利用枠も使うため、押す前に確認する */}
       <Button
         theme="green"

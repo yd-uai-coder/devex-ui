@@ -38,10 +38,11 @@ describe("HearingCompletionBanner", () => {
     expect(screen.queryByText("ヒアリング内容の確認")).not.toBeInTheDocument();
   });
 
-  it("is_sufficient=trueなら要約とボタンを表示する", () => {
+  it("is_sufficient=trueならボタンを表示し、要約は繰り返さない(チャットのまとめに出るため)", () => {
     renderBanner();
 
-    expect(screen.getByText("要約テキスト")).toBeInTheDocument();
+    expect(screen.queryByText("要約テキスト")).not.toBeInTheDocument();
+    expect(screen.getByText("チャットのまとめの内容で、設計書を生成できます。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "この内容で設計書を生成する" })).toBeInTheDocument();
   });
 

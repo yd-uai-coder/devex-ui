@@ -11,6 +11,7 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
 }) => {
   await registerAndLogin(page, "e2e-flow");
   await createProject(page, "simple", {
+    name: "在庫管理",
     overview: "在庫管理システムを作りたい",
     goal: "在庫数をリアルタイムに可視化したい",
   });
@@ -38,6 +39,7 @@ test("ドキュメントプレビュー画面から再生成すると、再度�
 }) => {
   await registerAndLogin(page, "e2e-regenerate", "E2E Regenerator");
   await createProject(page, "simple", {
+    name: "勤怠管理",
     overview: "勤怠管理システムを作りたい",
     goal: "打刻を簡略化したい",
   });
