@@ -7,7 +7,7 @@ import { StageStepper } from "../StageStepper";
 import { makeStages } from "../../test-utils/stageFixtures";
 
 describe("StageStepper", () => {
-  it("段階1〜7を状態つきで並べ、選んでいる段階を示す", () => {
+  it("段階1〜8を状態つきで並べ、選んでいる段階を示す", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <StageStepper
@@ -21,7 +21,7 @@ describe("StageStepper", () => {
       </TamaguiProvider>,
     );
 
-    expect(screen.getAllByRole("button")).toHaveLength(7);
+    expect(screen.getAllByRole("button")).toHaveLength(8);
     expect(
       // 作り直した段階
       screen.getByRole("button", { name: "段階1 機能一覧(再生成済(未承認))" }),

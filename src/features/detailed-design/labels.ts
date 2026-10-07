@@ -1,7 +1,9 @@
 import type {
   DesignStageRead,
+  FindingLevel,
   StageIssue,
   StageState,
+  UnitKind,
 } from "@/features/detailed-design/api/types";
 
 // 段階と詳細設計書の章は1対1(docs/external_design.md 2.7節の段階表)。
@@ -13,6 +15,7 @@ export const STAGE_TITLES: Record<number, string> = {
   5: "主要処理の手順",
   6: "処理ロジックの詳細(任意)",
   7: "横断事項と実装計画",
+  8: "実装手順書",
 };
 
 export const STATE_LABELS: Record<StageState, string> = {
@@ -23,6 +26,17 @@ export const STATE_LABELS: Record<StageState, string> = {
   approved: "承認済み",
   outdated: "古い",
 };
+
+// 段階7の単位の種別(devex-api の詳細設計書・実装計画の表示と同じ)
+export const UNIT_KIND_LABELS: Record<UnitKind, string> = { feature: "機能", base: "基盤" };
+
+// 段階8の実装可能性チェックの重要度と、指摘の出どころ(検証 = 決定的なチェック、AI = 手順書を作った AI)
+export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
+  critical: "最重要",
+  major: "中程度",
+  minor: "軽微",
+};
+export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
 
 const DOC_LABELS: Record<string, string> = {
   requirements: "要件定義書",

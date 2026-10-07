@@ -55,9 +55,9 @@ type DetailedDesignStore = {
   setTab: (key: string, value: string | null) => void;
 };
 
-// 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階7)。
+// 最初に開く段階: まだ承認されていない最初の段階(すべて承認済みなら段階8)。
 export function firstPendingStage(stages: DesignStageRead[]): number {
-  return stages.find((s) => s.state !== "approved")?.stage ?? 7;
+  return stages.find((s) => s.state !== "approved")?.stage ?? 8;
 }
 
 const CODE_MESSAGES: Record<string, string> = {

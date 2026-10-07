@@ -7,6 +7,7 @@ import type {
   LogicRow,
   ModuleListModel,
   PlanModel,
+  ProcedureDocModel,
   ProcedureModel,
   ProcedureStep,
 } from "@/features/detailed-design/api/types";
@@ -113,7 +114,8 @@ export function makeLogics(): LogicModel {
 }
 
 // makeFunctionList の F-01 と makeModuleList のパスを参照する、段階7の横断事項と実装計画(既定の
-// 横断事項4項目・マイルストーン1つ・リスク1件。段階7の検証を通る。テスト専用)。
+// 横断事項4項目・マイルストーン1つ・リスク1件。段階7の検証を通る。テスト専用)。マイルストーンには、
+// 基盤の単位 M-01-T01 と、それに依存する機能の単位 M-01-T02(F-01)を置く。
 export function makePlan(): PlanModel {
   const route = "app/api/routes/reservations.py";
   return {
@@ -128,9 +130,23 @@ export function makePlan(): PlanModel {
         name: "予約の登録",
         goal: "予約を登録できる",
         priority: "Must",
-        function_ids: ["F-01"],
         tasks: [
-          { area: "バックエンド", title: "予約の API を作る", modules: [route], function_ids: ["F-01"] },
+          {
+            kind: "base",
+            title: "開発環境を用意する",
+            function_ids: [],
+            depends_on: [],
+            modules: [],
+            config_files: ["Dockerfile"],
+          },
+          {
+            kind: "feature",
+            title: "予約を登録する",
+            function_ids: ["F-01"],
+            depends_on: ["M-01-T01"],
+            modules: [route],
+            config_files: [],
+          },
         ],
       },
     ],
@@ -139,11 +155,39 @@ export function makePlan(): PlanModel {
   };
 }
 
-// 段階1〜7の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
+// makePlan の機能の単位 M-01-T02 の手順書(段階8。テスト専用)。AI の指摘を1件持つ。
+export function makeProcedureDoc(): ProcedureDocModel {
+  return {
+    units: [
+      {
+        unit_id: "M-01-T02",
+        title: "予約を登録する",
+        purpose: "予約を登録できるようにする",
+        files: [
+          {
+            path: "app/api/routes/reservations.py",
+            kind: "module",
+            responsibility: "予約の API",
+            basis: "段階4",
+          },
+        ],
+        notes: [],
+        tests: [{ viewpoint: "予約を登録できる", sut: "create_reservation", driver: "API", stub: "不要" }],
+        gwt: [],
+        verify: ["テストが通る"],
+        findings: [
+          { level: "critical", target: "07章 例外と HTTP", message: "重複時の応答が無い", fix_stage: 7 },
+        ],
+      },
+    ],
+  };
+}
+
+// 段階1〜8の一覧の雛形。overrides で段階ごとに上書きする(テスト専用)。
 export function makeStages(
   overrides: Partial<Record<number, Partial<DesignStageRead>>> = {},
 ) {
-  return [1, 2, 3, 4, 5, 6, 7].map((stage): DesignStageRead => ({
+  return [1, 2, 3, 4, 5, 6, 7, 8].map((stage): DesignStageRead => ({
     stage,
     state: "not_started",
     is_open: stage === 1,

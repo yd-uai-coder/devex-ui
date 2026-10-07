@@ -15,4 +15,11 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "ログイン", href: "/login" },
     ],
   },
+  {
+    label: "開発用",
+    children: [
+      // 実装手順書(段階8)の見せ方の提案(仮データ)
+      { label: "実装手順書デモ", href: "/implementation-procedure-demo" },
+    ],
+  },
 ];

@@ -9,6 +9,7 @@ import { DataModelPanel } from "@/features/detailed-design/components/DataModelP
 import { FunctionListPanel } from "@/features/detailed-design/components/FunctionListPanel";
 import { LogicPanel } from "@/features/detailed-design/components/LogicPanel";
 import { PlanPanel } from "@/features/detailed-design/components/PlanPanel";
+import { ProcedureDocPanel } from "@/features/detailed-design/components/ProcedureDocPanel";
 import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
 import {
@@ -36,6 +37,7 @@ const STAGE_PANELS: Partial<Record<number, ComponentType<StagePanelProps>>> = {
   5: ProcedurePanel,
   6: LogicPanel,
   7: PlanPanel,
+  8: ProcedureDocPanel,
 };
 
 // 選んだ段階の作業領域。全段階に共通の部分(状態・足りない入力・古い表示・承認)を持ち、

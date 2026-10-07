@@ -5,7 +5,7 @@ import type { DesignStageRead, LogicTarget } from "./types";
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
 
-// 段階1〜7の状態(未着手の段階も含む)。詳細設計モードでないプロジェクトは409
+// 段階1〜8の状態(未着手の段階も含む)。詳細設計モードでないプロジェクトは409
 // (DESIGN_STAGES_NOT_AVAILABLE)。
 export function listDesignStages(
   projectId: string,

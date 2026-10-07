@@ -11,12 +11,20 @@ export type StageState =
   | "approved"
   | "outdated";
 
+// 実装可能性チェックの指摘の重要度。critical = 最重要、major = 中程度、minor = 軽微
+export type FindingLevel = "critical" | "major" | "minor";
+
 // 段階ごとの検証の指摘。error があると承認できない。warning は承認を止めない。
+// 段階8(実装可能性チェック)の指摘だけが、重要度 level・直す先の段階 fix_stage・指摘の出た
+// 作業単位の ID unit を持つ(他の段階は null か省略)。
 export type StageIssue = {
   severity: "error" | "warning";
   code: string;
   message: string;
   target: string | null;
+  level?: FindingLevel | null;
+  fix_stage?: number | null;
+  unit?: string | null;
 };
 
 // AIの下書きの生成の状態。null はまだ生成していない。
@@ -185,9 +193,11 @@ export const MAX_LOGIC_TARGETS = 5;
 
 // 段階7 横断事項と実装計画の意味モデル(devex-api app/detailed_design/plan.py)。07 横断事項と
 // 実装計画を1つの model に持つ。タスクはマイルストーンの中に入れ子にする(改名で参照が切れないため)。
-// マイルストーンの番号(M-01…)は保存せず並び順から導く(planOps の milestoneId)。
+// タスクは実装手順書の作業単位で、機能ごとの縦割り(feature)か、処理の無い準備・デプロイ(base)。
+// マイルストーンの番号(M-01…)と単位の ID(M-01-T01…)は保存せず並び順から導く(planOps の
+// milestoneId・taskId)。依存は単位の ID で書き、並べ替えたときは planOps が付け替える。
 export type Priority = "Must" | "Should" | "Could";
-export type TaskArea = "準備" | "バックエンド" | "フロントエンド" | "テスト" | "デプロイ";
+export type UnitKind = "feature" | "base";
 
 export type CrossCuttingRow = {
   topic: string; // 項目(例外と HTTP など)
@@ -196,17 +206,19 @@ export type CrossCuttingRow = {
 };
 
 export type PlanTask = {
-  area: TaskArea;
+  kind: UnitKind;
   title: string;
-  modules: string[];
-  function_ids: string[];
+  function_ids: string[]; // この単位で動くようにする処理(原則1つ)
+  depends_on: string[]; // 先に終わっている必要がある単位の ID(前の単位だけ)
+  modules: string[]; // 段階4のモジュール一覧のパス(検証する)
+  config_files: string[]; // 環境・設定のファイルの例(検証しない)
 };
 
+// 動くようにする処理は保存せず、タスクの処理から導く(planOps の milestoneFunctions)
 export type Milestone = {
   name: string;
   goal: string;
   priority: Priority;
-  function_ids: string[]; // このマイルストーンで動くようにする処理
   tasks: PlanTask[];
 };
 
@@ -219,7 +231,48 @@ export type PlanModel = {
   risks: Risk[];
 };
 
-// devex-api の PRIORITIES・TASK_AREAS・CROSSCUTTING_TOPICS と同じ値
+// devex-api の PRIORITIES・UNIT_KINDS・MAX_UNIT_FUNCTIONS・CROSSCUTTING_TOPICS と同じ値
 export const PRIORITIES: Priority[] = ["Must", "Should", "Could"];
-export const TASK_AREAS: TaskArea[] = ["準備", "バックエンド", "フロントエンド", "テスト", "デプロイ"];
+export const UNIT_KINDS: UnitKind[] = ["feature", "base"];
+export const MAX_UNIT_FUNCTIONS = 3;
 export const CROSSCUTTING_TOPICS = ["例外と HTTP", "認証", "トランザクション", "ログ"];
+
+// 段階8 実装手順書の意味モデル(devex-api app/detailed_design/procedure_doc.py)。作業単位の正本は
+// 段階7で、手順書は単位の ID と作ったときのタスク名を持つ(段階7と合わなくなった手順書は検証の
+// エラー)。設計は書き写さず、参照する設計は単位の処理ID・モジュールから導く。
+// units は手順書のある単位だけ(無い単位は、まだ手順書を生成していない)。
+export type UnitFileKind = "module" | "test" | "config";
+
+export type UnitFile = {
+  path: string;
+  kind: UnitFileKind; // module は段階4のモジュール(検証する)、test はテスト、config は環境・設定
+  responsibility: string;
+  basis: string; // 根拠(段階4・段階7の環境・設定のファイルなど)
+};
+
+export type TestPoint = { viewpoint: string; sut: string; driver: string; stub: string };
+
+// 手順書を作った AI の指摘(設計に無いため決められないこと)。fix_stage は直す先の段階
+export type AiFinding = {
+  level: FindingLevel;
+  target: string;
+  message: string;
+  fix_stage: number;
+};
+
+export type UnitProcedure = {
+  unit_id: string;
+  title: string;
+  purpose: string;
+  files: UnitFile[];
+  notes: string[];
+  tests: TestPoint[];
+  gwt: string[];
+  verify: string[];
+  findings: AiFinding[];
+};
+
+export type ProcedureDocModel = { units: UnitProcedure[] };
+
+// devex-api の FINDING_LEVELS と同じ値(重要度の高い順)
+export const FINDING_LEVELS: FindingLevel[] = ["critical", "major", "minor"];

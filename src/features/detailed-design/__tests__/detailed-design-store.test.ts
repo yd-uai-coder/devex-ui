@@ -40,11 +40,11 @@ describe("useDetailedDesignStore", () => {
       firstPendingStage(
         makeStages(
           Object.fromEntries(
-            [1, 2, 3, 4, 5, 6, 7].map((n) => [n, { state: "approved" }]),
+            [1, 2, 3, 4, 5, 6, 7, 8].map((n) => [n, { state: "approved" }]),
           ),
         ),
       ),
-    ).toBe(7);
+    ).toBe(8);
   });
 
   it("fetchStagesは一覧を保持し、初回は承認されていない最初の段階を選ぶ", async () => {
@@ -57,7 +57,7 @@ describe("useDetailedDesignStore", () => {
 
     const state = useDetailedDesignStore.getState();
     expect(state.status).toBe("success");
-    expect(state.stages).toHaveLength(7);
+    expect(state.stages).toHaveLength(8);
     expect(state.selectedStage).toBe(2);
   });
 

@@ -10,7 +10,7 @@ import { StageWorkArea } from "@/features/detailed-design/components/StageWorkAr
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
 
-// 詳細設計画面(SCR-008)。左に段階1〜7のステッパー、右に選んだ段階の作業領域を置く
+// 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
 // (docs/external_design.md 2.7節「段階の進め方」)。
 export function DetailedDesignPageContent({
   projectId,

@@ -17,7 +17,7 @@ const STATE_COLORS: Record<StageState, string> = {
   outdated: "$red10",
 };
 
-// 段階1〜7の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
+// 段階1〜8の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
 export function StageStepper({
   stages,
   selectedStage,
