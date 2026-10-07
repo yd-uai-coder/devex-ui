@@ -3,6 +3,7 @@ import {
   approveDesignStage,
   downloadDetailedDesign,
   generateDesignStage,
+  getUnitContext,
   listDesignStages,
   saveDesignStage,
 } from "../designStagesApi";
@@ -121,6 +122,27 @@ describe("designStagesApi", () => {
 
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/6/generate");
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
+  });
+
+  it("段階8は手順書を作る単位を本文の unit_ids で渡す", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 8, generation_status: "generating" } });
+
+    await generateDesignStage("p1", 8, undefined, undefined, ["M-01-T02"]);
+
+    expect(stub.requests[0].url).toContain("/api/v1/projects/p1/design-stages/8/generate");
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ unit_ids: ["M-01-T02"] });
+  });
+
+  it("getUnitContextはGET /design-stages/units/{unit_id}/contextを呼ぶ", async () => {
+    const context = { unit_id: "M-01-T02", refs: [], crosscutting: "", environment: "" };
+    stub.queue({ status: 200, body: context });
+
+    const read = await getUnitContext("p1", "M-01-T02");
+
+    expect(read).toEqual(context);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/units/M-01-T02/context",
+    );
   });
 
   it("段階3は CRUD 図を保存し、DFD から決まる R/W を受け取る", async () => {

@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
-import type { DesignStageRead, LogicTarget } from "./types";
+import type { DesignStageRead, LogicTarget, UnitContextRead } from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -42,20 +42,30 @@ export function approveDesignStage(
 // 段階2は、保存した DFD を描くグループの数が上限を超えていると 409 DESIGN_STAGE_INVALID。
 // 段階5は functionIds で下書きを作る処理を選べる(省略すると、選んだ処理のうち手順の無いもの)。
 // 段階6は logics で下書きを作る関数を選べる(省略すると、選んだ関数のうち詳細の無いもの)。
+// 段階8は unitIds で手順書を作る単位を選べる(省略すると、段階7の単位のうち手順書の無いもの)。
 export function generateDesignStage(
   projectId: string,
   stage: number,
   functionIds?: string[],
   logics?: LogicTarget[],
+  unitIds?: string[],
 ): Promise<DesignStageRead> {
   const body = {
     ...(functionIds ? { function_ids: functionIds } : {}),
     ...(logics ? { logics } : {}),
+    ...(unitIds ? { unit_ids: unitIds } : {}),
   };
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
     method: "POST",
-    ...(functionIds || logics ? { body: JSON.stringify(body) } : {}),
+    ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
   });
+}
+
+// 段階8の単位1つが参照する設計の展開(承認済みの段階1〜7から毎回導く)。段階8が開いていなければ409。
+export function getUnitContext(projectId: string, unitId: string): Promise<UnitContextRead> {
+  return apiFetch<UnitContextRead>(
+    `${base(projectId)}/units/${encodeURIComponent(unitId)}/context`,
+  );
 }
 
 export type DownloadedDocument = { filename: string; content: Blob };

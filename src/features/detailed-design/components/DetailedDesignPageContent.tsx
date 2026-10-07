@@ -9,6 +9,7 @@ import { StageStepper } from "@/features/detailed-design/components/StageStepper
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
+import { criticalCount } from "@/features/detailed-design/procedureDocOps";
 
 // 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
 // (docs/external_design.md 2.7節「段階の進め方」)。
@@ -28,6 +29,8 @@ export function DetailedDesignPageContent({
   const approve = useDetailedDesignStore((s) => s.approve);
   // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ)
   const [approvedStage, setApprovedStage] = useState<number | null>(null);
+  // 最重要の指摘が残ったまま承認しようとしている段階8の、最重要の数(確認を出している間だけ値を持つ)
+  const [criticalLeft, setCriticalLeft] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchStages(projectId);
@@ -39,8 +42,14 @@ export function DetailedDesignPageContent({
       ? approvedStage + 1
       : null;
 
-  const startApproval = async (stage: number) => {
+  const approveStage = async (stage: number) => {
     if (await approve(projectId, stage)) setApprovedStage(stage);
+  };
+  // 段階8は、最重要の指摘(未定義・要決定)が残っていれば確かめてから承認する(承認は止めない)
+  const startApproval = (stage: number) => {
+    const critical = current && stage === 8 ? criticalCount(current) : 0;
+    if (critical > 0) setCriticalLeft(critical);
+    else void approveStage(stage);
   };
 
   return (
@@ -77,11 +86,23 @@ export function DetailedDesignPageContent({
               stage={current}
               approving={approving}
               actionError={actionError}
-              onApprove={() => void startApproval(current.stage)}
+              onApprove={() => startApproval(current.stage)}
             />
           ) : null}
         </XStack>
       ) : null}
+
+      <ConfirmDialog
+        open={criticalLeft !== null}
+        title="最重要の指摘が残っています"
+        description={`最重要の未定義・要決定が ${criticalLeft ?? 0} 件残っています。このまま承認しますか?(手順書で決めず、対象の段階で直すのが原則です)`}
+        confirmLabel="このまま承認する"
+        onConfirm={() => {
+          setCriticalLeft(null);
+          void approveStage(8);
+        }}
+        onCancel={() => setCriticalLeft(null)}
+      />
 
       {/* 段階を承認したら知らせ、次の段階へ進めるようにする(最後の段階は閉じるだけ) */}
       <ConfirmDialog

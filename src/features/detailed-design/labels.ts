@@ -3,6 +3,7 @@ import type {
   FindingLevel,
   StageIssue,
   StageState,
+  UnitFileKind,
   UnitKind,
 } from "@/features/detailed-design/api/types";
 
@@ -37,6 +38,13 @@ export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
   minor: "軽微",
 };
 export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
+
+// 段階8の手順書のファイルの種類
+export const UNIT_FILE_KIND_LABELS: Record<UnitFileKind, string> = {
+  module: "モジュール",
+  test: "テスト",
+  config: "環境・設定",
+};
 
 const DOC_LABELS: Record<string, string> = {
   requirements: "要件定義書",

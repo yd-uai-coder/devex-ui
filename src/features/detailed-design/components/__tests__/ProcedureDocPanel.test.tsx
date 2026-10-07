@@ -9,8 +9,19 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import { makePlan, makeProcedureDoc, makeStages } from "../../test-utils/stageFixtures";
 import type { DesignStageRead, StageIssue } from "@/features/detailed-design/api/types";
 
-// SUT: ProcedureDocPanel / ドライバ: render と操作 / スタブ: 段階のストアの jumpTo。
+// SUT: ProcedureDocPanel / ドライバ: render と操作 / スタブ: 段階のストアの jumpTo・save・generate・
+// fetchStages と、単位の詳細が読む参照の API(getUnitContext)。
 // 単位の一覧は、ストアに置いた段階7の内容(makePlan)から作る。
+
+vi.mock("@/features/detailed-design/api/designStagesApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/detailed-design/api/designStagesApi")>()),
+  getUnitContext: vi.fn().mockResolvedValue({
+    unit_id: "M-01-T02",
+    refs: [],
+    crosscutting: "",
+    environment: "",
+  }),
+}));
 
 const noProcedure: StageIssue = {
   severity: "warning",
@@ -33,16 +44,26 @@ function stage8(patch: Partial<DesignStageRead>): DesignStageRead {
 }
 
 function renderPanel(stage: DesignStageRead) {
+  const onDirtyChange = vi.fn();
   render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <ProcedureDocPanel stage={stage} />
+      <ProcedureDocPanel projectId="p1" stage={stage} onDirtyChange={onDirtyChange} />
     </TamaguiProvider>,
   );
+  return onDirtyChange;
 }
 
 describe("ProcedureDocPanel", () => {
   beforeEach(() => {
-    useDetailedDesignStore.setState({ jumpTo: vi.fn() });
+    useDetailedDesignStore.setState({
+      jumpTo: vi.fn(),
+      saving: false,
+      requestingGeneration: false,
+      fetchStages: vi.fn().mockResolvedValue(undefined),
+      save: vi.fn().mockResolvedValue(true),
+      generate: vi.fn().mockResolvedValue(undefined),
+      tabs: {},
+    });
   });
 
   it("段階7の単位を依存順に並べ、手順書の有無と未定義の件数を出す", () => {
@@ -97,5 +118,68 @@ describe("ProcedureDocPanel", () => {
     expect(screen.getByText("段階8 実装手順書")).toBeInTheDocument();
     expect(screen.getByRole("table", { name: "単位の一覧" })).toBeInTheDocument();
     expect(screen.getByText("未定義・要決定はありません。")).toBeInTheDocument();
+  });
+
+  it("選んだ単位の手順書を生成する(手順書の無い単位はそのまま)", async () => {
+    const user = userEvent.setup();
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    const button = screen.getByRole("button", { name: "選んだ単位の手順書を生成する(0/5)" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    await user.click(screen.getByLabelText("M-01-T01 を生成する"));
+    await user.click(screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }));
+
+    expect(useDetailedDesignStore.getState().generate).toHaveBeenCalledWith(
+      "p1",
+      8,
+      undefined,
+      undefined,
+      ["M-01-T01"],
+    );
+  });
+
+  it("手順書のある単位を選んだときは、作り直しを確かめてから生成する", async () => {
+    const user = userEvent.setup();
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    await user.click(screen.getByLabelText("M-01-T02 を生成する"));
+    await user.click(screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }));
+    expect(useDetailedDesignStore.getState().generate).not.toHaveBeenCalled();
+    expect(await screen.findByText(/M-01-T02 の手順書を作り直します/)).toBeInTheDocument();
+    await user.click(screen.getByLabelText("作り直す"));
+
+    expect(useDetailedDesignStore.getState().generate).toHaveBeenCalledWith(
+      "p1",
+      8,
+      undefined,
+      undefined,
+      ["M-01-T02"],
+    );
+  });
+
+  it("単位の詳細を開いて編集すると保存でき、保存するまで生成できない", async () => {
+    const user = userEvent.setup();
+    const onDirtyChange = renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    await user.click(screen.getByLabelText("M-01-T02 の詳細を開く"));
+    await user.clear(screen.getByLabelText("目的"));
+    await user.type(screen.getByLabelText("目的"), "直した");
+    await user.click(screen.getByLabelText("M-01-T01 を生成する"));
+
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(
+      screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }),
+    ).toHaveAttribute("aria-disabled", "true");
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    const [projectId, stage, model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect([projectId, stage]).toEqual(["p1", 8]);
+    expect((model as { units: { purpose: string }[] }).units[0].purpose).toBe("直した");
+    expect(useDetailedDesignStore.getState().tabs["8:unit"]).toBe("M-01-T02");
+  });
+
+  it("生成に失敗したら理由を出す", () => {
+    renderPanel(stage8({ generation_status: "failed", generation_error: "下書きの生成に失敗しました。" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("下書きの生成に失敗しました。");
   });
 });

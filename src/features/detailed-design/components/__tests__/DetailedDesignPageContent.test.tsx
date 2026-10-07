@@ -5,7 +5,12 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makeFunctionList, makeStages } from "../../test-utils/stageFixtures";
+import {
+  makeFunctionList,
+  makePlan,
+  makeProcedureDoc,
+  makeStages,
+} from "../../test-utils/stageFixtures";
 
 function renderContent() {
   return render(
@@ -121,5 +126,43 @@ describe("DetailedDesignPageContent", () => {
     expect(screen.queryByLabelText("次の段階へ進む")).not.toBeInTheDocument();
     await user.click(screen.getByLabelText("閉じる"));
     expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();
+  });
+
+  // 段階8: makeProcedureDoc は最重要の AI の指摘を1件持つ
+  function selectStage8(model: Record<string, unknown>) {
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        7: { state: "approved", model: makePlan() },
+        8: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model },
+      }),
+      selectedStage: 8,
+      approve: vi.fn().mockResolvedValue(false),
+    });
+  }
+
+  it("段階8で最重要が残っていれば確かめ、「このまま承認する」で承認する", async () => {
+    const user = userEvent.setup();
+    selectStage8(makeProcedureDoc());
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+
+    expect(
+      await screen.findByText(/最重要の未定義・要決定が 1 件残っています/),
+    ).toBeInTheDocument();
+    expect(useDetailedDesignStore.getState().approve).not.toHaveBeenCalled();
+    await user.click(screen.getByLabelText("このまま承認する"));
+    expect(useDetailedDesignStore.getState().approve).toHaveBeenCalledWith("p1", 8);
+  });
+
+  it("確認を取り消すと承認しない", async () => {
+    const user = userEvent.setup();
+    selectStage8(makeProcedureDoc());
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+    await user.click(await screen.findByLabelText("キャンセル"));
+
+    expect(useDetailedDesignStore.getState().approve).not.toHaveBeenCalled();
   });
 });

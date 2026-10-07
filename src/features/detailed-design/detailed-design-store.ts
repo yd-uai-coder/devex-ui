@@ -42,12 +42,13 @@ type DetailedDesignStore = {
     stage: number,
     model: Record<string, unknown>,
   ) => Promise<boolean>;
-  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を選べる
+  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる
   generate: (
     projectId: string,
     stage: number,
     functionIds?: string[],
     logics?: LogicTarget[],
+    unitIds?: string[],
   ) => Promise<void>;
   // 05↔06 のバッジから、相手の段階のタブ・行へ移る
   jumpTo: (stage: number, target: string) => void;
@@ -164,10 +165,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return saved;
     },
 
-    generate: async (projectId, stage, functionIds, logics) => {
+    generate: async (projectId, stage, functionIds, logics, unitIds) => {
       set({ requestingGeneration: true, actionError: null });
       try {
-        await generateDesignStage(projectId, stage, functionIds, logics);
+        await generateDesignStage(projectId, stage, functionIds, logics, unitIds);
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
         const invalid = err instanceof ApiError && err.code === "DESIGN_STAGE_INVALID";
