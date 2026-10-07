@@ -4,6 +4,7 @@ import type {
   Procedure,
   ProcedureModel,
   ProcedureStep,
+  StepKind,
 } from "@/features/detailed-design/api/types";
 
 // 段階5(主要処理の手順)の編集操作と、表示に導く表(索引・関与表)。すべて純粋関数で、どれも新しい
@@ -31,7 +32,10 @@ const EMPTY_STEP: ProcedureStep = {
   db: "",
   branch: "",
   is_branch: false,
+  kind: "call",
 };
+
+const STEP_KINDS: readonly StepKind[] = ["call", "async", "return"];
 
 // 保存されている model(形の保証の無い JSON)を、編集できる形にそろえる。
 export function toProcedures(model: Record<string, unknown> | null): ProcedureModel {
@@ -46,6 +50,9 @@ export function toProcedures(model: Record<string, unknown> | null): ProcedureMo
                 const normalized: ProcedureStep = { ...EMPTY_STEP };
                 for (const field of STEP_FIELDS) normalized[field] = String(step[field] ?? "");
                 normalized.is_branch = Boolean(step.is_branch);
+                normalized.kind = STEP_KINDS.includes(step.kind as StepKind)
+                  ? (step.kind as StepKind)
+                  : "call";
                 return normalized;
               })
             : [],
@@ -90,6 +97,19 @@ export function stepId(functionId: string, number: string): string {
 // 呼び出し先が外部の役者(利用者・スケジューラなど)か。モジュールはパスなので「/」を含む。
 export function isExternalActor(callee: string): boolean {
   return !callee.includes("/");
+}
+
+// モジュールの関数を呼ぶ行か(分岐でも戻りでもなく、呼び出し先がモジュールで、関数が空でない。
+// バックエンドの calls_function と同じ)。06 の紐づけ・段階6の候補はこの行だけから導く。
+export function callsFunction(step: ProcedureStep): boolean {
+  const callee = step.callee.trim();
+  return (
+    !step.is_branch &&
+    step.kind !== "return" &&
+    callee !== "" &&
+    step.call.trim() !== "" &&
+    !isExternalActor(callee)
+  );
 }
 
 // 分岐を除いた手順の数(索引に出す)。
@@ -215,6 +235,7 @@ export type Involvement = {
 
 // 処理 × モジュールの関与表。CRUD 図と同じ格子で、セルには手順番号を入れる。列はモジュール一覧の
 // パスと完全一致する呼び出し先だけ(外部の役者・一覧に無いパスは含めない。後者は検証のエラー)。
+// 戻りの行は呼び出しでないので含めない。
 export function buildInvolvement(model: ProcedureModel, modulePaths: string[]): Involvement {
   const known = new Set(modulePaths);
   const used = new Set<string>();
@@ -224,7 +245,7 @@ export function buildInvolvement(model: ProcedureModel, modulePaths: string[]): 
     const numbers = numberSteps(procedure.steps);
     procedure.steps.forEach((step, i) => {
       const callee = step.callee.trim();
-      if (step.is_branch || !known.has(callee)) return;
+      if (step.is_branch || step.kind === "return" || !known.has(callee)) return;
       used.add(callee);
       row.set(callee, [...(row.get(callee) ?? []), numbers[i]]);
     });

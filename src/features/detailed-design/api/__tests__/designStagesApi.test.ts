@@ -3,6 +3,7 @@ import {
   approveDesignStage,
   downloadDetailedDesign,
   generateDesignStage,
+  getProcedureSequence,
   getUnitContext,
   listDesignStages,
   saveDesignStage,
@@ -142,6 +143,18 @@ describe("designStagesApi", () => {
     expect(read).toEqual(context);
     expect(stub.requests[0].url).toContain(
       "/api/v1/projects/p1/design-stages/units/M-01-T02/context",
+    );
+  });
+
+  it("getProcedureSequenceはGET /design-stages/procedures/{function_id}/sequenceを呼ぶ", async () => {
+    const sequence = { function_id: "F-01", svg: "<svg/>", issues: [] };
+    stub.queue({ status: 200, body: sequence });
+
+    const read = await getProcedureSequence("p1", "F-01");
+
+    expect(read).toEqual(sequence);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/procedures/F-01/sequence",
     );
   });
 

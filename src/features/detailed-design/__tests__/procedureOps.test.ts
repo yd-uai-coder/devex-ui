@@ -5,6 +5,7 @@ import {
   addStep,
   buildIndex,
   buildInvolvement,
+  callsFunction,
   isExternalActor,
   mainStepCount,
   numberSteps,
@@ -65,6 +66,38 @@ describe("procedureOps", () => {
       note: "",
       steps: [{ ...makeBranch("a", ""), is_branch: false }],
     });
+  });
+
+  it("toProcedures は種別の無い・知らない種別の行を同期の呼び出しとして読む", () => {
+    const model = toProcedures({
+      procedures: [
+        { function_id: "F-01", steps: [{ action: "a" }, { kind: "x" }, { kind: "return" }] },
+      ],
+    });
+    expect(model.procedures[0].steps.map((s) => s.kind)).toEqual(["call", "call", "return"]);
+  });
+
+  it("callsFunction はモジュールの関数を呼ぶ行だけ(分岐・戻り・外部の役者・空の関数を除く)", () => {
+    expect(callsFunction(makeStep())).toBe(true);
+    expect(callsFunction(makeStep({ kind: "async" }))).toBe(true);
+    expect(callsFunction(makeStep({ kind: "return" }))).toBe(false);
+    expect(callsFunction(makeBranch())).toBe(false);
+    expect(callsFunction(makeStep({ callee: "利用者" }))).toBe(false);
+    expect(callsFunction(makeStep({ call: " " }))).toBe(false);
+  });
+
+  it("関与表は戻りの行を含めない", () => {
+    const model = {
+      procedures: [
+        {
+          function_id: "F-01",
+          reason: "",
+          note: "",
+          steps: [makeStep(), makeStep({ caller: SERVICE, callee: ROUTE, kind: "return" as const })],
+        },
+      ],
+    };
+    expect(buildInvolvement(model, [ROUTE]).cells.get("F-01")?.get(ROUTE)).toEqual(["1"]);
   });
 
   it("numberSteps は分岐に a, b… を付け、z の次は aa、先頭の分岐は 0a にする", () => {

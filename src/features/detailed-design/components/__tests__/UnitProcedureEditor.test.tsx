@@ -26,6 +26,7 @@ const CONTEXT: UnitContextRead = {
       via: null,
       label: "段階5 F-01 予約を登録する",
       markdown: "### 段階5 F-01 予約を登録する\n\n| No | ... |",
+      svg: '<svg data-testid="unit-sequence"></svg>',
     },
     {
       kind: "module",
@@ -34,6 +35,7 @@ const CONTEXT: UnitContextRead = {
       via: null,
       label: "段階4 `app/unknown.py`",
       markdown: null,
+      svg: null,
     },
   ],
   crosscutting: "### 07章 横断事項",
@@ -74,6 +76,19 @@ describe("UnitProcedureEditor", () => {
     expect(screen.getByLabelText("段階5 F-01 予約を登録する の展開")).toHaveTextContent("| No |");
     expect(screen.getByText("段階4 `app/unknown.py`(設計に無い)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "07章 横断事項" })).toBeInTheDocument();
+  });
+
+  it("段階5の手順の参照を展開すると、シーケンス図の SVG も出す(他の参照には出さない)", async () => {
+    const user = userEvent.setup();
+    renderEditor(makeProcedureDoc());
+
+    await user.click(await screen.findByRole("button", { name: "段階5 F-01 予約を登録する" }));
+    expect(
+      screen.getByRole("img", { name: "段階5 F-01 予約を登録する のシーケンス図" }),
+    ).toContainElement(screen.getByTestId("unit-sequence"));
+
+    await user.click(screen.getByRole("button", { name: "07章 横断事項" }));
+    expect(screen.queryByTestId("unit-sequence")).not.toBeInTheDocument();
   });
 
   it("参照の取得に失敗したら理由を出す", async () => {

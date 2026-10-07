@@ -3,6 +3,7 @@ import type {
   FindingLevel,
   StageIssue,
   StageState,
+  StepKind,
   UnitFileKind,
   UnitKind,
 } from "@/features/detailed-design/api/types";
@@ -26,6 +27,13 @@ export const STATE_LABELS: Record<StageState, string> = {
   reviewing: "レビュー中",
   approved: "承認済み",
   outdated: "古い",
+};
+
+// 段階5の手順の行の種別(devex-api の詳細設計書の 05 の表と同じ)
+export const STEP_KIND_LABELS: Record<StepKind, string> = {
+  call: "同期",
+  async: "非同期",
+  return: "戻り",
 };
 
 // 段階7の単位の種別(devex-api の詳細設計書・実装計画の表示と同じ)

@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
-import type { DesignStageRead, LogicTarget, UnitContextRead } from "./types";
+import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -59,6 +59,14 @@ export function generateDesignStage(
     method: "POST",
     ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
   });
+}
+
+// 段階5の処理1つのシーケンス図(保存した手順から導く。図は保存しない)。段階5が開いていなければ409、
+// 段階5で選んでいない処理は404。
+export function getProcedureSequence(projectId: string, functionId: string): Promise<SequenceRead> {
+  return apiFetch<SequenceRead>(
+    `${base(projectId)}/procedures/${encodeURIComponent(functionId)}/sequence`,
+  );
 }
 
 // 段階8の単位1つが参照する設計の展開(承認済みの段階1〜7から毎回導く)。段階8が開いていなければ409。

@@ -5,7 +5,7 @@ import type {
   ProcedureModel,
   PseudoStep,
 } from "@/features/detailed-design/api/types";
-import { isExternalActor, numberSteps, stepId } from "@/features/detailed-design/procedureOps";
+import { callsFunction, numberSteps, stepId } from "@/features/detailed-design/procedureOps";
 
 // 段階6(処理ロジックの詳細)の編集操作と、05↔06 の紐づけを導く表(候補・呼ばれる手順・逆引き・
 // L-ID の引き当て)。すべて純粋関数で、どれも新しいモデルを返し引数は変えない。
@@ -73,16 +73,16 @@ export type LogicCandidate = {
   stepIds: string[]; // その関数を呼ぶ手順の手順ID(段階5の並び順)
 };
 
-// 段階5の手順から、段階6で選べる関数を集める(最初に現れた順)。対象は、分岐でなく、呼び出し先が
-// モジュール(「/」を含むパス)で、呼ぶ関数が空でない行。
+// 段階5の手順から、段階6で選べる関数を集める(最初に現れた順)。対象は、モジュールの関数を呼ぶ行
+// (callsFunction。分岐・戻り・外部の役者は除く)。
 export function logicCandidates(procedures: ProcedureModel): LogicCandidate[] {
   const found = new Map<string, LogicCandidate>();
   for (const procedure of procedures.procedures) {
     const numbers = numberSteps(procedure.steps);
     procedure.steps.forEach((step, i) => {
+      if (!callsFunction(step)) return;
       const callee = step.callee.trim();
       const call = step.call.trim();
-      if (step.is_branch || !callee || !call || isExternalActor(callee)) return;
       const key = logicKey(callee, call);
       const candidate = found.get(key) ?? { module: callee, function: call, stepIds: [] };
       candidate.stepIds.push(stepId(procedure.function_id, numbers[i]));

@@ -75,6 +75,7 @@ export function makeStep(patch: Partial<ProcedureStep> = {}): ProcedureStep {
     db: "reservations C",
     branch: "1a へ",
     is_branch: false,
+    kind: "call",
     ...patch,
   };
 }

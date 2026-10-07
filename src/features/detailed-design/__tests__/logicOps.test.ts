@@ -120,6 +120,15 @@ describe("logicOps", () => {
     expect(callingSteps(procedures(), SERVICE, "missing")).toEqual([]);
   });
 
+  it("logicCandidatesは戻りの行を除く", () => {
+    const procedures: ProcedureModel = {
+      procedures: [
+        { function_id: "F-01", reason: "", note: "", steps: [makeStep({ kind: "return" })] },
+      ],
+    };
+    expect(logicCandidates(procedures)).toEqual([]);
+  });
+
   it("logicIdsByKeyは並び順の L-ID を引く", () => {
     const ids = logicIdsByKey({ logics: [makeLogic(), makeLogic(CREATE)] });
     expect(ids.get(keyOf(CREATE))).toBe("L-02");

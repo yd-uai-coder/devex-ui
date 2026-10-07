@@ -9,6 +9,7 @@ import {
   type DesignStageRead,
   type ProcedureModel,
 } from "@/features/detailed-design/api/types";
+import { ProcedureSequenceView } from "@/features/detailed-design/components/ProcedureSequenceView";
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -37,6 +38,7 @@ const UNSELECT_CONFIRM = "この処理の手順は、保存すると失われま
 // 結果を持つ。入力の段階1(機能一覧)と段階4(モジュール一覧のパス)はストアの段階の一覧から読む。
 // 編集中の内容はこのコンポーネントの中だけに持ち、保存して初めてサーバーへ送る(段階2の DataFlowPanel
 // と同じ形)。生成は保存した内容を使うので、保存していない編集がある間は押せない。
+// 処理のタブの表の下には、保存した手順から導いたシーケンス図(ProcedureSequenceView)を出す。
 // 段階6に詳細がある手順には「詳細 L-02」のバッジを出し、押すと段階6のその関数へ移る(保存していない
 // 編集があれば確かめる)。段階6の「呼ばれる手順」から移ってきたときは、その処理のタブを開いて手順の行を
 // 強調する。
@@ -327,6 +329,14 @@ export function ProcedurePanel({
             onDetailPress={goToDetail}
             highlightedStep={highlighted}
           />
+          {savedCurrent && savedCurrent.steps.length > 0 ? (
+            <ProcedureSequenceView
+              projectId={projectId}
+              functionId={savedCurrent.function_id}
+              version={stage.version}
+              dirty={dirty}
+            />
+          ) : null}
         </YStack>
       ) : (
         <Text color="$color11">手順を書く処理はまだ選ばれていません。</Text>

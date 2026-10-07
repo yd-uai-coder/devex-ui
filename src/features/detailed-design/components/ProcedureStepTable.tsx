@@ -3,7 +3,11 @@
 import { useEffect, useId, useRef } from "react";
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
-import type { ProcedureModel, ProcedureStep } from "@/features/detailed-design/api/types";
+import type {
+  ProcedureModel,
+  ProcedureStep,
+  StepKind,
+} from "@/features/detailed-design/api/types";
 import {
   BADGE,
   CELL,
@@ -12,10 +16,12 @@ import {
   MONO,
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
+import { STEP_KIND_LABELS } from "@/features/detailed-design/labels";
 import { logicKey } from "@/features/detailed-design/logicOps";
 import {
   addBranch,
   addStep,
+  callsFunction,
   isExternalActor,
   numberSteps,
   removeStep,
@@ -27,8 +33,9 @@ import {
 // 呼び出し元・呼び出し先の入力の候補に出す外部の役者(自由に書いてもよい)
 const ACTORS = ["利用者", "スケジューラ"];
 
-// 段階5の、1つの処理の手順の表(No / 呼び出し元 → 呼び出し先 / 関数 / 渡すデータ / 処理内容 / 結果 /
-// DB 操作 / 分岐・例外)と、選定理由・注記。編集した内容は onChange で呼び出し元(ProcedurePanel)へ返し、
+// 段階5の、1つの処理の手順の表(No / 呼び出し元 → 呼び出し先 / 種別 / 関数 / 渡すデータ / 処理内容 /
+// 結果 / DB 操作 / 分岐・例外)と、選定理由・注記。種別(同期・非同期・戻り)はシーケンス図の矢印になる。
+// 戻りの行は関数を呼ばないので、詳細のバッジを出さない。編集した内容は onChange で呼び出し元(ProcedurePanel)へ返し、
 // 保存は呼び出し元が行う。番号は並び順から導くので、行の追加・削除で振り直される。呼び出し先は段階4の
 // モジュール一覧のパスを候補に出し、一覧に無いパスには印を出す(関与表の列の鍵のため。検証のエラーと
 // 同じ)。分岐の行は、条件(処理内容の欄)と結果(分岐・例外の欄)だけを書く。
@@ -68,7 +75,7 @@ export function ProcedureStepTable({
 
   const field = (
     index: number,
-    name: keyof Omit<ProcedureStep, "is_branch">,
+    name: keyof Omit<ProcedureStep, "is_branch" | "kind">,
     label: string,
     options: { mono?: boolean; list?: boolean; multiline?: boolean } = {},
   ) => {
@@ -124,6 +131,7 @@ export function ProcedureStepTable({
               <tr>
                 <th style={HEAD}>No</th>
                 <th style={HEAD}>呼び出し元 → 呼び出し先</th>
+                <th style={HEAD}>種別</th>
                 <th style={HEAD}>関数</th>
                 <th style={HEAD}>渡すデータ</th>
                 <th style={HEAD}>処理内容</th>
@@ -142,7 +150,7 @@ export function ProcedureStepTable({
                   !step.is_branch &&
                   (callee === "" || (!isExternalActor(callee) && !known.has(callee)));
                 const key = logicKey(callee, step.call);
-                const detail = step.is_branch ? undefined : detailIds?.get(key);
+                const detail = callsFunction(step) ? detailIds?.get(key) : undefined;
                 const background =
                   id === highlightedStep
                     ? "var(--yellow4)"
@@ -163,7 +171,7 @@ export function ProcedureStepTable({
                     <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{numbers[index]}</td>
                     {step.is_branch ? (
                       <>
-                        <td style={{ ...CELL, color: "var(--color11)", fontSize: 12 }} colSpan={3}>
+                        <td style={{ ...CELL, color: "var(--color11)", fontSize: 12 }} colSpan={4}>
                           分岐({numbers[index].replace(/[a-z]+$/, "")} の手順から)
                         </td>
                         <td style={{ ...CELL, minWidth: 220 }}>
@@ -185,6 +193,27 @@ export function ProcedureStepTable({
                               {callee ? "モジュール一覧に無いパスです" : "呼び出し先が空です"}
                             </div>
                           ) : null}
+                        </td>
+                        <td style={CELL}>
+                          <select
+                            style={INPUT}
+                            aria-label={`${id} の種別`}
+                            value={step.kind}
+                            disabled={disabled}
+                            onChange={(e) =>
+                              onChange(
+                                updateStep(model, functionId, index, {
+                                  kind: e.target.value as StepKind,
+                                }),
+                              )
+                            }
+                          >
+                            {(Object.keys(STEP_KIND_LABELS) as StepKind[]).map((kind) => (
+                              <option key={kind} value={kind}>
+                                {STEP_KIND_LABELS[kind]}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td style={{ ...CELL, minWidth: 160 }}>
                           {field(index, "call", "関数", { mono: true })}

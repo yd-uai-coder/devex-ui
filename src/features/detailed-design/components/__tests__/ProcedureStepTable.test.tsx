@@ -59,6 +59,17 @@ describe("ProcedureStepTable", () => {
     );
   });
 
+  it("種別を選ぶと onChange で返し、分岐の行には種別を出さない", async () => {
+    const user = userEvent.setup();
+    const onChange = renderTable();
+
+    expect(screen.getByLabelText("F-01#1 の種別")).toHaveValue("call");
+    expect(screen.queryByLabelText("F-01#1a の種別")).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("F-01#1 の種別"), "戻り");
+    const last = onChange.mock.lastCall?.[0] as ProcedureModel;
+    expect(last.procedures[0].steps[0].kind).toBe("return");
+  });
+
   it("モジュール一覧に無いパスと空の呼び出し先に印を出し、外部の役者には出さない", async () => {
     const user = userEvent.setup();
     renderTable();
@@ -144,5 +155,25 @@ describe("ProcedureStepTable", () => {
       "true",
     );
     expect(screen.getByLabelText("F-01#1a の条件").closest("tr")).not.toHaveAttribute("aria-current");
+  });
+
+  it("戻りの行には、関数の欄が一致しても詳細バッジを出さない", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ProcedureStepTable
+          model={{
+            procedures: [
+              { function_id: "F-01", reason: "", note: "", steps: [makeStep({ kind: "return" })] },
+            ],
+          }}
+          functionId="F-01"
+          modulePaths={[ROUTE]}
+          disabled={false}
+          onChange={vi.fn()}
+          detailIds={new Map([[logicKey(ROUTE, "create_reservation"), "L-02"]])}
+        />
+      </TamaguiProvider>,
+    );
+    expect(screen.queryByText("詳細 L-02 ↓")).not.toBeInTheDocument();
   });
 });
