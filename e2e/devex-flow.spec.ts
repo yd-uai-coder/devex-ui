@@ -4,7 +4,7 @@
 // 登録・プロジェクト作成・ヒアリングは helpers.ts を使う(詳細設計モードの spec と共有)。
 import { expect, test } from "@playwright/test";
 
-import { completeHearing, createProject, registerAndLogin } from "./helpers";
+import { completeHearing, createProject, generateProcedureDocs, registerAndLogin } from "./helpers";
 
 test("ログイン→プロジェクト作成→チャットヒアリング→設計書生成→ダウンロードの一連フロー", async ({
   page,
@@ -35,10 +35,14 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
 
   // 簡易モードは、同じ詳細設計画面を段階8(実装手順書)だけで開く。作業単位は実装計画書の WBS から読む
   await page.getByRole("link", { name: "実装手順書へ進む →" }).click();
-  await expect(page.getByRole("heading", { name: "実装手順書" })).toBeVisible();
+  // 見出しは画面の「実装手順書」と、作業領域の「段階8 実装手順書」の2つ
+  await expect(page.getByRole("heading", { name: "実装手順書", exact: true })).toBeVisible();
   const units = page.getByRole("table", { name: "単位の一覧" });
   await expect(units).toContainText("M-01-T01");
   await expect(units).toContainText("M-01-T02");
+
+  // 全単位の手順書を生成する(承認と zip は devex-api の test_fake_llm_simple_procedure.py が通す)
+  await generateProcedureDocs(page, ["M-01-T01", "M-01-T02"]);
 });
 
 test("ドキュメントプレビュー画面から再生成すると、再度生成完了まで待って表示を更新する", async ({
