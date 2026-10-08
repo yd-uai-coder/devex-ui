@@ -17,7 +17,39 @@ const STATE_COLORS: Record<StageState, string> = {
   outdated: "$red10",
 };
 
+// 簡易ドキュメントモードのプロジェクトが持たない段階(段階8だけを持つ)
+const DETAILED_ONLY_STAGES = [1, 2, 3, 4, 5, 6, 7];
+export const DETAILED_ONLY_NOTICE =
+  "段階1〜7は詳細設計モード用です。簡易ドキュメントモードは4文書から段階8(実装手順書)を作ります。";
+
+// 簡易モードの、使えない段階の行(番号が8から始まらないように並べる。押せない)。
+function DisabledStage({ stage }: { stage: number }) {
+  return (
+    <XStack
+      aria-disabled
+      aria-label={`段階${stage} ${STAGE_TITLES[stage]}(詳細設計モードのみ・使用不可)`}
+      padding="$2"
+      borderRadius="$3"
+      borderWidth={1}
+      borderStyle="dashed"
+      borderColor="$borderColor"
+      justifyContent="space-between"
+      alignItems="center"
+      gap="$2"
+      opacity={0.45}
+    >
+      <Text>
+        {stage}. {STAGE_TITLES[stage]}
+      </Text>
+      <Text fontSize="$2" color="$color10">
+        詳細設計モードのみ
+      </Text>
+    </XStack>
+  );
+}
+
 // 段階1〜8の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
+// 簡易ドキュメントモード(段階8だけ)は、段階1〜7を使えない行として前に並べ、その旨を添える。
 export function StageStepper({
   stages,
   selectedStage,
@@ -27,6 +59,7 @@ export function StageStepper({
   selectedStage: number;
   onSelect: (stage: number) => void;
 }) {
+  const simple = stages[0]?.mode === "simple";
   return (
     // 広い画面では作業領域の横に並ぶので、スクロールしても見えるように固定のヘッダーの下に
     // 貼り付ける(top は AppShell の本文の上余白と同じ)。狭い画面では作業領域の上の段に回るため、
@@ -39,6 +72,16 @@ export function StageStepper({
       alignSelf="flex-start"
       $md={{ position: "sticky", top: HEADER_HEIGHT + 16, zIndex: 10 }}
     >
+      {simple ? (
+        <>
+          <Text fontSize="$2" color="$color11" maxWidth={220}>
+            {DETAILED_ONLY_NOTICE}
+          </Text>
+          {DETAILED_ONLY_STAGES.map((stage) => (
+            <DisabledStage key={stage} stage={stage} />
+          ))}
+        </>
+      ) : null}
       {stages.map((s) => {
         const selected = s.stage === selectedStage;
         return (

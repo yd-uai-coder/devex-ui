@@ -1,4 +1,5 @@
 import type {
+  DesignDocument,
   DesignStageRead,
   FindingLevel,
   StageIssue,
@@ -54,10 +55,14 @@ export const UNIT_FILE_KIND_LABELS: Record<UnitFileKind, string> = {
   config: "環境・設定",
 };
 
-const DOC_LABELS: Record<string, string> = {
+// 文書の名前(段階の入力の文書と、簡易モードの段階8の指摘の直す先)
+export const DESIGN_DOCUMENT_LABELS: Record<DesignDocument, string> = {
   requirements: "要件定義書",
   external_design: "外部設計書",
+  internal_design: "内部設計書",
+  implementation_plan: "実装計画書",
 };
+const DOC_LABELS: Record<string, string> = DESIGN_DOCUMENT_LABELS;
 
 // バックエンドの missing_inputs("stage:<n>" / "doc:<doc_type>")を、何が足りないかの言葉にする。
 export function describeMissingInput(key: string): string {

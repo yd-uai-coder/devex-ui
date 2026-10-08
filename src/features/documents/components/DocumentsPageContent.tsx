@@ -45,6 +45,12 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
               <Text color="$blue10">詳細設計へ進む →</Text>
             </Link>
           ) : null}
+          {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}
+          {projectMode === "simple" ? (
+            <Link href={`/projects/${projectId}/detailed-design`}>
+              <Text color="$blue10">実装手順書へ進む →</Text>
+            </Link>
+          ) : null}
           <Button size="$3" disabled={regenerating} onPress={() => setConfirmOpen(true)}>
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>

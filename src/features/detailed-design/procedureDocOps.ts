@@ -1,6 +1,7 @@
 import {
   FINDING_LEVELS,
   type AiFinding,
+  type DesignDocument,
   type DesignStageRead,
   type FindingLevel,
   type PlanModel,
@@ -15,14 +16,23 @@ import {
 } from "@/features/detailed-design/api/types";
 import { milestoneId, taskId } from "@/features/detailed-design/planOps";
 
-// 段階8(実装手順書)の画面が使う純粋関数。作業単位の一覧は段階7から導き、未定義・要決定の一覧は
-// 検証の指摘(決定的なチェック)と、手順書を作った AI の指摘を1つの形にそろえて出す。
+// 段階8(実装手順書)の画面が使う純粋関数。作業単位の一覧は段階8の plan(詳細設計モードは段階7、
+// 簡易モードは実装計画書の WBS)から導き、未定義・要決定の一覧は検証の指摘(決定的なチェック)と、
+// 手順書を作った AI の指摘を1つの形にそろえて出す。
 
 const strings = (value: unknown) => (Array.isArray(value) ? value.map(String) : []);
 const list = (value: unknown) => (Array.isArray(value) ? (value as Record<string, unknown>[]) : []);
 const pick = <T extends string>(value: unknown, choices: T[], fallback: T): T =>
   choices.includes(value as T) ? (value as T) : fallback;
 export const FILE_KINDS: UnitFileKind[] = ["module", "test", "config"];
+export const DESIGN_DOCUMENTS: DesignDocument[] = [
+  "requirements",
+  "external_design",
+  "internal_design",
+  "implementation_plan",
+];
+const toDocument = (value: unknown): DesignDocument | null =>
+  DESIGN_DOCUMENTS.includes(value as DesignDocument) ? (value as DesignDocument) : null;
 
 // 保存されている model(形の保証の無い JSON)を、表示できる形にそろえる。
 export function toProcedureDoc(model: Record<string, unknown> | null): ProcedureDocModel {
@@ -51,12 +61,13 @@ export function toProcedureDoc(model: Record<string, unknown> | null): Procedure
         target: String(finding.target ?? ""),
         message: String(finding.message ?? ""),
         fix_stage: Number(finding.fix_stage ?? 8),
+        fix_document: toDocument(finding.fix_document),
       })),
     })),
   };
 }
 
-// 単位の一覧の1行。hasProcedure は、段階7と ID・タスク名の合う手順書があるか。
+// 単位の一覧の1行。hasProcedure は、作業単位と ID・タスク名の合う手順書があるか。
 export type ProcedureUnit = {
   id: string;
   milestone: string;
@@ -67,7 +78,7 @@ export type ProcedureUnit = {
   hasProcedure: boolean;
 };
 
-// 段階7の作業単位を、計画の並び順で返す。依存は前の単位だけを指すので、この順が依存順になる
+// 作業単位(段階7と同じ形)を、計画の並び順で返す。依存は前の単位だけを指すので、この順が依存順になる
 // (並べ替えは要らない)。
 export function procedureUnits(plan: PlanModel, doc: ProcedureDocModel): ProcedureUnit[] {
   const titles = new Map(doc.units.map((unit) => [unit.unit_id, unit.title.trim()]));
@@ -87,7 +98,8 @@ export function procedureUnits(plan: PlanModel, doc: ProcedureDocModel): Procedu
   );
 }
 
-// 未定義・要決定の1件。unit が null なら単位によらない指摘。fixStage は直す先の段階。
+// 未定義・要決定の1件。unit が null なら単位によらない指摘。fixStage は直す先の段階、fixDocument は
+// 簡易モードの直す先の文書(あれば fixStage より優先する)。
 export type Finding = {
   level: FindingLevel;
   source: "check" | "ai";
@@ -95,6 +107,7 @@ export type Finding = {
   target: string;
   message: string;
   fixStage: number;
+  fixDocument: DesignDocument | null;
 };
 
 // 検証の指摘のうち重要度のあるもの(設計の不足)と、手順書の AI の指摘を1つの一覧にする。
@@ -110,6 +123,7 @@ export function collectFindings(issues: StageIssue[], doc: ProcedureDocModel): F
             target: issue.target ?? "",
             message: issue.message,
             fixStage: issue.fix_stage ?? 8,
+            fixDocument: issue.fix_document ?? null,
           },
         ]
       : [],
@@ -122,9 +136,22 @@ export function collectFindings(issues: StageIssue[], doc: ProcedureDocModel): F
       target: finding.target,
       message: finding.message,
       fixStage: finding.fix_stage,
+      fixDocument: finding.fix_document ?? null,
     })),
   );
   return sortFindings([...checks, ...ai]);
+}
+
+// 直す先の行き先。document は文書の画面(SCR-005)で再生成する、stage はその段階へ移る、null は直す先が
+// 無い(手順書の上の指摘)。
+export type FixTarget =
+  | { kind: "document"; document: DesignDocument }
+  | { kind: "stage"; stage: number }
+  | null;
+
+export function fixTarget(fixStage: number, fixDocument: DesignDocument | null | undefined): FixTarget {
+  if (fixDocument) return { kind: "document", document: fixDocument };
+  return fixStage >= 1 && fixStage < 8 ? { kind: "stage", stage: fixStage } : null;
 }
 
 // 重要度の順(最重要が先)に並べる。同じ重要度の中では元の順を保つ。

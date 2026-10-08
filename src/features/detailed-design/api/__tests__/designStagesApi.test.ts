@@ -16,6 +16,7 @@ import { makeCrud, makeDataFlow } from "@/features/detailed-design/test-utils/st
 
 const STAGE1: DesignStageRead = {
   stage: 1,
+  mode: "detailed",
   state: "reviewing",
   is_open: true,
   missing_inputs: [],
@@ -27,6 +28,7 @@ const STAGE1: DesignStageRead = {
   generation_error: null,
   issues: [],
   dfd_accesses: [],
+  plan: null,
 };
 
 describe("designStagesApi", () => {

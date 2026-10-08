@@ -32,6 +32,13 @@ test("ログイン→プロジェクト作成→チャットヒアリング→�
   await page.getByRole("button", { name: "ダウンロード(.md)" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("implementation_plan.md");
+
+  // 簡易モードは、同じ詳細設計画面を段階8(実装手順書)だけで開く。作業単位は実装計画書の WBS から読む
+  await page.getByRole("link", { name: "実装手順書へ進む →" }).click();
+  await expect(page.getByRole("heading", { name: "実装手順書" })).toBeVisible();
+  const units = page.getByRole("table", { name: "単位の一覧" });
+  await expect(units).toContainText("M-01-T01");
+  await expect(units).toContainText("M-01-T02");
 });
 
 test("ドキュメントプレビュー画面から再生成すると、再度生成完了まで待って表示を更新する", async ({

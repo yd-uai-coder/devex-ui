@@ -190,6 +190,7 @@ export function makeStages(
 ) {
   return [1, 2, 3, 4, 5, 6, 7, 8].map((stage): DesignStageRead => ({
     stage,
+    mode: "detailed",
     state: "not_started",
     is_open: stage === 1,
     missing_inputs: stage === 1 ? [] : [`stage:${stage - 1}`],
@@ -201,6 +202,7 @@ export function makeStages(
     generation_error: null,
     issues: [],
     dfd_accesses: [],
+    plan: null,
     ...overrides[stage],
   }));
 }

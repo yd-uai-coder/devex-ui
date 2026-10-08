@@ -11,6 +11,7 @@ import {
   type FindingLevel,
   type ProcedureDocModel,
 } from "@/features/detailed-design/api/types";
+import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
@@ -28,6 +29,7 @@ import {
   countByLevel,
   filterFindings,
   findingsOfUnit,
+  fixTarget,
   procedureUnits,
   toggleUnit,
   toProcedureDoc,
@@ -37,11 +39,13 @@ import {
 // ストアに覚えるタブの選択の鍵(詳細を開いている単位)
 const TAB_KEY = "8:unit";
 
-// 段階8(実装手順書)の作業領域の中身。段階7の作業単位の一覧(依存順)、手順書の AI の下書きの生成
+// 段階8(実装手順書)の作業領域の中身。作業単位の一覧(依存順)、手順書の AI の下書きの生成
 // (選んだ単位を1回に5つまで)、単位の詳細(参照する設計の展開と、手順書の編集)、実装可能性チェックの
 // 未定義・要決定の一覧を持つ。未定義は手順書の上では決めず、「段階Nで直す」で対象の段階へ移って直す
 // (直した段階は差し戻され、段階8は「古い」になる)。編集中の内容はこのコンポーネントの中だけに持ち、
 // 保存して初めてサーバーへ送る(段階5の ProcedurePanel と同じ形)。
+// 作業単位は段階8の plan(詳細設計モードは段階7、簡易モードは実装計画書の WBS)から読む。簡易モードは
+// 直す先が文書なので、「〇〇書を直す(再生成)」で文書の画面へ移る。
 
 const LEVEL_COLOR: Record<FindingLevel, string> = {
   critical: "var(--red10)",
@@ -65,11 +69,13 @@ function LevelCounts({ findings }: { findings: Finding[] }) {
 }
 
 function FindingTable({
+  projectId,
   findings,
   onFix,
 }: {
+  projectId: string;
   findings: Finding[];
-  onFix: (finding: Finding) => void;
+  onFix: (stage: number, target: string) => void;
 }) {
   if (findings.length === 0) return <Text fontSize="$2">未定義・要決定はありません。</Text>;
   return (
@@ -95,11 +101,11 @@ function FindingTable({
               <td style={CELL}>{finding.target}</td>
               <td style={CELL}>{finding.message}</td>
               <td style={NOWRAP}>
-                {finding.fixStage === 8 ? null : (
-                  <Button size="$2" onPress={() => onFix(finding)}>
-                    {`段階${finding.fixStage}で直す`}
-                  </Button>
-                )}
+                <FixTargetButton
+                  projectId={projectId}
+                  target={fixTarget(finding.fixStage, finding.fixDocument)}
+                  onStage={(stage) => onFix(stage, finding.target)}
+                />
               </td>
             </tr>
           ))}
@@ -118,9 +124,8 @@ export function ProcedureDocPanel({
   stage: DesignStageRead;
   onDirtyChange: (dirty: boolean) => void;
 }) {
-  const planModel = useDetailedDesignStore(
-    (s) => s.stages.find((item) => item.stage === 7)?.model ?? null,
-  );
+  const planModel = stage.plan;
+  const simple = stage.mode === "simple";
   const saving = useDetailedDesignStore((s) => s.saving);
   const requestingGeneration = useDetailedDesignStore((s) => s.requestingGeneration);
   const save = useDetailedDesignStore((s) => s.save);
@@ -182,8 +187,13 @@ export function ProcedureDocPanel({
       <YStack gap="$2">
         <Text fontWeight="700">単位の一覧(依存順)</Text>
         <Paragraph color="$color11" fontSize="$2">
-          段階7の作業単位です(依存は前の単位だけを指すので、計画の並び順が依存順です)。手順書を作る単位を選んで生成し、単位の ID を押すと詳細を開きます。
+          {simple ? "実装計画書の WBS" : "段階7"}の作業単位です(依存は前の単位だけを指すので、計画の並び順が依存順です)。手順書を作る単位を選んで生成し、単位の ID を押すと詳細を開きます。
         </Paragraph>
+        {simple && units.length === 0 ? (
+          <Text role="status" color="$orange10">
+            実装計画書の WBS から作業単位を読めませんでした。下の指摘を見て、文書を再生成してください。
+          </Text>
+        ) : null}
         <div style={{ overflowX: "auto" }}>
           <table style={TABLE} aria-label="単位の一覧">
             <thead>
@@ -294,6 +304,7 @@ export function ProcedureDocPanel({
             doc={doc}
             disabled={generating || !stage.is_open}
             unsaved={dirty}
+            mode={stage.mode}
             onChange={setDoc}
             onFix={jumpTo}
           />
@@ -303,7 +314,9 @@ export function ProcedureDocPanel({
       <YStack gap="$2">
         <Text fontWeight="700">未定義・要決定(実装可能性チェック)</Text>
         <Paragraph color="$color11" fontSize="$2">
-          「検証」は設計の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、対象の段階で直してください。直した段階は差し戻され、この段階は「古い」になります。
+          {simple
+            ? "「検証」は実装計画書・内部設計書の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、直す先の文書を再生成して直してください(手順が要る単位は、詳細設計モードで詰めることも検討してください)。文書を再生成すると、この段階は「古い」になります。"
+            : "「検証」は設計の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、対象の段階で直してください。直した段階は差し戻され、この段階は「古い」になります。"}
         </Paragraph>
         <XStack gap="$2" flexWrap="wrap">
           <Button
@@ -327,8 +340,9 @@ export function ProcedureDocPanel({
           ))}
         </XStack>
         <FindingTable
+          projectId={projectId}
           findings={filterFindings(findings, filter)}
-          onFix={(finding) => jumpTo(finding.fixStage, finding.target)}
+          onFix={jumpTo}
         />
       </YStack>
 

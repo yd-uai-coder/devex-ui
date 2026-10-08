@@ -107,4 +107,15 @@ describe("DocumentsPageContent", () => {
 
     expect(screen.getByText("まだ生成されたドキュメントがありません。")).toBeInTheDocument();
   });
+
+  it("簡易ドキュメントモードでは、実装手順書へ進むリンクを表示する(同じ詳細設計画面を段階8だけで開く)", () => {
+    useDocumentsStore.setState({ projectMode: "simple" });
+
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "実装手順書へ進む →" })).toHaveAttribute(
+      "href",
+      "/projects/p1/detailed-design",
+    );
+  });
 });

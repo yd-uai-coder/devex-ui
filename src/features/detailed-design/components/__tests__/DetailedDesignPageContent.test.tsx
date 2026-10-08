@@ -166,4 +166,16 @@ describe("DetailedDesignPageContent", () => {
 
     expect(useDetailedDesignStore.getState().approve).not.toHaveBeenCalled();
   });
+
+  it("簡易モードは見出しを「実装手順書」にし、段階8だけのステッパーで開く", () => {
+    useDetailedDesignStore.setState({
+      stages: makeStages({ 8: { mode: "simple", is_open: true, missing_inputs: [] } }).slice(7),
+      selectedStage: 8,
+    });
+
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "実装手順書" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" })).not.toBeInTheDocument();
+  });
 });

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { FINDING_LEVELS, type StageIssue } from "@/features/detailed-design/api/types";
-import { FINDING_LEVEL_LABELS, FINDING_SOURCE_LABELS, STAGE_TITLES } from "@/features/detailed-design/labels";
+import {
+  DESIGN_DOCUMENT_LABELS,
+  FINDING_LEVEL_LABELS,
+  FINDING_SOURCE_LABELS,
+  STAGE_TITLES,
+} from "@/features/detailed-design/labels";
 import {
   addUnitRow,
   collectFindings,
@@ -9,6 +14,7 @@ import {
   criticalCount,
   filterFindings,
   findingsOfUnit,
+  fixTarget,
   procedureUnits,
   removeUnit,
   removeUnitRow,
@@ -49,7 +55,13 @@ describe("procedureDocOps", () => {
 
     expect(doc.units[0].title).toBe("");
     expect(doc.units[0].files[0].kind).toBe("module");
-    expect(doc.units[0].findings[0]).toEqual({ level: "major", target: "", message: "", fix_stage: 8 });
+    expect(doc.units[0].findings[0]).toEqual({
+      level: "major",
+      target: "",
+      message: "",
+      fix_stage: 8,
+      fix_document: null,
+    });
     expect(toProcedureDoc(null)).toEqual({ units: [] });
   });
 
@@ -144,5 +156,31 @@ describe("procedureDocOps", () => {
 
   it("removeUnit は単位の手順書を消す", () => {
     expect(removeUnit(makeProcedureDoc(), "M-01-T02").units).toEqual([]);
+  });
+
+  it("簡易モードの指摘は直す先の文書を持ち、直す先は文書を段階より優先する", () => {
+    const doc = toProcedureDoc({
+      units: [
+        {
+          unit_id: "M-01-T02",
+          findings: [{ target: "DF-1", fix_stage: 8, fix_document: "internal_design" }, { fix_document: "x" }],
+        },
+      ],
+    });
+    const findings = collectFindings(
+      [check({ code: "UNKNOWN_DATAFLOW", fix_stage: 8, fix_document: "implementation_plan" })],
+      doc,
+    );
+
+    expect(doc.units[0].findings.map((f) => f.fix_document)).toEqual(["internal_design", null]);
+    expect(findings.map((f) => [f.source, f.fixDocument])).toEqual([
+      ["check", "implementation_plan"],
+      ["ai", "internal_design"],
+      ["ai", null],
+    ]);
+    expect(fixTarget(8, "internal_design")).toEqual({ kind: "document", document: "internal_design" });
+    expect(fixTarget(5, null)).toEqual({ kind: "stage", stage: 5 });
+    expect(fixTarget(8, null)).toBeNull();
+    expect(DESIGN_DOCUMENT_LABELS.implementation_plan).toBe("実装計画書");
   });
 });
