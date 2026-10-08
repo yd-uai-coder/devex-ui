@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
-import { getUnitContext } from "@/features/detailed-design/api/designStagesApi";
+import { getUnitAiMarkdown, getUnitContext } from "@/features/detailed-design/api/designStagesApi";
 import {
   FINDING_LEVELS,
   type FindingLevel,
@@ -29,6 +29,7 @@ import { subToText, textToSub } from "@/features/detailed-design/logicOps";
 import {
   FILE_KINDS,
   addUnitRow,
+  aiCopyNotices,
   removeUnit,
   removeUnitRow,
   updateUnit,
@@ -40,6 +41,7 @@ import {
 // 手順書(目的・ファイル・実装の要点・テスト観点・確認方法・AI の指摘)を出す。手順書の編集は
 // onChange で呼び出し元(ProcedureDocPanel)へ返し、保存は呼び出し元が行う。AI の指摘は手順書の上では
 // 決めず、「段階Nで直す」で対象の段階へ移って直す(直したら指摘の行を消せる)。
+// 「AI 向けにコピー」は、サーバーが保存済みの手順書から組み立てた md を写す。
 
 const TEXTAREA = { ...INPUT, minHeight: 32, resize: "vertical" } as const;
 
@@ -164,11 +166,84 @@ function UnitRefs({ projectId, unitId }: { projectId: string; unitId: string }) 
   );
 }
 
+type CopyState =
+  | { status: "idle" }
+  | { status: "copying" }
+  | { status: "copied"; notices: string[] }
+  | { status: "error"; message: string };
+
+// 「AI 向けにコピー」。サーバーが保存済みの手順書と承認済みの設計から組み立てた md(参照する設計を
+// 展開したもの。zip の ai/<単位ID>.md と同じ)をクリップボードへ写す。段階8が承認済みでない・未定義が
+// 残るときは、写した後に件数を示して警告する(渡すのは止めない)。保存していない編集があると、写す
+// 中身が画面とずれるので押せない。
+function AiCopyButton({
+  projectId,
+  unitId,
+  unsaved,
+}: {
+  projectId: string;
+  unitId: string;
+  unsaved: boolean;
+}) {
+  const [state, setState] = useState<CopyState>({ status: "idle" });
+
+  const handleCopy = async () => {
+    setState({ status: "copying" });
+    try {
+      const result = await getUnitAiMarkdown(projectId, unitId);
+      await navigator.clipboard.writeText(result.markdown);
+      setState({ status: "copied", notices: aiCopyNotices(result) });
+    } catch (err) {
+      setState({
+        status: "error",
+        message: err instanceof Error ? err.message : "コピーに失敗しました",
+      });
+    }
+  };
+
+  return (
+    <YStack gap="$1">
+      <XStack gap="$2" alignItems="center" flexWrap="wrap">
+        <StyledButton
+          size="$2"
+          disabled={unsaved || state.status === "copying"}
+          onPress={() => void handleCopy()}
+        >
+          {state.status === "copying" ? "準備中..." : "AI 向けにコピー"}
+        </StyledButton>
+        <Text color="$color11" fontSize="$2">
+          {unsaved
+            ? "保存していない編集があります。保存してからコピーしてください。"
+            : "参照する設計を展開した md を、AI Coding Agent に渡す形でコピーします(保存済みの内容から)。"}
+        </Text>
+      </XStack>
+      {state.status === "copied" ? (
+        <YStack role="status" gap="$1">
+          <Text color="$green10" fontSize="$2">
+            コピーしました。
+          </Text>
+          {state.notices.map((notice) => (
+            <Text key={notice} color="$orange10" fontSize="$2">
+              ⚠ {notice}
+            </Text>
+          ))}
+        </YStack>
+      ) : null}
+      {state.status === "error" ? (
+        <Text role="alert" color="$red10" fontSize="$2">
+          {state.message}
+        </Text>
+      ) : null}
+    </YStack>
+  );
+}
+
 export function UnitProcedureEditor({
   projectId,
   unit,
   doc,
   disabled,
+  unsaved,
   onChange,
   onFix,
 }: {
@@ -176,6 +251,7 @@ export function UnitProcedureEditor({
   unit: ProcedureUnit;
   doc: ProcedureDocModel;
   disabled: boolean;
+  unsaved: boolean;
   onChange: (doc: ProcedureDocModel) => void;
   onFix: (fixStage: number, target: string) => void;
 }) {
@@ -210,7 +286,9 @@ export function UnitProcedureEditor({
             <Paragraph role="status" color="$red10">
               この手順書は、作ったときのタスク名「{procedure.title}」が段階7と合いません。作り直すか、削除してください。
             </Paragraph>
-          ) : null}
+          ) : (
+            <AiCopyButton projectId={projectId} unitId={id} unsaved={unsaved} />
+          )}
 
           <YStack gap="$1">
             <Text fontWeight="700">目的</Text>

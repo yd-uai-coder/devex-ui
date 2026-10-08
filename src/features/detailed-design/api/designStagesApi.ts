@@ -1,6 +1,12 @@
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
-import type { DesignStageRead, LogicTarget, SequenceRead, UnitContextRead } from "./types";
+import type {
+  DesignStageRead,
+  LogicTarget,
+  SequenceRead,
+  UnitAiMarkdownRead,
+  UnitContextRead,
+} from "./types";
 
 const base = (projectId: string) =>
   `/api/v1/projects/${projectId}/design-stages`;
@@ -76,14 +82,31 @@ export function getUnitContext(projectId: string, unitId: string): Promise<UnitC
   );
 }
 
+// 段階8の単位1つの AI 向けの版(保存済みの手順書と承認済みの段階1〜7から組み立てる)。段階8が開いて
+// いなければ409、段階7に無い単位・手順書の無い単位は404。
+export function getUnitAiMarkdown(projectId: string, unitId: string): Promise<UnitAiMarkdownRead> {
+  return apiFetch<UnitAiMarkdownRead>(
+    `${base(projectId)}/units/${encodeURIComponent(unitId)}/ai-markdown`,
+  );
+}
+
 export type DownloadedDocument = { filename: string; content: Blob };
 
-// 詳細設計書(HTML・md)と載せた図(SVG・draw.io)の zip。いつでもダウンロードでき、
-// 承認していない段階の章は「未承認」になる。zip に入れた図は exported になる。
 // zip はバイナリなので text() ではなく blob() で受け取る。
-export async function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
-  const res = await fetchAttachment(`${base(projectId)}/document`);
+async function downloadZip(url: string, fallback: string): Promise<DownloadedDocument> {
+  const res = await fetchAttachment(url);
   const content = await res.blob();
-  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? "detailed_design.zip";
+  const filename = parseFilename(res.headers.get("Content-Disposition")) ?? fallback;
   return { filename, content };
+}
+
+// 詳細設計書(HTML・md)と載せた図(SVG・draw.io)、実装計画の zip。段階1〜7がすべて承認済みでなければ
+// 409(DESIGN_DOCUMENT_NOT_READY)。zip に入れた図は exported になる。
+export function downloadDetailedDesign(projectId: string): Promise<DownloadedDocument> {
+  return downloadZip(`${base(projectId)}/document`, "detailed_design.zip");
+}
+
+// 実装手順書(index.md・単位ごとの md・AI 向けの版・HTML 1枚)の zip。段階8が承認済みでなければ 409。
+export function downloadImplementationProcedure(projectId: string): Promise<DownloadedDocument> {
+  return downloadZip(`${base(projectId)}/procedure-document`, "implementation_procedure.zip");
 }

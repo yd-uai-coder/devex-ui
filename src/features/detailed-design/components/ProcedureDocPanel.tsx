@@ -293,6 +293,7 @@ export function ProcedureDocPanel({
             unit={openedUnit}
             doc={doc}
             disabled={generating || !stage.is_open}
+            unsaved={dirty}
             onChange={setDoc}
             onFix={jumpTo}
           />

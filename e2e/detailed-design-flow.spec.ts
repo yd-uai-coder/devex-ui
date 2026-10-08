@@ -143,10 +143,14 @@ test("詳細設計モードで段階1〜7を承認し、詳細設計書と実装
   await generateDraft(page);
   await approveStage(page, 7, "横断事項と実装計画");
 
-  // 詳細設計書と実装計画の zip
-  await expect(page.getByText("段階1〜7はすべて承認済みです。")).toBeVisible();
+  // 詳細設計書と実装計画の zip(段階1〜7の承認で押せる)。実装手順書は段階8を承認するまで押せない
+  await expect(page.getByRole("button", { name: "実装手順書をダウンロード(.zip)" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await expect(page.getByText("段階8が未承認です。承認するとダウンロードできます。")).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }).click();
+  await page.getByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe("detailed_design.zip");
   const path = await download.path();

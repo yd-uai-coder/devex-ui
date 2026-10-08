@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   approveDesignStage,
   downloadDetailedDesign,
+  downloadImplementationProcedure,
   generateDesignStage,
   getProcedureSequence,
+  getUnitAiMarkdown,
   getUnitContext,
   listDesignStages,
   saveDesignStage,
@@ -146,6 +148,18 @@ describe("designStagesApi", () => {
     );
   });
 
+  it("getUnitAiMarkdownはGET /design-stages/units/{unit_id}/ai-markdownを呼ぶ", async () => {
+    const result = { unit_id: "M-01-T02", markdown: "# x", state: "approved", finding_total: 0, critical: 0 };
+    stub.queue({ status: 200, body: result });
+
+    const read = await getUnitAiMarkdown("p1", "M-01-T02");
+
+    expect(read).toEqual(result);
+    expect(stub.requests[0].url).toContain(
+      "/api/v1/projects/p1/design-stages/units/M-01-T02/ai-markdown",
+    );
+  });
+
   it("getProcedureSequenceはGET /design-stages/procedures/{function_id}/sequenceを呼ぶ", async () => {
     const sequence = { function_id: "F-01", svg: "<svg/>", issues: [] };
     stub.queue({ status: 200, body: sequence });
@@ -201,5 +215,23 @@ describe("downloadDetailedDesign", () => {
     expect(result.filename).toBe("detailed_design.zip");
     expect(result.content).toBeInstanceOf(Blob);
     expect(result.content.size).toBe(4);
+  });
+
+  it("downloadImplementationProcedure は GET .../design-stages/procedure-document の zip を受け取る", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b]), {
+        status: 200,
+        headers: { "Content-Disposition": 'attachment; filename="implementation_procedure.zip"' },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await downloadImplementationProcedure("p1");
+
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(
+      /\/api\/v1\/projects\/p1\/design-stages\/procedure-document$/,
+    );
+    expect(result.filename).toBe("implementation_procedure.zip");
+    expect(result.content).toBeInstanceOf(Blob);
   });
 });

@@ -57,9 +57,10 @@ describe("DetailedDesignPageContent", () => {
     renderContent();
 
     expect(
-      screen.getByRole("button", { name: "詳細設計書と実装計画をダウンロード(.zip)" }),
+      screen.getByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("7 件が未承認");
+    expect(screen.getByRole("button", { name: "実装手順書をダウンロード(.zip)" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("段階1・2・3・4・5・6・7が未承認です。");
   });
 
   it("承認ボタンでapprove(projectId, 段階)を呼ぶ", async () => {

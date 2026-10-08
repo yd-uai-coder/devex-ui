@@ -315,3 +315,13 @@ export type UnitContextRead = {
   crosscutting: string;
   environment: string;
 };
+
+// 段階8の単位1つの AI 向けの版(「AI 向けにコピー」。zip の ai/<単位ID>.md と同じ組み立て)。保存済みの
+// 手順書から作る。state は段階8の状態、finding_total・critical はその単位に残る未定義の件数と最重要の件数。
+export type UnitAiMarkdownRead = {
+  unit_id: string;
+  markdown: string;
+  state: StageState;
+  finding_total: number;
+  critical: number;
+};

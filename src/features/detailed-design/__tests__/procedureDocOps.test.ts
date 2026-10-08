@@ -5,6 +5,7 @@ import {
   addUnitRow,
   collectFindings,
   countByLevel,
+  aiCopyNotices,
   criticalCount,
   filterFindings,
   findingsOfUnit,
@@ -97,6 +98,21 @@ describe("procedureDocOps", () => {
 
     expect(criticalCount(stage)).toBe(2);
     expect(criticalCount(makeStages()[7])).toBe(0);
+  });
+
+  it("aiCopyNotices は未承認・古い・未定義の残りを知らせ、承認済みで残りが無ければ空", () => {
+    const base = { unit_id: "M-01-T02", markdown: "", finding_total: 0, critical: 0 };
+
+    expect(aiCopyNotices({ ...base, state: "approved" })).toEqual([]);
+    expect(aiCopyNotices({ ...base, state: "reviewing" })).toEqual([
+      "段階8は未承認です(人が確定していない下書きです)。",
+    ]);
+    const outdated = aiCopyNotices({ ...base, state: "outdated", finding_total: 3, critical: 1 });
+    expect(outdated).toHaveLength(2);
+    expect(outdated[0]).toContain("古くなっています");
+    expect(outdated[1]).toBe(
+      "この単位には未定義・要決定が 3 件残っています(最重要 1 件)。決めてから渡すことを勧めます。",
+    );
   });
 
   it("toggleUnit は上限まで足し、外すのはいつでもできる", () => {
