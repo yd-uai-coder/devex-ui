@@ -20,6 +20,8 @@ export const MENU_TREE: MenuGroup[] = [
     children: [
       // 実装手順書(段階8)の見せ方の提案(仮データ)
       { label: "実装手順書デモ", href: "/implementation-procedure-demo" },
+      // ヒアリングの観点の表・選択肢カード・要件の出どころの見せ方の提案(仮データ)
+      { label: "ヒアリングの観点の表デモ", href: "/hearing-points-demo" },
     ],
   },
 ];
