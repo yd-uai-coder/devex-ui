@@ -18,6 +18,13 @@ vi.mock("@/features/hearing/components/ChatPanel", () => ({
   ChatPanel: () => null,
 }));
 
+// 広い画面(lg)かどうかを切り替えるため、useMedia だけを差し替える
+const mediaMock = vi.fn(() => ({ lg: false }));
+vi.mock("tamagui", async () => {
+  const actual = await vi.importActual<typeof import("tamagui")>("tamagui");
+  return { ...actual, useMedia: () => mediaMock() };
+});
+
 const useGenerationPollingMock = vi.fn();
 vi.mock("@/hooks/useGenerationPolling", () => ({
   useGenerationPolling: (...args: unknown[]) => useGenerationPollingMock(...args),
@@ -35,7 +42,8 @@ describe("ChatPageContent", () => {
   beforeEach(() => {
     push.mockClear();
     useGenerationPollingMock.mockReset().mockReturnValue({ timedOut: false });
-    useHearingStore.setState({ generationTriggered: false, projectStatus: null });
+    useHearingStore.setState({ generationTriggered: false, projectStatus: null, points: null });
+    mediaMock.mockReturnValue({ lg: false });
   });
 
   it("useGenerationPollingへprojectIdとgenerationTriggeredを渡す", () => {
@@ -93,4 +101,47 @@ describe("ChatPageContent", () => {
       expect(screen.queryByRole("link", { name: /生成済みのドキュメントを見る/ })).not.toBeInTheDocument();
     },
   );
+
+  const POINTS = {
+    scale: null,
+    legacy: false,
+    stale: false,
+    is_sufficient: false,
+    points: [
+      {
+        key: "scale",
+        kind: "function" as const,
+        label: "規模",
+        question: "使うのは誰ですか",
+        required: true,
+        status: "open" as const,
+        summary: "",
+        evidence: [],
+      },
+    ],
+  };
+
+  it("観点の表がまだ無ければ、パネルを出さない", () => {
+    renderContent();
+
+    expect(screen.queryByRole("table", { name: "観点の表" })).not.toBeInTheDocument();
+  });
+
+  it("狭い画面では観点の表を畳んで置く", () => {
+    useHearingStore.setState({ points: POINTS });
+
+    const { container } = renderContent();
+
+    expect(screen.getByText("観点の表 ── 未決の必須 1 件")).toBeInTheDocument();
+    expect(container.querySelector("details")?.open).toBe(false);
+  });
+
+  it("広い画面では観点の表を開いて置く", () => {
+    mediaMock.mockReturnValue({ lg: true });
+    useHearingStore.setState({ points: POINTS });
+
+    const { container } = renderContent();
+
+    expect(container.querySelector("details")?.open).toBe(true);
+  });
 });

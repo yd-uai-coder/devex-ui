@@ -3,10 +3,15 @@ import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
 import {
   getChatHistory,
   getHearingCompletion,
+  getHearingPoints,
   getProject,
   triggerGeneration,
 } from "@/features/hearing/api/hearingApi";
-import type { ChatHistoryEntry, HearingCompletionCheck } from "@/features/hearing/api/hearingApi";
+import type {
+  ChatHistoryEntry,
+  HearingCompletionCheck,
+  HearingPointsView,
+} from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { AsyncStatus } from "@/lib/api/types";
 
@@ -26,6 +31,9 @@ type HearingStore = {
   // (connectionLost)と分けて、何が起きたかを利用者に見せる。
   streamError: string | null;
   completion: HearingCompletionCheck | null;
+  // 観点の表(チャット画面のパネル)。発言のたびにサーバーが判定し直すので、completionと同じ
+  // タイミングで取り直す。
+  points: HearingPointsView | null;
   // 「今まさに生成が進行中で、完了をポーリングして自動遷移すべき」ことを表す
   // (status==="generating"のときのみtrue)。過去に生成済み(completed/revising)は
   // 含めない ── 含めるとチャット画面を開くたびに/documentsへ強制的に押し戻されてしまうため。
@@ -47,9 +55,24 @@ const PROJECT_INITIAL = {
   connectionLost: false,
   streamError: null,
   completion: null,
+  points: null,
   generationTriggered: false,
   projectStatus: null,
 } as const;
+
+type StoreGet = () => HearingStore;
+type StoreSet = (partial: Partial<HearingStore>) => void;
+
+// 観点の表を取り直す。失敗はチャット自体をブロックしない(完了判定と同じ方針)。
+async function loadPoints(projectId: string, get: StoreGet, set: StoreSet): Promise<void> {
+  try {
+    const points = await getHearingPoints(projectId);
+    // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
+    if (get().projectId === projectId) set({ points });
+  } catch {
+    // 表が出ないだけで、チャットは続けられる
+  }
+}
 
 export const useHearingStore = create<HearingStore>((set, get) => ({
   projectId: null,
@@ -60,6 +83,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   connectionLost: false,
   streamError: null,
   completion: null,
+  points: null,
   generationTriggered: false,
   projectStatus: null,
 
@@ -89,6 +113,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
           // 完了判定の失敗はチャット自体をブロックしない(sendMessage側と同じ方針)
         }
       }
+      // 観点の表は生成の後も見られるよう、状態によらず取る
+      await loadPoints(projectId, get, set);
     } catch {
       set({ historyStatus: "error" });
     }
@@ -133,6 +159,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       } catch {
         // 完了判定の失敗はチャット自体をブロックしない
       }
+      await loadPoints(projectId, get, set);
     } catch (err) {
       if (err instanceof StreamChatError && err.code) {
         // バックエンドが失敗を伝えた(発話は保存されていない)。表示した発話を取り消し、理由を見せる

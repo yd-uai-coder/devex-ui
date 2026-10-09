@@ -25,10 +25,30 @@ function resetStore() {
     connectionLost: false,
     streamError: null,
     completion: null,
+    points: null,
     generationTriggered: false,
     projectStatus: null,
   });
 }
+
+const POINTS_VIEW = {
+  scale: null,
+  legacy: false,
+  stale: false,
+  is_sufficient: false,
+  points: [
+    {
+      key: "scale",
+      kind: "function",
+      label: "規模",
+      question: "使うのは誰ですか",
+      required: true,
+      status: "open",
+      summary: "",
+      evidence: [],
+    },
+  ],
+};
 
 describe("useHearingStore", () => {
   let stub: ReturnType<typeof stubFetch>;
@@ -117,7 +137,8 @@ describe("useHearingStore", () => {
 
     expect(useHearingStore.getState().generationTriggered).toBe(true);
     expect(useHearingStore.getState().completion).toBeNull();
-    expect(stub.requests).toHaveLength(2); // getChatHistory + getProjectのみ、getHearingCompletionは呼ばない
+    // getChatHistory + getProject + 観点の表のみ、getHearingCompletionは呼ばない
+    expect(stub.requests.map((r) => r.url.split("/").pop())).toEqual(["chat", "p1", "hearing-points"]);
   });
 
   it("loadHistory()はstatus==='completed'のときgenerationTriggeredを立てず"
@@ -130,7 +151,54 @@ describe("useHearingStore", () => {
     expect(useHearingStore.getState().generationTriggered).toBe(false);
     expect(useHearingStore.getState().projectStatus).toBe("completed");
     expect(useHearingStore.getState().completion).toBeNull();
-    expect(stub.requests).toHaveLength(2); // getChatHistory + getProjectのみ、getHearingCompletionは呼ばない
+    // getChatHistory + getProject + 観点の表のみ、getHearingCompletionは呼ばない
+    expect(stub.requests.map((r) => r.url.split("/").pop())).toEqual(["chat", "p1", "hearing-points"]);
+  });
+
+  it("loadHistory()は完了判定の後に観点の表を取り、storeに置く", async () => {
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p1", status: "interviewing" } });
+    stub.queue({ status: 200, body: { is_sufficient: false, summary: "", missing_points: [] } });
+    stub.queue({ status: 200, body: POINTS_VIEW });
+
+    await useHearingStore.getState().loadHistory("p1");
+
+    expect(stub.requests[3].url).toContain("/api/v1/projects/p1/hearing-points");
+    expect(useHearingStore.getState().points).toEqual(POINTS_VIEW);
+  });
+
+  it("観点の表の取得に失敗しても、チャットの読み込みは成功のまま", async () => {
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p1", status: "completed" } });
+    stub.queue({ status: 500, body: { error: { code: "X", message: "失敗" } } });
+
+    await useHearingStore.getState().loadHistory("p1");
+
+    expect(useHearingStore.getState().historyStatus).toBe("success");
+    expect(useHearingStore.getState().points).toBeNull();
+  });
+
+  it("sendMessage()は返信の後に完了判定と観点の表を取り直す", async () => {
+    useHearingStore.setState({ projectId: "p1" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["了解"]));
+    stub.queue({ status: 200, body: { is_sufficient: false, summary: "", missing_points: ["規模"] } });
+    stub.queue({ status: 200, body: POINTS_VIEW });
+
+    await useHearingStore.getState().sendMessage("p1", "個人で使います");
+
+    expect(stub.requests.map((r) => r.url.split("/").pop())).toEqual(["hearing-completion", "hearing-points"]);
+    expect(useHearingStore.getState().points).toEqual(POINTS_VIEW);
+  });
+
+  it("別のプロジェクトへ移った後に届いた観点の表は置かない", async () => {
+    useHearingStore.setState({ projectId: "p2" });
+    vi.mocked(streamChat).mockReturnValue(fakeStream(["了解"]));
+    stub.queue({ status: 200, body: { is_sufficient: false, summary: "", missing_points: [] } });
+    stub.queue({ status: 200, body: POINTS_VIEW });
+
+    await useHearingStore.getState().sendMessage("p1", "個人で使います");
+
+    expect(useHearingStore.getState().points).toBeNull();
   });
 
   it("sendMessage()はストリームを蓄積してAIメッセージを確定し、完了判定も取得する", async () => {

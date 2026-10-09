@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { H2, Text, XStack, YStack } from "tamagui";
+import { H2, Text, XStack, YStack, useMedia } from "tamagui";
 import { ChatPanel } from "@/features/hearing/components/ChatPanel";
+import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 
@@ -13,6 +14,9 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const router = useRouter();
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  const points = useHearingStore((s) => s.points);
+  // 広い画面(lg 以上)は観点の表をチャットの右に開いて置き、狭い画面はチャットの上に畳んで置く
+  const wide = useMedia().lg;
 
   const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
     router.push(`/projects/${projectId}/documents`);
@@ -39,7 +43,17 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
           </Link>
         </XStack>
       ) : null}
-      <ChatPanel projectId={projectId} />
+      <YStack gap="$4" $lg={{ flexDirection: "row-reverse", alignItems: "flex-start" }}>
+        {points ? (
+          <YStack $lg={{ width: 460, flexShrink: 0 }}>
+            {/* 幅が変わって置き場所が変わったら、開閉の初期値を合わせ直す */}
+            <HearingPointsPanel key={wide ? "wide" : "narrow"} view={points} defaultOpen={wide} />
+          </YStack>
+        ) : null}
+        <YStack minWidth={0} $lg={{ flex: 1 }}>
+          <ChatPanel projectId={projectId} />
+        </YStack>
+      </YStack>
     </YStack>
   );
 }
