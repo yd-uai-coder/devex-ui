@@ -71,6 +71,9 @@ export type DesignStageRead = {
   // 段階8だけが持つ、作業単位(段階7と同じ形。詳細設計モードは承認済みの段階7、簡易モードは実装計画書の
   // WBS を読んだもの。段階8が開いていなければ null)
   plan: Record<string, unknown> | null;
+  // 段階8だけが持つ、作業単位 → 要件ID(詳細設計モードは単位の処理の段階1の要件、簡易モードは
+  // WBS の「要件」欄)。古いバックエンドの応答には無い
+  unit_req_ids?: Record<string, string[]>;
 };
 
 // 段階1 機能(処理)一覧の意味モデル(devex-api app/detailed_design/function_list.py)。
@@ -86,6 +89,7 @@ export type FunctionRow = {
   group_initial: string; // API のパスから決めた機能グループの初期値
   group: string; // 人が確定した機能グループ
   summary: string;
+  req_ids: string[]; // 要件ID(FR-001…)。API の処理は外部設計書の 2.6 から写した下書き
 };
 
 export type FunctionListModel = {

@@ -41,6 +41,7 @@ export function toFunctionList(
           group_initial: String(row.group_initial ?? ""),
           group: String(row.group ?? ""),
           summary: String(row.summary ?? ""),
+          req_ids: Array.isArray(row.req_ids) ? row.req_ids.map(String) : [],
         }),
       )
     : [];
@@ -73,6 +74,7 @@ export function addRow(model: FunctionListModel): FunctionListModel {
     group_initial: "",
     group: model.groups[0] ?? "",
     summary: "",
+    req_ids: [],
   };
   return {
     ...model,
@@ -130,16 +132,4 @@ export function removeGroup(
 ): FunctionListModel {
   if (isGroupUsed(model, group)) return model;
   return { ...model, groups: model.groups.filter((g) => g !== group) };
-}
-
-// 関連画面の入力欄(「SCR-001/SCR-002」)と配列の相互変換。
-export function screensToText(screens: string[]): string {
-  return screens.join("/");
-}
-
-export function textToScreens(text: string): string[] {
-  return text
-    .split(/[/、,]/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
 }

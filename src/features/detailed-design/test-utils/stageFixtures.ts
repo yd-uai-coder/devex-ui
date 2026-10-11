@@ -26,6 +26,7 @@ export function makeFunctionList(): FunctionListModel {
         group_initial: "reservations",
         group: "reservations",
         summary: "予約を保存する",
+        req_ids: ["FR-001"],
       },
     ],
     next_number: 2,

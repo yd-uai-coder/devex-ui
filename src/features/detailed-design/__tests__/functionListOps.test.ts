@@ -7,8 +7,6 @@ import {
   removeGroup,
   removeRow,
   renameGroup,
-  screensToText,
-  textToScreens,
   toFunctionList,
   updateRow,
 } from "../functionListOps";
@@ -32,6 +30,7 @@ describe("functionListOps", () => {
       kind: "API",
       screens: [],
       group: "",
+      req_ids: [],
     });
   });
 
@@ -74,8 +73,7 @@ describe("functionListOps", () => {
     expect(removeGroup(withEmpty, "空").groups).toEqual(["reservations"]);
   });
 
-  it("関連画面は「/」区切りの文字列と相互に変換する", () => {
-    expect(textToScreens("SCR-001/ SCR-002、,")).toEqual(["SCR-001", "SCR-002"]);
-    expect(screensToText(["SCR-001", "SCR-002"])).toBe("SCR-001/SCR-002");
+  it("addRowの行は要件ID を持たない", () => {
+    expect(addRow(makeFunctionList()).functions[1].req_ids).toEqual([]);
   });
 });

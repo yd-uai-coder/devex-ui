@@ -5,6 +5,7 @@ import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { StyledInput } from "@/components/ui/primitives/StyledInput";
+import { ListInput } from "@/features/detailed-design/components/ListInput";
 import type {
   DesignStageRead,
   FunctionKind,
@@ -29,8 +30,6 @@ import {
   removeGroup,
   removeRow,
   renameGroup,
-  screensToText,
-  textToScreens,
   toFunctionList,
   updateRow,
 } from "@/features/detailed-design/functionListOps";
@@ -178,6 +177,7 @@ export function FunctionListPanel({
                   <th style={HEAD}>種別</th>
                   <th style={HEAD}>トリガー</th>
                   <th style={HEAD}>関連画面</th>
+                  <th style={HEAD}>要件</th>
                   <th style={HEAD}>機能グループ</th>
                   <th style={HEAD}>概要</th>
                   <th style={HEAD} />
@@ -226,14 +226,24 @@ export function FunctionListPanel({
                       />
                     </td>
                     <td style={{ ...CELL, minWidth: 100 }}>
-                      <input
+                      <ListInput
+                        label={`${row.id} の関連画面`}
+                        items={row.screens}
+                        disabled={false}
                         style={INPUT}
-                        aria-label={`${row.id} の関連画面`}
-                        value={screensToText(row.screens)}
-                        onChange={(e) =>
-                          setDraft((m) =>
-                            updateRow(m, row.id, { screens: textToScreens(e.target.value) }),
-                          )
+                        onChange={(screens) =>
+                          setDraft((m) => updateRow(m, row.id, { screens }))
+                        }
+                      />
+                    </td>
+                    <td style={{ ...CELL, minWidth: 100 }}>
+                      <ListInput
+                        label={`${row.id} の要件`}
+                        items={row.req_ids}
+                        disabled={false}
+                        style={{ ...INPUT, ...MONO }}
+                        onChange={(reqIds) =>
+                          setDraft((m) => updateRow(m, row.id, { req_ids: reqIds }))
                         }
                       />
                     </td>

@@ -14,6 +14,7 @@ import {
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayProcedureList } from "@/features/detailed-design/components/StrayProcedureList";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { UnitProcedureEditor } from "@/features/detailed-design/components/UnitProcedureEditor";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -166,6 +167,7 @@ export function ProcedureDocPanel({
   const counts = countByLevel(findings);
   // 重要度の無い指摘は、手順書そのもののエラー(形の不正・段階7と合わない手順書)
   const docIssues = stage.issues.filter((issue) => !issue.level);
+  const unitReqIds = stage.unit_req_ids ?? {};
 
   const startGeneration = () => {
     setConfirming(false);
@@ -198,7 +200,7 @@ export function ProcedureDocPanel({
           <table style={TABLE} aria-label="単位の一覧">
             <thead>
               <tr>
-                {["生成", "単位", "種別", "タスク", "処理", "依存", "手順書", "未定義"].map((head) => (
+                {["生成", "単位", "種別", "タスク", "処理", "要件", "依存", "手順書", "未定義"].map((head) => (
                   <th key={head} style={HEAD}>
                     {head}
                   </th>
@@ -242,6 +244,7 @@ export function ProcedureDocPanel({
                   <td style={NOWRAP}>{UNIT_KIND_LABELS[unit.kind]}</td>
                   <td style={CELL}>{unit.title}</td>
                   <td style={{ ...CELL, ...MONO }}>{unit.functionIds.join(", ") || "—"}</td>
+                  <td style={{ ...CELL, ...MONO }}>{(unitReqIds[unit.id] ?? []).join(", ") || "—"}</td>
                   <td style={{ ...CELL, ...MONO }}>{unit.dependsOn.join(", ") || "—"}</td>
                   <td style={NOWRAP}>{unit.hasProcedure ? "生成済" : "未生成"}</td>
                   <td style={CELL}>
@@ -293,6 +296,14 @@ export function ProcedureDocPanel({
         confirmLabel="作り直す"
         onConfirm={startGeneration}
         onCancel={() => setConfirming(false)}
+      />
+
+      <StrayProcedureList
+        plan={toPlan(planModel)}
+        doc={doc}
+        planLabel={simple ? "実装計画書" : "段階7"}
+        disabled={generating || !stage.is_open}
+        onChange={setDoc}
       />
 
       {openedUnit ? (
