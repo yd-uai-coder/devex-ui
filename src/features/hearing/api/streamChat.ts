@@ -1,5 +1,6 @@
 import { refreshTokens, useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
+import type { CardAnswer, HearingCard } from "@/features/hearing/api/hearingApi";
 
 export class StreamChatError extends Error {
   // バックエンドの共通エラー形式の code(例: "LLM_QUOTA_EXCEEDED")。HTTPの失敗では持たない。
@@ -12,24 +13,38 @@ export class StreamChatError extends Error {
   }
 }
 
+// ストリームから届くもの: 返信の本文(delta)と、本文の後の選択肢カード(cards)
+export type ChatStreamEvent =
+  | { kind: "delta"; delta: string }
+  | { kind: "cards"; cards: HearingCard[] };
+
 // POST /api/v1/projects/{id}/chat のSSEレスポンスを解釈する。バックエンドの形式は
-// `data: {"delta": "..."}\n\n` を`data: [DONE]\n\n`まで繰り返すだけの単純なもので、
+// `data: {"delta": "..."}\n\n`(本文)と`event: cards\ndata: {"cards": [...]}\n\n`(選択肢カード)を
+// `data: [DONE]\n\n`まで送るだけの単純なもので、
 // 途中で失敗したときだけ`event: error\ndata: {"code": "...", "detail": "..."}\n\n`を送って終わる
-// (200を返した後なのでステータスコードでは伝えられないため)。id:/retry:等は使わないため、
+// (200を返した後なのでステータスコードでは伝えられないため)。本文は構造化出力の1回で作るので、
+// 今は1回の delta で全文が届く(形は断片の連続のまま受ける)。id:/retry:等は使わないため、
 // @microsoft/fetch-event-source等の汎用ライブラリは導入せず、fetch+ReadableStreamで直接パースする。
 // apiFetchの401リトライ機構はbodyのストリームを
 // 一度しか読めないため使えず、このヘルパー自身で1回だけリフレッシュ→リトライする。
+// cardAnswers は最新の AI の発言の選択肢カードへの回答(サーバーが選んだ内容を発言の本文に足す)。
+// continueOptional は、必須がそろった後も任意の観点のヒアリングを続けるときに立てる。
 export async function* streamChat(
   projectId: string,
   message: string,
-  options?: { signal?: AbortSignal },
-): AsyncGenerator<string, void, void> {
-  let res = await sendRequest(projectId, message, options?.signal);
+  options?: { signal?: AbortSignal; cardAnswers?: CardAnswer[]; continueOptional?: boolean },
+): AsyncGenerator<ChatStreamEvent, void, void> {
+  const body = {
+    message,
+    card_answers: options?.cardAnswers ?? [],
+    continue_optional: options?.continueOptional ?? false,
+  };
+  let res = await sendRequest(projectId, body, options?.signal);
 
   if (!res.ok && res.status === 401 && useAuthStore.getState().accessToken) {
     const refreshed = await refreshTokens();
     if (refreshed) {
-      res = await sendRequest(projectId, message, options?.signal);
+      res = await sendRequest(projectId, body, options?.signal);
     }
   }
 
@@ -56,13 +71,18 @@ export async function* streamChat(
       const event = parseEvent(rawEvent);
       if (event.kind === "done") return;
       if (event.kind === "error") throw new StreamChatError(event.detail, event.code);
-      if (event.kind === "delta") yield event.delta;
+      if (event.kind === "delta") yield { kind: "delta", delta: event.delta };
+      if (event.kind === "cards") yield { kind: "cards", cards: event.cards };
       boundary = buffer.indexOf("\n\n");
     }
   }
 }
 
-function sendRequest(projectId: string, message: string, signal?: AbortSignal): Promise<Response> {
+function sendRequest(
+  projectId: string,
+  body: { message: string; card_answers: CardAnswer[]; continue_optional: boolean },
+  signal?: AbortSignal,
+): Promise<Response> {
   const accessToken = useAuthStore.getState().accessToken;
   return fetch(`${API_BASE_URL}/api/v1/projects/${projectId}/chat`, {
     method: "POST",
@@ -73,12 +93,13 @@ function sendRequest(projectId: string, message: string, signal?: AbortSignal): 
       Accept: "text/event-stream",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
   });
 }
 
 type SseEvent =
   | { kind: "delta"; delta: string }
+  | { kind: "cards"; cards: HearingCard[] }
   | { kind: "done" }
   | { kind: "error"; code?: string; detail: string }
   | { kind: "ignored" };
@@ -97,6 +118,14 @@ export function parseEvent(rawEvent: string): SseEvent {
       return { kind: "error", code: parsed.code, detail: parsed.detail || STREAM_ERROR_FALLBACK };
     } catch {
       return { kind: "error", detail: STREAM_ERROR_FALLBACK };
+    }
+  }
+  if (eventName === "cards") {
+    try {
+      const parsed = JSON.parse(payload) as { cards?: HearingCard[] };
+      return Array.isArray(parsed.cards) ? { kind: "cards", cards: parsed.cards } : { kind: "ignored" };
+    } catch {
+      return { kind: "ignored" };
     }
   }
   if (!dataLine) return { kind: "ignored" };

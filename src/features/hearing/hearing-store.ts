@@ -1,19 +1,30 @@
 import { create } from "zustand";
 import { streamChat, StreamChatError } from "@/features/hearing/api/streamChat";
 import {
+  composeAnswerText,
+  latestAiMessage,
+  markSelected,
+  pendingAnswers,
+} from "@/features/hearing/cards";
+import {
   getChatHistory,
   getHearingCompletion,
   getHearingPoints,
   getProject,
+  markPointNotApplicable,
   triggerGeneration,
 } from "@/features/hearing/api/hearingApi";
 import type {
   ChatHistoryEntry,
+  HearingCard,
   HearingCompletionCheck,
   HearingPointsView,
 } from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { AsyncStatus } from "@/lib/api/types";
+
+// 「任意項目についてヒアリングを続ける」で、サーバーが利用者の発言として残す文(楽観表示も同じ文)
+export const CONTINUE_OPTIONAL_MESSAGE = "任意の項目についてもヒアリングを続けてください";
 
 type HearingStore = {
   // 今の内容がどのプロジェクトのものか。別のプロジェクトを開いたら、前の会話・完了判定を
@@ -34,6 +45,8 @@ type HearingStore = {
   // 観点の表(チャット画面のパネル)。発言のたびにサーバーが判定し直すので、completionと同じ
   // タイミングで取り直す。
   points: HearingPointsView | null;
+  // 選択肢カードで選んでいる選択肢(カードの id → 選択肢の番号)。送信までは送らず、選び直せる。
+  cardDrafts: Record<string, number>;
   // 「今まさに生成が進行中で、完了をポーリングして自動遷移すべき」ことを表す
   // (status==="generating"のときのみtrue)。過去に生成済み(completed/revising)は
   // 含めない ── 含めるとチャット画面を開くたびに/documentsへ強制的に押し戻されてしまうため。
@@ -42,7 +55,19 @@ type HearingStore = {
   projectStatus: ProjectStatus | null;
 
   loadHistory: (projectId: string) => Promise<void>;
-  sendMessage: (projectId: string, text: string) => Promise<void>;
+  // 選択中のカードの回答も一緒に送る(選んだ内容と text を1つの発言にする)。cardIds を渡すと、
+  // そのカードの回答だけを送る(カードごとの「この回答を送る」)
+  // continueOptional は、必須がそろった後も任意の観点のヒアリングを続ける(バナーのボタン)
+  sendMessage: (
+    projectId: string,
+    text: string,
+    options?: { cardIds?: string[]; continueOptional?: boolean },
+  ) => Promise<void>;
+  // 観点の表の画面から、未決の観点を「対象外(後で決める)」にし、表と完了判定を取り直す。
+  // 失敗は呼び出し側に投げる(画面が理由を出す)
+  skipPoint: (projectId: string, pointKey: string) => Promise<void>;
+  // 選んだ選択肢を置く(ラジオボタンなので外さない。別の選択肢を選び直す)
+  selectCardOption: (cardId: string, option: number) => void;
   approveAndGenerate: (projectId: string) => Promise<void>;
   dismissConnectionLost: () => void;
 };
@@ -56,6 +81,7 @@ const PROJECT_INITIAL = {
   streamError: null,
   completion: null,
   points: null,
+  cardDrafts: {} as Record<string, number>,
   generationTriggered: false,
   projectStatus: null,
 } as const;
@@ -84,6 +110,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   streamError: null,
   completion: null,
   points: null,
+  cardDrafts: {},
   generationTriggered: false,
   projectStatus: null,
 
@@ -120,18 +147,34 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     }
   },
 
-  sendMessage: async (projectId, text) => {
+  sendMessage: async (projectId, text, options) => {
     // ユーザー発話は、AI応答の保存と同じタイミング(ストリームの最後)でまとめて永続化される
     // (devex-api app/services/chat_service.py)。途中で失敗するとバックエンドは発話ごと
-    // 巻き戻すため、失敗を伝えられたときはこの楽観的な表示を取り消す。
+    // 巻き戻すため、失敗を伝えられたときはこの楽観的な表示(カードの選択を含む)を取り消す。
+    const previousMessages = get().messages;
+    const previousDrafts = get().cardDrafts;
+    const latest = latestAiMessage(previousMessages);
+    const cards = latest?.cards ?? [];
+    const cardIds = options?.cardIds;
+    const answers = pendingAnswers(cards, previousDrafts).filter(
+      (answer) => !cardIds || cardIds.includes(answer.card_id),
+    );
     const optimisticUserMessage: ChatHistoryEntry = {
       id: `local-user-${Date.now()}`,
       sender: "user",
-      message: text,
+      message:
+        composeAnswerText(cards, answers, text) ||
+        (options?.continueOptional ? CONTINUE_OPTIONAL_MESSAGE : ""),
       created_at: new Date().toISOString(),
     };
+    const answeredMessages =
+      latest && answers.length > 0
+        ? previousMessages.map((m) => (m === latest ? { ...m, cards: markSelected(cards, answers) } : m))
+        : previousMessages;
     set((state) => ({
-      messages: [...state.messages, optimisticUserMessage],
+      messages: [...answeredMessages, optimisticUserMessage],
+      // 送ったカードの返信で最新の発言が変わり、残りのカードは選べなくなるので、選択中はすべて捨てる
+      cardDrafts: {},
       sending: true,
       streamingReply: "",
       connectionLost: false,
@@ -140,13 +183,22 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     }));
 
     try {
-      for await (const delta of streamChat(projectId, text)) {
-        set((state) => ({ streamingReply: state.streamingReply + delta }));
+      let replyCards: HearingCard[] = [];
+      const streamOptions = options?.continueOptional
+        ? { cardAnswers: answers, continueOptional: true }
+        : { cardAnswers: answers };
+      for await (const event of streamChat(projectId, text, streamOptions)) {
+        if (event.kind === "delta") {
+          set((state) => ({ streamingReply: state.streamingReply + event.delta }));
+        } else {
+          replyCards = event.cards;
+        }
       }
       const aiMessage: ChatHistoryEntry = {
         id: `local-ai-${Date.now()}`,
         sender: "ai",
         message: get().streamingReply,
+        cards: replyCards.length > 0 ? replyCards : null,
         created_at: new Date().toISOString(),
       };
       set((state) => ({ messages: [...state.messages, aiMessage], streamingReply: "", sending: false }));
@@ -162,13 +214,15 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       await loadPoints(projectId, get, set);
     } catch (err) {
       if (err instanceof StreamChatError && err.code) {
-        // バックエンドが失敗を伝えた(発話は保存されていない)。表示した発話を取り消し、理由を見せる
-        set((state) => ({
-          messages: state.messages.filter((m) => m.id !== optimisticUserMessage.id),
+        // バックエンドが失敗を伝えた(発話もカードの選択も保存されていない)。表示を送信の前に戻し、
+        // 選んでいた選択肢も戻して、理由を見せる
+        set({
+          messages: previousMessages,
+          cardDrafts: previousDrafts,
           sending: false,
           streamingReply: "",
           streamError: err.message,
-        }));
+        });
         return;
       }
       // 接続切断等。自動再送はせず、ユーザーに再接続を促すバナーを表示するに留める
@@ -176,6 +230,22 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       set({ sending: false, connectionLost: true, streamingReply: "" });
     }
   },
+
+  skipPoint: async (projectId, pointKey) => {
+    const points = await markPointNotApplicable(projectId, pointKey);
+    if (get().projectId !== projectId) return;
+    set({ points });
+    try {
+      // 必須がそろえば、生成のバナーが出る(サーバーが完了判定を作り直している)
+      const completion = await getHearingCompletion(projectId);
+      if (get().projectId === projectId) set({ completion });
+    } catch {
+      // 完了判定の失敗はチャット自体をブロックしない
+    }
+  },
+
+  selectCardOption: (cardId, option) =>
+    set((state) => ({ cardDrafts: { ...state.cardDrafts, [cardId]: option } })),
 
   approveAndGenerate: async (projectId) => {
     await triggerGeneration(projectId);

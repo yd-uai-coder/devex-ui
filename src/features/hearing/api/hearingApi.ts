@@ -3,11 +3,28 @@ import type { ProjectRead } from "@/features/dashboard/api/projects";
 
 export type ChatSender = "user" | "ai" | "intake" | "others" | "attachment";
 
-// devex-api app/schemas/hearing.py の ChatHistoryRead に対応する。
+// devex-api app/schemas/hearing.py の CardRead に対応する(選択肢カード1枚)。
+// selected は選ばれた選択肢の番号(0始まり。未回答なら null)。
+export type HearingCard = {
+  id: string;
+  point_key: string;
+  label: string;
+  question: string;
+  options: { label: string; result: string }[];
+  recommended: number;
+  reason: string;
+  selected: number | null;
+};
+
+// devex-api app/schemas/hearing.py の CardAnswer に対応する。
+export type CardAnswer = { card_id: string; option: number };
+
+// devex-api app/schemas/hearing.py の ChatHistoryRead に対応する。cards は AI の発言だけが持つ。
 export type ChatHistoryEntry = {
   id: string;
   sender: ChatSender;
   message: string;
+  cards?: HearingCard[] | null;
   created_at: string;
 };
 
@@ -54,6 +71,15 @@ export function getHearingCompletion(projectId: string): Promise<HearingCompleti
 
 export function getHearingPoints(projectId: string): Promise<HearingPointsView> {
   return apiFetch<HearingPointsView>(`/api/v1/projects/${projectId}/hearing-points`);
+}
+
+// 観点の表の画面から、未決の観点を「対象外(後で決める)」にする。作り直した観点の表が返る。
+// サーバーは完了判定もその場で作り直す(LLM は呼ばない)。
+export function markPointNotApplicable(projectId: string, pointKey: string): Promise<HearingPointsView> {
+  return apiFetch<HearingPointsView>(`/api/v1/projects/${projectId}/hearing-points/${pointKey}`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "not_applicable" }),
+  });
 }
 
 // 202 Acceptedを返す(バックグラウンドタスクとして生成をトリガーするのみ)。

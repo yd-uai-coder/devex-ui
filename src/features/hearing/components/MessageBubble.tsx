@@ -1,3 +1,4 @@
+import { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -18,7 +19,9 @@ const MARKDOWN_COMPONENTS: Components = {
   ol: ({ children }) => <ol style={{ paddingLeft: "1.5em" }}>{children}</ol>,
 };
 
-export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
+// memo: 発言のオブジェクトはストアで同じ参照のまま残るので、カードの選択などでチャットが
+// 描き直されても、発言ごとの Markdown を解析し直さない
+export const MessageBubble = memo(function MessageBubble({ message }: { message: ChatHistoryEntry }) {
   const isUser = message.sender === "user";
 
   return (
@@ -32,7 +35,10 @@ export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
         borderColor="$borderColor"
       >
         {isUser ? (
-          <Text color="white">{message.message}</Text>
+          // カードの選択を送った発言は「【観点】選択肢」を改行で並べるので、改行をそのまま見せる
+          <Text color="white" whiteSpace="pre-wrap">
+            {message.message}
+          </Text>
         ) : (
           <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={MARKDOWN_COMPONENTS}>
             {message.message}
@@ -41,4 +47,4 @@ export function MessageBubble({ message }: { message: ChatHistoryEntry }) {
       </YStack>
     </XStack>
   );
-}
+});

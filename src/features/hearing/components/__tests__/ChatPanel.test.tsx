@@ -25,7 +25,10 @@ describe("ChatPanel", () => {
       connectionLost: false,
       streamError: null,
       completion: null,
+      points: null,
       generationTriggered: false,
+      cardDrafts: {},
+      selectCardOption: vi.fn(),
       loadHistory: vi.fn().mockResolvedValue(undefined),
       sendMessage: vi.fn().mockResolvedValue(undefined),
       approveAndGenerate: vi.fn().mockResolvedValue(undefined),
@@ -89,6 +92,102 @@ describe("ChatPanel", () => {
 
     expect(useHearingStore.getState().sendMessage).toHaveBeenCalledWith("p1", "予約管理システムを作りたい");
     expect(textarea).toHaveValue("");
+  });
+
+  it("最新のAIの発言のカードだけを選べ、選んでいれば文が空でも送れる", async () => {
+    const card = (id: string) => ({
+      id,
+      point_key: "availability",
+      label: id,
+      question: `${id}の問い`,
+      options: [
+        { label: `${id}-A`, result: "" },
+        { label: `${id}-B`, result: "" },
+      ],
+      recommended: 0,
+      reason: "",
+      selected: null,
+    });
+    useHearingStore.setState({
+      messages: [
+        { id: "a1", sender: "ai", message: "古い", cards: [card("old")], created_at: "" },
+        { id: "a2", sender: "ai", message: "新しい", cards: [card("new")], created_at: "" },
+      ],
+    });
+    const user = userEvent.setup();
+    const { rerender } = renderPanel();
+
+    expect(screen.getByRole("button", { name: "送信" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("radio", { name: /old-A/ })).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: /new-B/ }));
+    expect(useHearingStore.getState().selectCardOption).toHaveBeenCalledWith("new", 1);
+
+    useHearingStore.setState({ cardDrafts: { new: 1 } });
+    rerender(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ChatPanel projectId="p1" />
+      </TamaguiProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "送信(カード 1 件の選択を含む)" }));
+    expect(useHearingStore.getState().sendMessage).toHaveBeenCalledWith("p1", "");
+  });
+
+  it("カードごとの「この回答を送る」は、そのカードだけを入力欄の文と一緒に送る", async () => {
+    const card = {
+      id: "new",
+      point_key: "availability",
+      label: "可用性",
+      question: "問い",
+      options: [
+        { label: "A", result: "" },
+        { label: "B", result: "" },
+      ],
+      recommended: 0,
+      reason: "",
+      selected: null,
+    };
+    useHearingStore.setState({
+      messages: [{ id: "a1", sender: "ai", message: "質問", cards: [card], created_at: "" }],
+      cardDrafts: { new: 1 },
+    });
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.type(screen.getByPlaceholderText("メッセージを入力"), "補足");
+    await user.click(screen.getByRole("button", { name: "この回答を送る" }));
+
+    expect(useHearingStore.getState().sendMessage).toHaveBeenCalledWith("p1", "補足", { cardIds: ["new"] });
+  });
+
+  it("バナーの「任意項目についてヒアリングを続ける」で、continueOptional 付きで送る", async () => {
+    useHearingStore.setState({
+      completion: { is_sufficient: true, summary: "", missing_points: [] },
+      points: {
+        scale: "personal",
+        legacy: false,
+        stale: false,
+        is_sufficient: true,
+        points: [
+          {
+            key: "schedule",
+            kind: "function",
+            label: "体制・期間",
+            question: "何人で作りますか",
+            required: false,
+            status: "open",
+            summary: "",
+            evidence: [],
+          },
+        ],
+      },
+    });
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "任意項目についてヒアリングを続ける" }));
+
+    // 文は送らない(サーバーが決まった文を利用者の発言として残し、判定の LLM は呼ばない)
+    expect(useHearingStore.getState().sendMessage).toHaveBeenCalledWith("p1", "", { continueOptional: true });
   });
 
   it("connectionLostがtrueなら警告バナーを表示し、閉じるボタンでdismissConnectionLostを呼ぶ", async () => {
