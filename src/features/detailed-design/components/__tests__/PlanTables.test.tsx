@@ -29,6 +29,7 @@ describe("PlanTables", () => {
     renderTables(makePlan());
 
     expect(screen.getByLabelText("例外と HTTP の方針")).toHaveValue("ドメイン例外を共通の形に変換する");
+    expect(screen.getByLabelText("認証 の要件")).toHaveValue("NFR-001");
     expect(screen.getByLabelText("M-01 の名前")).toHaveValue("予約の登録");
     expect(screen.getByLabelText("M-01 の優先度")).toHaveValue("Must");
     // マイルストーンの処理はタスクから導いて見せるだけ
@@ -52,7 +53,20 @@ describe("PlanTables", () => {
 
     await user.click(screen.getByRole("button", { name: "「ログ」を追加" }));
 
-    expect(lastModel(onChange).crosscutting).toEqual([{ topic: "ログ", policy: "", modules: [] }]);
+    expect(lastModel(onChange).crosscutting).toEqual([
+      { topic: "ログ", policy: "", modules: [], req_ids: [] },
+    ]);
+  });
+
+  it("横断事項の要件ID を「,」区切りで書ける", async () => {
+    const user = userEvent.setup();
+    const onChange = renderTables(makePlan());
+
+    // onChange はスタブで model を変えないので、1回の入力(貼り付け)で確かめる
+    await user.click(screen.getByLabelText("ログ の要件"));
+    await user.paste("NFR-002, NFR-003");
+
+    expect(lastModel(onChange).crosscutting[3].req_ids).toEqual(["NFR-002", "NFR-003"]);
   });
 
   it("マイルストーンの優先度・単位の種別を選び直し、タスクを足せる", async () => {

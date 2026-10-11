@@ -39,6 +39,7 @@ export function toProcedureDoc(model: Record<string, unknown> | null): Procedure
   return {
     units: list(model?.units).map((unit) => ({
       unit_id: String(unit.unit_id ?? ""),
+      unit_key: String(unit.unit_key ?? ""),
       title: String(unit.title ?? ""),
       purpose: String(unit.purpose ?? ""),
       files: list(unit.files).map((file) => ({
@@ -70,6 +71,7 @@ export function toProcedureDoc(model: Record<string, unknown> | null): Procedure
 // 単位の一覧の1行。hasProcedure は、作業単位と ID・タスク名の合う手順書があるか。
 export type ProcedureUnit = {
   id: string;
+  key: string; // 単位のキー(タスクにキーが無ければ単位の ID。devex-api の PlanUnit.key と同じ)
   milestone: string;
   kind: UnitKind;
   title: string;
@@ -87,6 +89,7 @@ export function procedureUnits(plan: PlanModel, doc: ProcedureDocModel): Procedu
       const id = taskId(m, t);
       return {
         id,
+        key: task.key || id,
         milestone: milestoneId(m),
         kind: task.kind,
         title: task.title,
@@ -99,7 +102,8 @@ export function procedureUnits(plan: PlanModel, doc: ProcedureDocModel): Procedu
 }
 
 // 計画と合わない手順書(単位の ID が計画に無い、または ID は在るがタスク名が違う)。文書の再生成や
-// 段階7の並べ替えで単位が変わると残る。自動では消さず、人が今の単位へ付け替えるか消す。
+// 段階7の改名で単位が変わると残る(並べ替えは devex-api がキーで付け直すので残らない)。自動では消さず、
+// 人が今の単位へ付け替えるか消す。
 // index は doc.units の中の位置(同じ ID の手順書が2つあっても区別できるように)。
 export type StrayProcedure = { index: number; unitId: string; title: string; fileCount: number };
 
@@ -125,15 +129,17 @@ export function reassignTargets(
   return procedureUnits(plan, doc).filter((unit) => !taken.has(unit.id));
 }
 
-// 手順書の単位の ID とタスク名を、付け替え先の単位のものにする(中身は変えない)。
+// 手順書の単位のキー・ID・タスク名を、付け替え先の単位のものにする(中身は変えない)。
 export function reassignUnit(
   doc: ProcedureDocModel,
   index: number,
-  target: { id: string; title: string },
+  target: { id: string; key: string; title: string },
 ): ProcedureDocModel {
   return {
     units: doc.units.map((unit, i) =>
-      i === index ? { ...unit, unit_id: target.id, title: target.title } : unit,
+      i === index
+        ? { ...unit, unit_id: target.id, unit_key: target.key, title: target.title }
+        : unit,
     ),
   };
 }

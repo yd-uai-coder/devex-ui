@@ -59,6 +59,7 @@ describe("procedureDocOps", () => {
     });
 
     expect(doc.units[0].title).toBe("");
+    expect(doc.units[0].unit_key).toBe("");
     expect(doc.units[0].files[0].kind).toBe("module");
     expect(doc.units[0].findings[0]).toEqual({
       level: "major",
@@ -80,6 +81,11 @@ describe("procedureDocOps", () => {
     const renamed = makeProcedureDoc();
     renamed.units[0].title = "別のタスク";
     expect(procedureUnits(makePlan(), renamed)[1].hasProcedure).toBe(false);
+    // 単位のキー(タスクにキーが無ければ単位の ID)
+    expect(units.map((u) => u.key)).toEqual(["U-001", "U-002"]);
+    const unkeyed = makePlan();
+    unkeyed.milestones[0].tasks[0].key = "";
+    expect(procedureUnits(unkeyed, makeProcedureDoc())[0].key).toBe("M-01-T01");
   });
 
   it("collectFindings は重要度のある検証の指摘と AI の指摘をまとめ、重要度の順に並べる", () => {
@@ -226,13 +232,18 @@ describe("procedureDocOps", () => {
       ]);
     });
 
-    it("reassignUnitは ID とタスク名だけを付け替え、中身はそのまま残す", () => {
+    it("reassignUnitはキー・ID・タスク名だけを付け替え、中身はそのまま残す", () => {
       const doc = docWithStrays();
-      const moved = reassignUnit(doc, 1, { id: "M-01-T01", title: "開発環境を用意する" });
+      const moved = reassignUnit(doc, 1, {
+        id: "M-01-T01",
+        key: "U-001",
+        title: "開発環境を用意する",
+      });
 
       expect(moved.units[1]).toEqual({
         ...doc.units[1],
         unit_id: "M-01-T01",
+        unit_key: "U-001",
         title: "開発環境を用意する",
       });
       expect(moved.units[0]).toBe(doc.units[0]);

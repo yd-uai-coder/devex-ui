@@ -28,18 +28,21 @@ export function toPlan(model: Record<string, unknown> | null): PlanModel {
       topic: String(row.topic ?? ""),
       policy: String(row.policy ?? ""),
       modules: strings(row.modules),
+      req_ids: strings(row.req_ids),
     })),
     milestones: list(model?.milestones).map((row) => ({
       name: String(row.name ?? ""),
       goal: String(row.goal ?? ""),
       priority: pick<Priority>(row.priority, PRIORITIES, "Must"),
       tasks: list(row.tasks).map((task) => ({
+        key: String(task.key ?? ""),
         kind: pick<UnitKind>(task.kind, UNIT_KINDS, "feature"),
         title: String(task.title ?? ""),
         function_ids: strings(task.function_ids),
         depends_on: strings(task.depends_on),
         modules: strings(task.modules),
         config_files: strings(task.config_files),
+        req_ids: strings(task.req_ids),
       })),
     })),
     environment: String(model?.environment ?? ""),
@@ -47,6 +50,7 @@ export function toPlan(model: Record<string, unknown> | null): PlanModel {
       risk: String(row.risk ?? ""),
       mitigation: String(row.mitigation ?? ""),
     })),
+    next_unit_seq: Number(model?.next_unit_seq ?? 1),
   };
 }
 
@@ -86,7 +90,7 @@ const removeAt = <T>(items: T[], index: number): T[] => items.filter((_, i) => i
 
 // 項目を足す。topic を渡すと、その項目名で足す(欠けている既定の項目を足すボタン)。
 export function addCrossCutting(model: PlanModel, topic = ""): PlanModel {
-  const row: CrossCuttingRow = { topic, policy: "", modules: [] };
+  const row: CrossCuttingRow = { topic, policy: "", modules: [], req_ids: [] };
   return { ...model, crosscutting: [...model.crosscutting, row] };
 }
 
@@ -163,13 +167,16 @@ export function relinkDependencies(before: PlanModel, after: PlanModel): PlanMod
 }
 
 export function addTask(model: PlanModel, milestone: number): PlanModel {
+  // キーは空で足し、保存時に devex-api が振る
   const task: PlanTask = {
+    key: "",
     kind: "feature",
     title: "",
     function_ids: [],
     depends_on: [],
     modules: [],
     config_files: [],
+    req_ids: [],
   };
   const tasks = [...model.milestones[milestone].tasks, task];
   return updateMilestone(model, milestone, { tasks });

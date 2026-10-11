@@ -122,10 +122,15 @@ export function makePlan(): PlanModel {
   const route = "app/api/routes/reservations.py";
   return {
     crosscutting: [
-      { topic: "例外と HTTP", policy: "ドメイン例外を共通の形に変換する", modules: [route] },
-      { topic: "認証", policy: "JWT で利用者を確かめる", modules: [] },
-      { topic: "トランザクション", policy: "commit はサービスだけ", modules: [] },
-      { topic: "ログ", policy: "JSON で出す", modules: [] },
+      {
+        topic: "例外と HTTP",
+        policy: "ドメイン例外を共通の形に変換する",
+        modules: [route],
+        req_ids: [],
+      },
+      { topic: "認証", policy: "JWT で利用者を確かめる", modules: [], req_ids: ["NFR-001"] },
+      { topic: "トランザクション", policy: "commit はサービスだけ", modules: [], req_ids: [] },
+      { topic: "ログ", policy: "JSON で出す", modules: [], req_ids: [] },
     ],
     milestones: [
       {
@@ -134,26 +139,31 @@ export function makePlan(): PlanModel {
         priority: "Must",
         tasks: [
           {
+            key: "U-001",
             kind: "base",
             title: "開発環境を用意する",
             function_ids: [],
             depends_on: [],
             modules: [],
             config_files: ["Dockerfile"],
+            req_ids: [],
           },
           {
+            key: "U-002",
             kind: "feature",
             title: "予約を登録する",
             function_ids: ["F-01"],
             depends_on: ["M-01-T01"],
             modules: [route],
             config_files: [],
+            req_ids: [],
           },
         ],
       },
     ],
     environment: "Python 3.13 と PostgreSQL",
     risks: [{ risk: "予約の重複", mitigation: "一意制約で防ぐ" }],
+    next_unit_seq: 3,
   };
 }
 
@@ -163,6 +173,7 @@ export function makeProcedureDoc(): ProcedureDocModel {
     units: [
       {
         unit_id: "M-01-T02",
+        unit_key: "U-002",
         title: "予約を登録する",
         purpose: "予約を登録できるようにする",
         files: [
