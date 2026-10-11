@@ -54,16 +54,25 @@ export async function createProject(
 
 // チャットで発話し、ヒアリング完了のバナーから設計書を生成して、ドキュメント画面へ移るまで待つ。
 // 偽LLMはユーザー発話3回でヒアリング完了と判定する(fake.py の _TURNS_UNTIL_SUFFICIENT)。
+// 最初の発話には規模のカードが付くので、1回目は規模を選び、入力欄の文と一緒に送る
+// (カードの回答と文は1つの発言になる)。
 export async function completeHearing(page: Page, messages: string[]) {
   const messageBox = page.getByPlaceholder("メッセージを入力");
   await expect(messageBox).toBeVisible();
-  for (const message of messages) {
+  const scaleCard = page.getByRole("group", { name: "選択肢カード: 規模" });
+  await scaleCard.getByRole("radio").first().check();
+  for (const [index, message] of messages.entries()) {
     await messageBox.fill(message);
     await page.getByRole("button", { name: "送信" }).click();
     // オープニング発話と通常のチャット返信が同じ固定文字列(E2eFakeLLM._reply_for)のため、
     // strict mode違反を避けるべく.first()を使う。
     await expect(page.getByText("E2E Fake", { exact: false }).first()).toBeVisible();
+    if (index === 0) {
+      await expect(scaleCard).toContainText("回答済み");
+    }
   }
+  // 必須の観点がすべて決まると、観点の表の見出しが変わる
+  await expect(page.getByText("観点の表 ── 必須はすべて決まりました").first()).toBeVisible();
 
   // 生成の前に確認ダイアログが出る
   await page.getByRole("button", { name: "この内容で設計書を生成する" }).click();
