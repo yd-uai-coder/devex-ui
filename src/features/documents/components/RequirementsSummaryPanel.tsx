@@ -3,9 +3,9 @@
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import type {
   GeneratedDocumentRead,
-  RequirementIssueRead,
   RequirementSource,
 } from "@/features/documents/api/documentsApi";
+import { DocumentIssueList } from "@/features/documents/components/DocumentIssueList";
 import { useDocumentsStore } from "@/features/documents/documents-store";
 
 const SOURCE_LABELS: Record<RequirementSource, string> = {
@@ -19,12 +19,6 @@ const SOURCE_NOTES: Record<RequirementSource, string> = {
   user: "初期入力・チャットでの回答より",
   adopted: "ヒアリングで AI の提案を採用",
   assumed: "ドキュメント生成時に AI が推測(未確認)",
-};
-
-const LEVEL_LABELS: Record<RequirementIssueRead["level"], string> = {
-  critical: "最重要",
-  major: "中程度",
-  minor: "軽微",
 };
 
 type RequirementsSummaryPanelProps = {
@@ -71,19 +65,7 @@ export function RequirementsSummaryPanel({ projectId, document }: RequirementsSu
           </Paragraph>
         ))}
       </YStack>
-      {summary.issues.length > 0 ? (
-        <YStack gap="$1" role="list" aria-label="要件定義書の指摘">
-          {summary.issues.map((issue) => (
-            <Text
-              role="listitem"
-              key={issue.code}
-              color={issue.level === "minor" ? "$color11" : "$red10"}
-            >
-              【{LEVEL_LABELS[issue.level]}】{issue.message}
-            </Text>
-          ))}
-        </YStack>
-      ) : null}
+      <DocumentIssueList issues={summary.issues} label="要件定義書の指摘" />
       {summary.assumed.length > 0 ? (
         <YStack gap="$2">
           <Paragraph size="$2" color="$color10">

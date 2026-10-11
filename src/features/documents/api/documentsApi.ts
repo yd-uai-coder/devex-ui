@@ -7,9 +7,10 @@ export type DocType = "requirements" | "external_design" | "internal_design" | "
 
 export type RequirementSource = "user" | "adopted" | "assumed";
 
-// devex-api app/schemas/document.py の RequirementIssueRead・AssumedRequirementRead・
-// RequirementsSummaryRead に対応する。
-export type RequirementIssueRead = {
+// devex-api app/schemas/document.py の DocumentIssueRead・AssumedRequirementRead・
+// RequirementsSummaryRead・ExternalDesignSummaryRead に対応する。
+// 検証の指摘(要件定義書・外部設計書で共通)
+export type DocumentIssueRead = {
   level: "critical" | "major" | "minor";
   code: string;
   message: string;
@@ -25,7 +26,12 @@ export type AssumedRequirementRead = {
 export type RequirementsSummaryRead = {
   counts: Record<RequirementSource, number>;
   assumed: AssumedRequirementRead[];
-  issues: RequirementIssueRead[];
+  issues: DocumentIssueRead[];
+};
+
+export type ExternalDesignSummaryRead = {
+  counts: { screens: number; apis: number; integrations: number };
+  issues: DocumentIssueRead[];
 };
 
 // devex-api app/schemas/document.py の GeneratedDocumentRead に対応する。
@@ -38,6 +44,8 @@ export type GeneratedDocumentRead = {
   is_current: boolean;
   // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
   requirements?: RequirementsSummaryRead | null;
+  // 外部設計書で model を持つ版だけ(ほかの文書・以前の版は null)
+  external_design?: ExternalDesignSummaryRead | null;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
