@@ -12,6 +12,8 @@ function resetStore() {
     regenerating: false,
     regenerateError: null,
     projectMode: null,
+    adoptingId: null,
+    adoptError: null,
   });
 }
 
@@ -117,5 +119,28 @@ describe("useDocumentsStore", () => {
     const state = useDocumentsStore.getState();
     expect(state.regenerating).toBe(false);
     expect(state.regenerateError).toBe("設計書を生成しています。");
+  });
+
+  it("adoptRequirement()は返った要件定義書で同じ文書を置き換える(ほかの文書は変えない)", async () => {
+    const external = { ...SAMPLE_DOC, id: "d2", doc_type: "external_design" as const };
+    useDocumentsStore.setState({ projectId: "p1", documents: [SAMPLE_DOC, external] });
+    const adopted = { ...SAMPLE_DOC, content: "# 採用後" };
+    stub.queue({ status: 200, body: adopted });
+
+    await useDocumentsStore.getState().adoptRequirement("p1", "NFR-001");
+
+    expect(useDocumentsStore.getState().documents).toEqual([adopted, external]);
+    expect(useDocumentsStore.getState().adoptingId).toBeNull();
+  });
+
+  it("adoptRequirement()の失敗はadoptErrorに残し、文書は変えない", async () => {
+    useDocumentsStore.setState({ projectId: "p1", documents: [SAMPLE_DOC] });
+    stub.queue({ status: 409, body: { detail: { code: "REQUIREMENT_NOT_ASSUMED", message: "推測ではありません" } } });
+
+    await useDocumentsStore.getState().adoptRequirement("p1", "FR-001");
+
+    expect(useDocumentsStore.getState().documents).toEqual([SAMPLE_DOC]);
+    expect(useDocumentsStore.getState().adoptError).not.toBeNull();
+    expect(useDocumentsStore.getState().adoptingId).toBeNull();
   });
 });

@@ -5,6 +5,29 @@ import { parseFilename } from "@/lib/api/download";
 
 export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
 
+export type RequirementSource = "user" | "adopted" | "assumed";
+
+// devex-api app/schemas/document.py の RequirementIssueRead・AssumedRequirementRead・
+// RequirementsSummaryRead に対応する。
+export type RequirementIssueRead = {
+  level: "critical" | "major" | "minor";
+  code: string;
+  message: string;
+  targets: string[];
+};
+
+export type AssumedRequirementRead = {
+  id: string;
+  kind: "FR" | "NFR" | "CON";
+  text: string;
+};
+
+export type RequirementsSummaryRead = {
+  counts: Record<RequirementSource, number>;
+  assumed: AssumedRequirementRead[];
+  issues: RequirementIssueRead[];
+};
+
 // devex-api app/schemas/document.py の GeneratedDocumentRead に対応する。
 export type GeneratedDocumentRead = {
   id: string;
@@ -13,6 +36,8 @@ export type GeneratedDocumentRead = {
   version: number;
   created_at: string;
   is_current: boolean;
+  // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
+  requirements?: RequirementsSummaryRead | null;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
@@ -35,6 +60,14 @@ export function restoreDocumentVersion(
 ): Promise<GeneratedDocumentRead> {
   return apiFetch<GeneratedDocumentRead>(
     `/api/v1/projects/${projectId}/documents/${docType}/versions/${version}/restore`,
+    { method: "POST" },
+  );
+}
+
+// 推測の要件を、利用者が確かめた「採用」にする(同じ版の md が書き換わる。版は増えない)。
+export function adoptRequirement(projectId: string, reqId: string): Promise<GeneratedDocumentRead> {
+  return apiFetch<GeneratedDocumentRead>(
+    `/api/v1/projects/${projectId}/documents/requirements/rows/${reqId}/adopt`,
     { method: "POST" },
   );
 }

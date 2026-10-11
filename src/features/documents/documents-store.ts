@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { isCacheFresh } from "@/lib/api/cache";
-import { listDocuments } from "@/features/documents/api/documentsApi";
+import { adoptRequirement, listDocuments } from "@/features/documents/api/documentsApi";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 // triggerGenerationはhearingApi.tsのものをそのまま使う
 // (プロジェクトの生成トリガー自体はヒアリング画面の承認・ドキュメント画面の再生成の
@@ -24,6 +24,9 @@ type DocumentsStore = {
   // プロジェクトのモード。詳細設計モードでは、詳細設計(SCR-008)へのリンクを出す。
   // 取得するまでは null。
   projectMode: ProjectMode | null;
+  // 「採用にする」を押している要件ID と、その失敗
+  adoptingId: string | null;
+  adoptError: string | null;
 
   fetchDocuments: (projectId: string, options?: { force?: boolean }) => Promise<void>;
   fetchProjectMode: (projectId: string) => Promise<void>;
@@ -31,6 +34,8 @@ type DocumentsStore = {
   // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
   // 一覧をforce再取得して新しいバージョンを反映する。
   onRegenerationCompleted: (projectId: string) => void;
+  // 推測の要件を「採用」にし、返った要件定義書で一覧の同じ文書を置き換える
+  adoptRequirement: (projectId: string, reqId: string) => Promise<void>;
 };
 
 // 別のプロジェクトを開いたときに戻す値
@@ -40,6 +45,8 @@ const PROJECT_INITIAL = {
   regenerating: false,
   regenerateError: null,
   projectMode: null,
+  adoptingId: null,
+  adoptError: null,
 } as const;
 
 export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
@@ -51,6 +58,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   regenerating: false,
   regenerateError: null,
   projectMode: null,
+  adoptingId: null,
+  adoptError: null,
 
   fetchDocuments: async (projectId, { force = false } = {}) => {
     switchProject(set, get, projectId);
@@ -97,6 +106,23 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   onRegenerationCompleted: (projectId) => {
     set({ regenerating: false });
     void get().fetchDocuments(projectId, { force: true });
+  },
+
+  adoptRequirement: async (projectId, reqId) => {
+    set({ adoptingId: reqId, adoptError: null });
+    try {
+      const updated = await adoptRequirement(projectId, reqId);
+      if (get().projectId !== projectId) return;
+      set({
+        documents: get().documents.map((doc) => (doc.doc_type === updated.doc_type ? updated : doc)),
+        adoptingId: null,
+      });
+    } catch (err) {
+      set({
+        adoptingId: null,
+        adoptError: err instanceof Error ? err.message : "採用にできませんでした",
+      });
+    }
   },
 }));
 

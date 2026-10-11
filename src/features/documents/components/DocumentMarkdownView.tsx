@@ -7,6 +7,7 @@ import { Button, H1, H2, H3, H4, Paragraph, Text, XStack, YStack } from "tamagui
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
+import { RequirementsSummaryPanel } from "@/features/documents/components/RequirementsSummaryPanel";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
 import type { Components } from "react-markdown";
 
@@ -106,6 +107,7 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
         </Text>
       ) : null}
       <VersionHistoryPanel projectId={projectId} docType={document.doc_type} />
+      <RequirementsSummaryPanel projectId={projectId} document={document} />
       <YStack borderWidth={1} borderColor="$borderColor" borderRadius="$4" padding="$4">
         {/* 生の HTML は描かない(skipHtml)。以前に簡易モードの設計図を反映した内部設計書には、
             図のアンカー(HTML コメント)が残っており、そのままだと文字として出てしまうため */}
