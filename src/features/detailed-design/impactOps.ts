@@ -63,13 +63,15 @@ export function pathText(path: string[]): string {
 }
 
 // 影響を取りに行く必要があるか。記録した印があるか、承認の後に編集した段階(承認すると届く印 pending
-// がありうる)があるときだけ取る(簡易モードは段階8だけで印が無いので取らない)。
+// がありうる)があるときだけ取る。簡易モードは段階8だけで下流が無く pending の印は出ないので、
+// 文書の切り替えで記録した印があるときだけ取る。
 export function mayHaveImpact(stages: DesignStageRead[]): boolean {
+  const recorded = (s: DesignStageRead) => (s.impact_open ?? 0) + (s.impact_reviewed ?? 0) > 0;
+  if (stages[0]?.mode === "simple") return stages.some(recorded);
   if (stages[0]?.mode !== "detailed") return false;
   return stages.some(
     (s) =>
-      (s.impact_open ?? 0) + (s.impact_reviewed ?? 0) > 0 ||
-      (s.approved_version !== null && s.state !== "approved"),
+      recorded(s) || (s.approved_version !== null && s.state !== "approved"),
   );
 }
 

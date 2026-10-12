@@ -76,8 +76,8 @@ export function DetailedDesignPageContent({
       {/* 詳細設計書のダウンロード(いつでもできる) */}
       {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
 
-      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは印が無い) */}
-      {stages.length > 0 && !simple ? <ChangeImpactPanel projectId={projectId} /> : null}
+      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは文書の変更から段階8の単位に印) */}
+      {stages.length > 0 ? <ChangeImpactPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">
