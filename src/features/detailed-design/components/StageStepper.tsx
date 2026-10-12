@@ -105,9 +105,17 @@ export function StageStepper({
             <Text>
               {s.stage}. {STAGE_TITLES[s.stage]}
             </Text>
-            <Text fontSize="$2" color={STATE_COLORS[s.state]}>
-              {STATE_LABELS[s.state]}
-            </Text>
+            <XStack gap="$1" alignItems="center">
+              <Text fontSize="$2" color={STATE_COLORS[s.state]}>
+                {STATE_LABELS[s.state]}
+              </Text>
+              {/* 変更の影響の未確認の印の数 */}
+              {(s.impact_open ?? 0) > 0 ? (
+                <Text fontSize="$1" color="$red10" aria-label={`見直し ${s.impact_open}`}>
+                  {`見直し ${s.impact_open}`}
+                </Text>
+              ) : null}
+            </XStack>
           </XStack>
         );
       })}

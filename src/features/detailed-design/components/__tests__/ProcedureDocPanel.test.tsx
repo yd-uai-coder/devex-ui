@@ -6,7 +6,13 @@ import tamaguiConfig from "@/tamagui.config";
 import { ProcedureDocPanel } from "../ProcedureDocPanel";
 import { StageWorkArea } from "../StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
-import { makePlan, makeProcedureDoc, makeStages } from "../../test-utils/stageFixtures";
+import {
+  impactWith,
+  makeMark,
+  makePlan,
+  makeProcedureDoc,
+  makeStages,
+} from "../../test-utils/stageFixtures";
 import type { DesignStageRead, StageIssue } from "@/features/detailed-design/api/types";
 
 // SUT: ProcedureDocPanel / ドライバ: render と操作 / スタブ: 段階のストアの jumpTo・save・generate・
@@ -282,5 +288,18 @@ describe("ProcedureDocPanel", () => {
     renderPanel(simple);
 
     expect(screen.getByRole("status")).toHaveTextContent("実装計画書の WBS から作業単位を読めませんでした");
+  });
+
+  it("変更の影響の印を単位の行に出し、「表で見る」の行を強調する(印は単位のキーで引く)", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "unit:U-002", stage: 8 })),
+      highlight: { stage: 8, key: "unit:U-002" },
+    });
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    const rows = within(screen.getByRole("table", { name: "単位の一覧" })).getAllByRole("row");
+    expect(rows[2]).toHaveAttribute("aria-current", "true");
+    expect(within(rows[2]).getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

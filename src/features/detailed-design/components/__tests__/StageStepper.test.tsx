@@ -73,4 +73,19 @@ describe("StageStepper", () => {
     await user.click(screen.getByRole("button", { name: "段階8 実装手順書(未着手)" }));
     expect(onSelect).toHaveBeenCalledWith(8);
   });
+
+  it("変更の影響の未確認の印があれば、その数を状態の横に出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <StageStepper
+          stages={makeStages({ 5: { state: "outdated", impact_open: 2 } })}
+          selectedStage={1}
+          onSelect={vi.fn()}
+        />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getByText("見直し 2")).toBeInTheDocument();
+    expect(screen.getAllByText(/^見直し/)).toHaveLength(1);
+  });
 });

@@ -3,6 +3,7 @@
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { ModuleListModel } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
   CELL,
@@ -12,6 +13,8 @@ import {
   OPTION,
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addModule,
   duplicatePaths,
@@ -35,6 +38,7 @@ export function ModuleListTable({
   onChange: (model: ModuleListModel) => void;
 }) {
   const duplicated = duplicatePaths(model);
+  const impact = useStageImpact(4);
 
   return (
     <YStack gap="$2">
@@ -64,7 +68,7 @@ export function ModuleListTable({
                   onChange(updateModule(model, index, patch));
                 return (
                   // 行はパスで引かない(パスは書き換える欄で、重複もありうるため)
-                  <tr key={index}>
+                  <tr key={index} {...impact.row(elementKey.module(row.path))}>
                     <td style={{ ...CELL, minWidth: 240 }}>
                       <input
                         style={{ ...INPUT, ...MONO }}
@@ -76,6 +80,7 @@ export function ModuleListTable({
                       {duplicated.has(row.path.trim()) ? (
                         <div style={{ fontSize: 11, color: "var(--red10)" }}>パスが重複しています</div>
                       ) : null}
+                      <ImpactBadge mark={impact.mark(elementKey.module(row.path))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 110 }}>
                       <select

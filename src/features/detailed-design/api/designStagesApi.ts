@@ -1,9 +1,11 @@
 import { apiFetch } from "@/lib/api/client";
 import { fetchAttachment, parseFilename } from "@/lib/api/download";
 import type {
+  DesignImpactRead,
   DesignStageRead,
   LogicTarget,
   SequenceRead,
+  StageImpactRead,
   UnitAiMarkdownRead,
   UnitContextRead,
 } from "./types";
@@ -88,6 +90,26 @@ export function getUnitAiMarkdown(projectId: string, unitId: string): Promise<Un
   return apiFetch<UnitAiMarkdownRead>(
     `${base(projectId)}/units/${encodeURIComponent(unitId)}/ai-markdown`,
   );
+}
+
+// 変更の影響(全段階の変わったものと印・再生成の候補)。記録した印に、まだ承認していない編集から届く
+// 印(pending)を足して返す。
+export function getDesignImpact(projectId: string): Promise<DesignImpactRead> {
+  return apiFetch<DesignImpactRead>(`${base(projectId)}/impact`);
+}
+
+// 段階の印を確認済み(reviewed=false で未確認)にする。まとめて渡せる。知らないキーは無視される。
+// 段階の内容は変えないので版(楽観ロック)は持たせない。応答はその段階1つ分。
+export function reviewImpactMarks(
+  projectId: string,
+  stage: number,
+  keys: string[],
+  reviewed: boolean,
+): Promise<StageImpactRead> {
+  return apiFetch<StageImpactRead>(`${base(projectId)}/${stage}/impact/review`, {
+    method: "POST",
+    body: JSON.stringify({ keys, reviewed }),
+  });
 }
 
 export type DownloadedDocument = { filename: string; content: Blob };

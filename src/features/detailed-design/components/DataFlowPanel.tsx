@@ -11,6 +11,7 @@ import {
 } from "@/features/detailed-design/api/types";
 import { DataDictionaryTable } from "@/features/detailed-design/components/DataDictionaryTable";
 import { DfdEditorTabs } from "@/features/detailed-design/components/DfdEditorTabs";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
@@ -25,6 +26,8 @@ import {
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 
 // 段階2(データフロー)の作業領域の中身。DFD を描く機能グループの選択、AIの下書きの生成、
 // 機能グループの DFD(タブ)、データ辞書、処理概要表の編集、検証の結果、保存を持つ。
@@ -48,6 +51,7 @@ export function DataFlowPanel({
   );
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
+  const impact = useStageImpact(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const saved = toDataFlow(stage.model);
@@ -183,8 +187,11 @@ export function DataFlowPanel({
                 {functionList.functions.map((fn) => {
                   const row = summaryOf(draft, fn.id);
                   return (
-                    <tr key={fn.id}>
-                      <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{fn.id}</td>
+                    <tr key={fn.id} {...impact.row(elementKey.summary(fn.id))}>
+                      <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
+                        {fn.id}
+                        <ImpactBadge mark={impact.mark(elementKey.summary(fn.id))} />
+                      </td>
                       <td style={{ ...CELL, minWidth: 140 }}>{fn.name}</td>
                       <td style={{ ...CELL, whiteSpace: "nowrap" }}>{fn.group}</td>
                       <td style={{ ...CELL, minWidth: 140 }}>

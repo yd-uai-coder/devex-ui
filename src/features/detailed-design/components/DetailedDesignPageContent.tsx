@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { ChangeImpactPanel } from "@/features/detailed-design/components/ChangeImpactPanel";
 import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
@@ -74,6 +75,9 @@ export function DetailedDesignPageContent({
 
       {/* 詳細設計書のダウンロード(いつでもできる) */}
       {stages.length > 0 ? <DesignDocumentBar projectId={projectId} stages={stages} /> : null}
+
+      {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは印が無い) */}
+      {stages.length > 0 && !simple ? <ChangeImpactPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">

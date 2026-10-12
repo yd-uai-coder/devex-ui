@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { CrossCuttingTable, MilestoneList, RiskTable } from "../PlanTables";
-import { makePlan } from "../../test-utils/stageFixtures";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { impactWith, makeMark, makePlan } from "../../test-utils/stageFixtures";
 import type { PlanModel } from "@/features/detailed-design/api/types";
 
 // SUT: CrossCuttingTable / MilestoneList / RiskTable(段階7の表)
@@ -114,5 +115,21 @@ describe("PlanTables", () => {
 
     expect(screen.getByLabelText("M-01 の名前")).toBeDisabled();
     expect(screen.getByLabelText("例外と HTTP の関わるファイル")).toBeDisabled();
+  });
+
+  it("変更の影響の印をタスク(単位のキー)と横断事項の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(
+        makeMark({ key: "task:U-002", stage: 7 }),
+        makeMark({ key: "cc:認証", stage: 7, reviewed: true }),
+      ),
+      highlight: { stage: 7, key: "task:U-002" },
+    });
+    renderTables(makePlan());
+
+    expect(screen.getByLabelText("M-01-T02 の種別").closest("tr")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(screen.getByLabelText("変更の影響: 確認済み")).toBeInTheDocument();
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

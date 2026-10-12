@@ -7,6 +7,7 @@ import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
   makeFunctionList,
+  makeImpact,
   makePlan,
   makeProcedureDoc,
   makeStages,
@@ -177,5 +178,13 @@ describe("DetailedDesignPageContent", () => {
 
     expect(screen.getByRole("heading", { name: "実装手順書" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "詳細設計書・実装計画をダウンロード(.zip)" })).not.toBeInTheDocument();
+  });
+
+  it("変更の影響があれば、作業領域の上に「変更の影響」パネルを出す", () => {
+    useDetailedDesignStore.setState({ impact: makeImpact(), impactError: null });
+    renderContent();
+    expect(screen.getByRole("region", { name: "変更の影響" })).toBeInTheDocument();
+
+    useDetailedDesignStore.setState({ impact: null });
   });
 });

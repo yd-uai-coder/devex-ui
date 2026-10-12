@@ -9,6 +9,7 @@ import {
   type DesignStageRead,
   type ProcedureModel,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ProcedureSequenceView } from "@/features/detailed-design/components/ProcedureSequenceView";
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
@@ -17,6 +18,8 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import { logicIdsByKey, toLogics } from "@/features/detailed-design/logicOps";
 import { toModuleList } from "@/features/detailed-design/moduleListOps";
 import {
@@ -67,6 +70,7 @@ export function ProcedurePanel({
   const focus = useDetailedDesignStore((s) => s.focus);
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
+  const impact = useStageImpact(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const modulePaths = toModuleList(stage4Model).modules.map((row) => row.path.trim());
@@ -227,8 +231,14 @@ export function ProcedurePanel({
               </thead>
               <tbody>
                 {index.map((row) => (
-                  <tr key={row.procedure.function_id}>
-                    <td style={{ ...CELL, ...MONO }}>{row.procedure.function_id}</td>
+                  <tr
+                    key={row.procedure.function_id}
+                    {...impact.row(elementKey.proc(row.procedure.function_id))}
+                  >
+                    <td style={{ ...CELL, ...MONO }}>
+                      {row.procedure.function_id}
+                      <ImpactBadge mark={impact.mark(elementKey.proc(row.procedure.function_id))} />
+                    </td>
                     <td style={CELL}>{row.fn?.name ?? "(機能一覧に無い処理)"}</td>
                     <td style={{ ...CELL, ...MONO }}>{row.fn?.trigger ?? ""}</td>
                     <td style={CELL}>{row.procedure.reason}</td>

@@ -73,6 +73,30 @@ export function describeMissingInput(key: string): string {
   return key;
 }
 
+// 閉じた段階を開くために、今承認し直せばよい段階(入力の段階のうち最も前のものから、開いている段階まで
+// 入力をたどる)。上流が「古い」と下流が連鎖して閉じるので、どこから承認し直せばよいかを示すのに使う。
+// 足りないのが文書だけなら null。
+export function firstStageToApprove(
+  stage: DesignStageRead,
+  stages: DesignStageRead[],
+): number | null {
+  const byStage = new Map(stages.map((s) => [s.stage, s]));
+  let current: DesignStageRead | undefined = stage;
+  const seen = new Set<number>();
+  while (current !== undefined && !seen.has(current.stage)) {
+    seen.add(current.stage);
+    const inputs = current.missing_inputs
+      .filter((key) => key.startsWith("stage:"))
+      .map((key) => Number(key.slice("stage:".length)));
+    if (inputs.length === 0) return null;
+    const next = byStage.get(Math.min(...inputs));
+    if (next === undefined) return null;
+    if (next.is_open) return next.stage;
+    current = next;
+  }
+  return null;
+}
+
 // 図の承認待ち(段階2の DFD・段階3の ER・段階4の構成図)。図のエディタで承認すれば消える指摘なので、検証の結果の
 // 一覧には常に出さず、段階の承認を押したときに理由として出す(承認ボタンは押せるようにする)。
 // バックエンドは検証のエラーのまま残し、承認を 409 で断る(画面を通らない承認の守り)。

@@ -10,6 +10,7 @@ import {
   type LogicModel,
   type LogicTarget,
 } from "@/features/detailed-design/api/types";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { LogicSpecEditor } from "@/features/detailed-design/components/LogicSpecEditor";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -17,6 +18,8 @@ import { BADGE, CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/compo
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   buildReverseIndex,
   candidatesByProcedure,
@@ -89,6 +92,7 @@ export function LogicPanel({
   const focus = useDetailedDesignStore((s) => s.focus);
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
+  const impact = useStageImpact(stage.stage);
 
   const procedures = toProcedures(stage5Model);
   const candidates = logicCandidates(procedures);
@@ -379,8 +383,11 @@ export function LogicPanel({
                   </thead>
                   <tbody>
                     {reverse.map(({ id, row, stepIds }) => (
-                      <tr key={keyOf(row)}>
-                        <td style={{ ...CELL, ...MONO }}>{id}</td>
+                      <tr key={keyOf(row)} {...impact.row(elementKey.logic(row.module, row.function))}>
+                        <td style={{ ...CELL, ...MONO }}>
+                          {id}
+                          <ImpactBadge mark={impact.mark(elementKey.logic(row.module, row.function))} />
+                        </td>
                         <td style={{ ...CELL, ...MONO }}>{row.function}</td>
                         <td style={{ ...CELL, ...MONO }}>{row.module}</td>
                         <td style={{ ...CELL, ...MONO }}>{stepIds.join(", ") || "—"}</td>

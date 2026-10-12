@@ -7,8 +7,10 @@ import { LogicPanel } from "../LogicPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import type { DesignStageRead, ProcedureModel } from "@/features/detailed-design/api/types";
 import {
+  impactWith,
   makeBranch,
   makeLogic,
+  makeMark,
   makeStages,
   makeStep,
 } from "../../test-utils/stageFixtures";
@@ -427,5 +429,19 @@ describe("LogicPanel", () => {
       expect(screen.getByRole("tab", { name: /^F-02/ })).toHaveAttribute("aria-selected", "true");
       expect(screen.getByRole("tab", { name: "L-02 a" })).toHaveAttribute("aria-selected", "true");
     });
+  });
+
+  it("変更の影響の印を逆引きの関数の行に出し、「表で見る」の行を強調する", () => {
+    const key = `logic:${SERVICE}::ReservationService.create`;
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key, stage: 6 })),
+      highlight: { stage: 6, key },
+    });
+    renderPanel(setup({ state: "reviewing", version: 3, model: { logics: [makeLogic(), makeLogic({ ...CREATE })] } }));
+
+    const reverse = screen.getByRole("table", { name: "処理ロジックの逆引き" });
+    expect(reverse.querySelector('[aria-label="変更の影響: 見直し"]')).not.toBeNull();
+    expect(reverse.querySelector('tr[aria-current="true"]')).toHaveTextContent("L-02");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

@@ -12,6 +12,7 @@ import {
   type ProcedureDocModel,
 } from "@/features/detailed-design/api/types";
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
 import { StrayProcedureList } from "@/features/detailed-design/components/StrayProcedureList";
@@ -19,6 +20,8 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { UnitProcedureEditor } from "@/features/detailed-design/components/UnitProcedureEditor";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   FINDING_LEVEL_LABELS,
   FINDING_SOURCE_LABELS,
@@ -132,6 +135,7 @@ export function ProcedureDocPanel({
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
+  const impact = useStageImpact(stage.stage);
   const setTab = useDetailedDesignStore((s) => s.setTab);
   const [filter, setFilter] = useState<FindingLevel | "all">("all");
 
@@ -211,7 +215,11 @@ export function ProcedureDocPanel({
               {units.map((unit) => (
                 <tr
                   key={unit.id}
-                  style={unit.id === opened ? { background: "var(--blue2)" } : undefined}
+                  {...impact.row(elementKey.unit(unit.key))}
+                  style={
+                    impact.row(elementKey.unit(unit.key)).style ??
+                    (unit.id === opened ? { background: "var(--blue2)" } : undefined)
+                  }
                 >
                   <td style={NOWRAP}>
                     <input
@@ -240,6 +248,7 @@ export function ProcedureDocPanel({
                     >
                       {unit.id}
                     </button>
+                    <ImpactBadge mark={impact.mark(elementKey.unit(unit.key))} />
                   </td>
                   <td style={NOWRAP}>{UNIT_KIND_LABELS[unit.kind]}</td>
                   <td style={CELL}>{unit.title}</td>

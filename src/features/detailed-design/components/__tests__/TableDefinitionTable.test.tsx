@@ -3,6 +3,8 @@ import { render, screen, within } from "@testing-library/react";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { TableDefinitionTable } from "../TableDefinitionTable";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { impactWith, makeMark } from "../../test-utils/stageFixtures";
 import type { ErSemanticModel } from "@/features/uml/api/types";
 
 // SUT: TableDefinitionTable / ドライバ: render / スタブ不要 ── 渡した ER を表にするだけで、
@@ -64,5 +66,18 @@ describe("TableDefinitionTable", () => {
   it("テーブルが無い ER は案内を出す", () => {
     renderTable({ notation: "er", elements: [], relations: [] });
     expect(screen.getByText("ER にテーブルがありません。")).toBeInTheDocument();
+  });
+
+  it("変更の影響の印をテーブルの見出しの行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "table:users", stage: 3 })),
+      highlight: { stage: 3, key: "table:users" },
+    });
+    renderTable(MODEL);
+
+    const header = screen.getByRole("rowheader", { name: /users/ });
+    expect(header.closest("tr")).toHaveAttribute("aria-current", "true");
+    expect(within(header).getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

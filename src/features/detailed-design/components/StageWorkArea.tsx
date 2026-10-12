@@ -12,9 +12,11 @@ import { PlanPanel } from "@/features/detailed-design/components/PlanPanel";
 import { ProcedureDocPanel } from "@/features/detailed-design/components/ProcedureDocPanel";
 import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
+import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
   canApprove,
   describeMissingInput,
+  firstStageToApprove,
   STAGE_TITLES,
   STATE_LABELS,
 } from "@/features/detailed-design/labels";
@@ -57,6 +59,12 @@ export function StageWorkArea({
 }) {
   // 段階の中身に保存していない編集があるか。あるうちは承認させない(承認されるのは保存済みの版のため)
   const [dirty, setDirty] = useState(false);
+  const stages = useDetailedDesignStore((s) => s.stages);
+  const selectStage = useDetailedDesignStore((s) => s.selectStage);
+  // 閉じた段階に保存した内容があれば、消えていないことと、どこを承認し直せば開くかを示す
+  const reopen =
+    !stage.is_open && stage.version !== null ? firstStageToApprove(stage, stages) : null;
+  const reopenState = stages.find((s) => s.stage === reopen)?.state;
   const Panel = stage.is_open ? STAGE_PANELS[stage.stage] : undefined;
   const hasPanel = Panel !== undefined;
 
@@ -66,6 +74,13 @@ export function StageWorkArea({
         段階{stage.stage} {STAGE_TITLES[stage.stage]}
       </H3>
       <Text color="$color11">状態: {STATE_LABELS[stage.state]}</Text>
+
+      {/* 変更の影響の印の件数(印の一覧は画面の上の「変更の影響」パネル) */}
+      {(stage.impact_open ?? 0) + (stage.impact_reviewed ?? 0) > 0 ? (
+        <Text color={(stage.impact_open ?? 0) > 0 ? "$red10" : "$color11"} fontSize="$2">
+          {`変更の影響: 見直し ${stage.impact_open ?? 0} / 確認済み ${stage.impact_reviewed ?? 0}`}
+        </Text>
+      ) : null}
 
       {!stage.is_open ? (
         <Paragraph color="$color11">
@@ -98,11 +113,25 @@ export function StageWorkArea({
           borderColor="$borderColor"
           borderRadius="$4"
         >
-          <Text color="$color11">
-            {stage.is_open
-              ? "この段階の下書きの生成と編集の画面は、準備中です。"
-              : "前の段階を承認すると、この段階を始められます。"}
-          </Text>
+          {!stage.is_open && stage.version !== null ? (
+            <YStack gap="$2" alignItems="flex-start">
+              <Text color="$color11">
+                この段階には保存した内容があります(消えていません)。前の段階が承認済みでない(「古い」を含む)ため閉じています。
+                {reopen !== null && reopenState
+                  ? `段階${reopen}(${STATE_LABELS[reopenState]})を承認し直すと、表示・編集できます。`
+                  : "前の段階を承認し直すと、表示・編集できます。"}
+              </Text>
+              {reopen !== null ? (
+                <StyledButton onPress={() => selectStage(reopen)}>{`段階${reopen}へ移る`}</StyledButton>
+              ) : null}
+            </YStack>
+          ) : (
+            <Text color="$color11">
+              {stage.is_open
+                ? "この段階の下書きの生成と編集の画面は、準備中です。"
+                : "前の段階を承認すると、この段階を始められます。"}
+            </Text>
+          )}
         </YStack>
       )}
 
@@ -116,6 +145,10 @@ export function StageWorkArea({
         {hasPanel && dirty ? (
           <Text color="$color11" fontSize="$2">
             保存してから承認してください。
+          </Text>
+        ) : (stage.impact_open ?? 0) > 0 ? (
+          <Text color="$color11" fontSize="$2">
+            他の段階・文書から届いた見直しの印は、確認済みにしてから承認し直してください。
           </Text>
         ) : null}
         <StyledButton

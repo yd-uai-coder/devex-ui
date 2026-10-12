@@ -6,7 +6,9 @@ import tamaguiConfig from "@/tamagui.config";
 import { DataFlowPanel } from "../DataFlowPanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
+  impactWith,
   makeDataFlow,
+  makeMark,
   makeFunctionList,
   makeStages,
 } from "../../test-utils/stageFixtures";
@@ -185,5 +187,17 @@ describe("DataFlowPanel と DFD のタブ", () => {
     const report = tabsProps.last?.onDirtyChange as (dirty: boolean) => void;
     await act(async () => report(true));
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it("変更の影響の印を処理概要表の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "summary:F-01", stage: 2 })),
+      highlight: { stage: 2, key: "summary:F-01" },
+    });
+    renderPanel(setup({ state: "draft", version: 2, model: makeDataFlow() }));
+
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(screen.getByLabelText("F-01 の入力").closest("tr")).toHaveAttribute("aria-current", "true");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

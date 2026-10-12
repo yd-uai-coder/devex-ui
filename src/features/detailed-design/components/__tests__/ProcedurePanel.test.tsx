@@ -8,8 +8,10 @@ import { getProcedureSequence } from "@/features/detailed-design/api/designStage
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import type { DesignStageRead, FunctionListModel } from "@/features/detailed-design/api/types";
 import {
+  impactWith,
   makeFunctionList,
   makeLogics,
+  makeMark,
   makeModuleList,
   makeProcedures,
   makeStages,
@@ -296,5 +298,17 @@ describe("ProcedurePanel", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  it("変更の影響の印を索引の処理の行に出し、「表で見る」の行を強調する", () => {
+    useDetailedDesignStore.setState({
+      impact: impactWith(makeMark({ key: "proc:F-01", stage: 5 })),
+      highlight: { stage: 5, key: "proc:F-01" },
+    });
+    renderPanel(setup({ state: "reviewing", version: 4, model: makeProcedures() }));
+
+    expect(screen.getByLabelText("変更の影響: 見直し")).toBeInTheDocument();
+    expect(within(screen.getByRole("table", { name: "手順の索引" })).getByText("F-01").closest("tr")).toHaveAttribute("aria-current", "true");
+    useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
 });

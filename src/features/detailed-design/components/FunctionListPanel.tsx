@@ -5,6 +5,7 @@ import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { StyledInput } from "@/components/ui/primitives/StyledInput";
+import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import type {
   DesignStageRead,
@@ -22,6 +23,8 @@ import {
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addGroup,
   addRow,
@@ -53,6 +56,7 @@ export function FunctionListPanel({
   );
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
+  const impact = useStageImpact(stage.stage);
 
   const saved = toFunctionList(stage.model);
   const [draft, setDraft] = useState<FunctionListModel>(saved);
@@ -185,8 +189,11 @@ export function FunctionListPanel({
               </thead>
               <tbody>
                 {draft.functions.map((row) => (
-                  <tr key={row.id}>
-                    <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>{row.id}</td>
+                  <tr key={row.id} {...impact.row(elementKey.fn(row.id))}>
+                    <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
+                      {row.id}
+                      <ImpactBadge mark={impact.mark(elementKey.fn(row.id))} />
+                    </td>
                     <td style={{ ...CELL, minWidth: 160 }}>
                       <input
                         style={INPUT}
