@@ -8,8 +8,8 @@ export type DocType = "requirements" | "external_design" | "internal_design" | "
 export type RequirementSource = "user" | "adopted" | "assumed";
 
 // devex-api app/schemas/document.py の DocumentIssueRead・AssumedRequirementRead・
-// RequirementsSummaryRead・ExternalDesignSummaryRead に対応する。
-// 検証の指摘(要件定義書・外部設計書で共通)
+// RequirementsSummaryRead・ExternalDesignSummaryRead・DocumentSummaryRead に対応する。
+// 検証の指摘(4文書で共通)
 export type DocumentIssueRead = {
   level: "critical" | "major" | "minor";
   code: string;
@@ -34,6 +34,18 @@ export type ExternalDesignSummaryRead = {
   issues: DocumentIssueRead[];
 };
 
+// 内部設計書(tables / apis / modules / dataflows)・実装計画書(milestones / tasks / risks)の
+// 行数と検証の指摘
+export type InternalDesignSummaryRead = {
+  counts: { tables: number; apis: number; modules: number; dataflows: number };
+  issues: DocumentIssueRead[];
+};
+
+export type ImplementationPlanSummaryRead = {
+  counts: { milestones: number; tasks: number; risks: number };
+  issues: DocumentIssueRead[];
+};
+
 // devex-api app/schemas/document.py の GeneratedDocumentRead に対応する。
 export type GeneratedDocumentRead = {
   id: string;
@@ -46,6 +58,9 @@ export type GeneratedDocumentRead = {
   requirements?: RequirementsSummaryRead | null;
   // 外部設計書で model を持つ版だけ(ほかの文書・以前の版は null)
   external_design?: ExternalDesignSummaryRead | null;
+  // 内部設計書・実装計画書で model を持つ版だけ(ほかの文書・以前の版は null)
+  internal_design?: InternalDesignSummaryRead | null;
+  implementation_plan?: ImplementationPlanSummaryRead | null;
 };
 
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {

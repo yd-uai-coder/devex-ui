@@ -14,7 +14,7 @@ type DocumentIssueListProps = {
   label: string;
 };
 
-// 要件定義書・外部設計書の検証の指摘(警告だけ)を、重要度の見出しを付けて並べる。
+// 4文書の検証の指摘(警告だけ)を、重要度の見出しを付けて並べる。
 // 指摘が無ければ何も出さない。
 export function DocumentIssueList({ issues, label }: DocumentIssueListProps) {
   if (issues.length === 0) return null;

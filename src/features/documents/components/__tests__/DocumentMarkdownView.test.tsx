@@ -139,6 +139,8 @@ describe("DocumentMarkdownView", () => {
 
     expect(screen.getByRole("cell", { name: "認証API" })).toBeInTheDocument();
     expect(screen.queryByText(/uml:diagram/)).not.toBeInTheDocument();
+    // model の無い以前の版なので、書き落としの検証の代わりに再生成の案内を出す
+    expect(screen.getByText(/書き落としの検証がありません/)).toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });
