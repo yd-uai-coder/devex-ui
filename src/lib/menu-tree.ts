@@ -15,11 +15,4 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "ログイン", href: "/login" },
     ],
   },
-  {
-    label: "開発用",
-    children: [
-      // 変更の影響範囲の見せ方の提案(仮データ)
-      { label: "変更の影響デモ", href: "/change-impact-demo" },
-    ],
-  },
 ];
