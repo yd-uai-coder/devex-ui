@@ -48,6 +48,13 @@ describe("crudOps", () => {
     ]);
     expect(countDrafts(edited)).toBe(0);
 
+    // DFD の書き込みの線から推定した印は、保存しても残り、書き換えると外れる
+    const inferred = toCrud({
+      cells: [{ function_id: "F-01", table: "reservations", ops: "U", draft: true, inferred: true }],
+    });
+    expect(inferred.cells[0].inferred).toBe(true);
+    expect(setCellOps(inferred, "F-01", "reservations", "c", ACCESSES).cells[0].inferred).toBeUndefined();
+
     const read = setCellOps({ cells: [] }, "F-02", "reservations", "", ACCESSES);
     expect(read.cells).toEqual([
       { function_id: "F-02", table: "reservations", ops: "R", draft: false },
