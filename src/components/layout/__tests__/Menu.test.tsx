@@ -62,4 +62,16 @@ describe("Menu", () => {
       "/login",
     );
   });
+
+  it("開発用のグループに AI 設計レビューデモへのリンクを置く", async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    await user.click(screen.getByRole("button", { name: "開発用" }));
+
+    expect(screen.getByRole("link", { name: "AI 設計レビューデモ" })).toHaveAttribute(
+      "href",
+      "/design-review-demo",
+    );
+  });
 });
