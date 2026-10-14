@@ -8,6 +8,9 @@ import { useReviewStore } from "@/features/design-review/review-store";
 import type { TargetActionOf } from "@/features/design-review/model";
 import { finding, gate, run, user } from "../../test-utils/reviewFixtures";
 
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
 // SUT: ReviewPanel(と、その中の FindingTable)/ ドライバ: render と操作 / スタブ: レビューのストアの
 // fetchMe・fetchGates・setReviewEnabled・runReview・decide(API を呼ばずに、呼ばれ方を確かめる)。
 
@@ -60,7 +63,10 @@ describe("ReviewPanel", () => {
       setReviewEnabled: vi.fn().mockResolvedValue(undefined),
       runReview: vi.fn().mockResolvedValue(true),
       decide: vi.fn().mockResolvedValue(undefined),
+      rehear: vi.fn().mockResolvedValue(true),
+      rehearing: false,
     });
+    push.mockReset();
   });
 
   it("superuser でなければ何も出さない", () => {
@@ -183,5 +189,81 @@ describe("ReviewPanel", () => {
     // 段階の区切りでは C が詳細設計
     await u.click(screen.getByRole("button", { name: "段階6の承認の後の指摘を開く" }));
     expect(screen.getByLabelText("文書の凡例")).toHaveTextContent("C 詳細設計 D 実装計画(詳細)");
+  });
+
+  it("採用した指摘の追跡をチップで出し、見出しに未対応の数、前の回で採用した指摘を出す", async () => {
+    useReviewStore.setState({
+      gates: [
+        gate({
+          status: "reviewed",
+          run: run({
+            findings: [
+              finding({
+                id: "f1",
+                decision: "adopted",
+                followup: "changed",
+                problem: "新しい回の指摘",
+                fix_check: { verdict: "fixed", reason: "直っている", model: "claude-haiku", error_code: null, created_at: "" },
+              }),
+              finding({ id: "f2", problem: "未判断の指摘" }),
+            ],
+          }),
+          adopted_before: [finding({ id: "f0", decision: "adopted", followup: "unaddressed", problem: "前の回の指摘" })],
+        }),
+      ],
+    });
+    const u = userEvent.setup();
+    renderPanel();
+
+    expect(screen.getByText("採用 2(未対応 1)")).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "文書の生成の後の指摘を開く" }));
+    expect(screen.getAllByLabelText("追跡: 変更あり").length).toBeGreaterThan(0);
+    // 直ったかの判定(シャドーモード)は小さく添え、理由を title に出す
+    expect(screen.getByText("AI: 直った")).toHaveAttribute("title", "直っている");
+    const carried = screen.getByLabelText("文書の生成の後の前の回で採用した指摘");
+    expect(within(carried).getByText("前の回で採用した指摘 1件")).toBeInTheDocument();
+    expect(within(carried).getByText("前の回の指摘")).toBeInTheDocument();
+    expect(within(carried).getByLabelText("追跡: 未対応")).toBeInTheDocument();
+  });
+
+  it("最新の回が失敗でも、前の回で採用した指摘は出す", async () => {
+    useReviewStore.setState({
+      gates: [
+        gate({
+          status: "failed",
+          run: run({ status: "failed" }),
+          adopted_before: [finding({ id: "f0", decision: "adopted", followup: "changed" })],
+        }),
+      ],
+    });
+    const u = userEvent.setup();
+    renderPanel();
+    await u.click(screen.getByRole("button", { name: "文書の生成の後の指摘を開く" }));
+    expect(screen.getByLabelText("追跡: 変更あり")).toBeInTheDocument();
+    expect(screen.queryByText("指摘はありません。")).not.toBeInTheDocument();
+  });
+
+  it("採用したヒアリングの指摘があれば、聞き直してチャットへ移る", async () => {
+    useReviewStore.setState({
+      gates: [
+        gate({
+          status: "reviewed",
+          run: run({
+            findings: [
+              finding({ id: "h1", decision: "adopted", cause: "hearing", point_key: "security" }),
+              finding({ id: "h2", cause: "hearing", point_key: "abuse" }),
+              finding({ id: "d1", decision: "adopted" }),
+            ],
+          }),
+        }),
+      ],
+    });
+    const u = userEvent.setup();
+    renderPanel();
+
+    await u.click(screen.getByRole("button", { name: "チャットで聞き直す(1件)" }));
+
+    expect(useReviewStore.getState().rehear).toHaveBeenCalledWith("p1", ["h1"]);
+    expect(push).toHaveBeenCalledWith("/projects/p1/chat");
   });
 });

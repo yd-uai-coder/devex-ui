@@ -43,4 +43,18 @@ describe("reviewFindingsByKey", () => {
     const gates = [gate({ status: "running", run: run({ status: "running", findings: [finding({ targets: ["F-01"] })] }) }), gate({ gate: "stage7" })];
     expect(reviewFindingsByKey(gates, stages, 1).size).toBe(0);
   });
+
+  it("前の回で採用した指摘も出す(今の版のレビューではない)", () => {
+    const gates = [
+      gate({
+        gate: "stage6",
+        status: "failed",
+        run: run({ gate: "stage6", status: "failed" }),
+        adopted_before: [finding({ id: "carried", decision: "adopted", followup: "unaddressed", targets: ["F-01"] })],
+      }),
+    ];
+    expect(reviewFindingsByKey(gates, stages, 1).get("fn:F-01")).toMatchObject([
+      { finding: { id: "carried" }, gate: "stage6", isCurrent: false },
+    ]);
+  });
 });

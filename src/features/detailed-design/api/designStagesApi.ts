@@ -51,21 +51,24 @@ export function approveDesignStage(
 // 段階5は functionIds で下書きを作る処理を選べる(省略すると、選んだ処理のうち手順の無いもの)。
 // 段階6は logics で下書きを作る関数を選べる(省略すると、選んだ関数のうち詳細の無いもの)。
 // 段階8は unitIds で手順書を作る単位を選べる(省略すると、段階7の単位のうち手順書の無いもの)。
+// findingIds は修正指示に入れる、AI 設計レビューの採用した指摘(設計・不整合)。
 export function generateDesignStage(
   projectId: string,
   stage: number,
   functionIds?: string[],
   logics?: LogicTarget[],
   unitIds?: string[],
+  findingIds: string[] = [],
 ): Promise<DesignStageRead> {
   const body = {
     ...(functionIds ? { function_ids: functionIds } : {}),
     ...(logics ? { logics } : {}),
     ...(unitIds ? { unit_ids: unitIds } : {}),
+    ...(findingIds.length > 0 ? { finding_ids: findingIds } : {}),
   };
   return apiFetch<DesignStageRead>(`${base(projectId)}/${stage}/generate`, {
     method: "POST",
-    ...(functionIds || logics || unitIds ? { body: JSON.stringify(body) } : {}),
+    ...(Object.keys(body).length > 0 ? { body: JSON.stringify(body) } : {}),
   });
 }
 

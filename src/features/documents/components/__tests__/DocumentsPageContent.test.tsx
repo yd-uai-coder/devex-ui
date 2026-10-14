@@ -5,6 +5,8 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentsPageContent } from "../DocumentsPageContent";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useReviewStore } from "@/features/design-review/review-store";
+import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 
 const useGenerationPollingMock = vi.fn();
 vi.mock("@/hooks/useGenerationPolling", () => ({
@@ -57,6 +59,7 @@ describe("DocumentsPageContent", () => {
       progress: null,
       fetchProgress: vi.fn().mockResolvedValue(undefined),
     });
+    useReviewStore.setState({ me: null, gates: [] });
   });
 
   it("マウント時にfetchDocuments(projectId)とfetchProjectMode(projectId)を呼ぶ", () => {
@@ -76,7 +79,37 @@ describe("DocumentsPageContent", () => {
     await user.click(screen.getByLabelText("再生成する"));
 
     // 既定の起点は最初の文書(全部を作り直す。起点は送らない)
-    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", undefined);
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", undefined, []);
+  });
+
+  it("未対応の採用した指摘を選んだ状態で開き、関連する最も上流の文書を起点にする", async () => {
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          status: "reviewed",
+          run: run({
+            findings: [
+              finding({ id: "ext", decision: "adopted", followup: "unaddressed", documents: ["external_design"], problem: "認可が無い" }),
+              finding({ id: "done", decision: "adopted", followup: "changed", documents: ["requirements"], problem: "直した" }),
+              finding({ id: "hear", decision: "adopted", cause: "hearing", followup: "unaddressed", documents: ["requirements"] }),
+            ],
+          }),
+        }),
+      ],
+    });
+    const user = userEvent.setup();
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "再生成する" }));
+    // ヒアリングの指摘は聞き直しで直すので、再生成の指示には出さない
+    expect(screen.getByLabelText(/認可が無い/)).toBeChecked();
+    expect(screen.getByLabelText(/直した/)).not.toBeChecked();
+    expect(screen.getByLabelText(/外部設計以降を再生成/)).toBeChecked();
+    await user.click(screen.getByLabelText(/直した/));
+    await user.click(screen.getByLabelText("再生成する"));
+
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "external_design", ["ext", "done"]);
   });
 
   it("再生成の起点を選ぶと、その文書から下流を作り直す", async () => {
@@ -88,7 +121,7 @@ describe("DocumentsPageContent", () => {
     await user.click(screen.getByLabelText(/内部設計以降を再生成/));
     await user.click(screen.getByLabelText("再生成する"));
 
-    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "internal_design");
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "internal_design", []);
   });
 
   it("再生成中は文書ごとの進み具合を出し、取り直す", () => {

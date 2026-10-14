@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
-import { documentOfTarget } from "@/features/design-review/model";
+import { LEVEL_LABEL, documentOfTarget, regenerableFindings, regenerationStartFor } from "@/features/design-review/model";
+import { useReviewStore } from "@/features/design-review/review-store";
 import type { TargetActionOf } from "@/features/design-review/model";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { DocumentTabs } from "@/features/documents/components/DocumentTabs";
@@ -39,6 +40,12 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const [startFrom, setStartFrom] = useState<DocType>("requirements");
   // 表示中の文書のタブ(レビューの指摘の対象から移る)
   const [activeType, setActiveType] = useState<DocType | null>(null);
+  // 再生成の指示に入れる、AI 設計レビューの採用した指摘(レビューがオンのときだけ選べる)
+  const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
+  const reviewGates = useReviewStore((s) => s.gates);
+  const documentsGate = reviewGates.find((g) => g.gate === "documents");
+  const sendback = reviewEffective && documentsGate ? regenerableFindings(documentsGate) : [];
+  const [findingIds, setFindingIds] = useState<string[]>([]);
 
   useEffect(() => {
     void fetchDocuments(projectId);
@@ -88,7 +95,10 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
             size="$3"
             disabled={regenerating}
             onPress={() => {
-              setStartFrom(docTypes[0]);
+              // 未対応の採用した指摘があれば、それを選んだ状態で、関連する最も上流の文書から作り直す
+              const unaddressed = sendback.filter((f) => f.followup === "unaddressed");
+              setFindingIds(unaddressed.map((f) => f.id));
+              setStartFrom(regenerationStartFor(unaddressed, docTypes) ?? docTypes[0]);
               setConfirmOpen(true);
             }}
           >
@@ -162,13 +172,33 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
                 </span>
               </label>
             ))}
+            {sendback.length > 0 ? (
+              <>
+                <span style={{ display: "block", marginTop: 12, fontWeight: 600 }}>
+                  AI 設計レビューの採用した指摘を、再生成の指示に入れる(関連する文書だけに渡します)
+                </span>
+                {sendback.map((f) => (
+                  <label key={f.id} style={{ display: "block", marginTop: 4, fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={findingIds.includes(f.id)}
+                      onChange={(e) =>
+                        setFindingIds((ids) => (e.target.checked ? [...ids, f.id] : ids.filter((id) => id !== f.id)))
+                      }
+                    />{" "}
+                    {`[${LEVEL_LABEL[f.level]}] ${f.problem}`}
+                    {f.followup === "unaddressed" ? <span style={{ color: "var(--red10)" }}>(未対応)</span> : null}
+                  </label>
+                ))}
+              </>
+            ) : null}
           </>
         }
         confirmLabel="再生成する"
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false);
-          void regenerate(projectId, startFrom === docTypes[0] ? undefined : startFrom);
+          void regenerate(projectId, startFrom === docTypes[0] ? undefined : startFrom, findingIds);
         }}
       />
     </YStack>

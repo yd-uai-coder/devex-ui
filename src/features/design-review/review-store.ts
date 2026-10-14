@@ -4,12 +4,14 @@ import {
   decideFinding,
   getCurrentUser,
   listReviewGates,
+  requestRehearing,
   requestReview,
   updateReviewSettings,
 } from "@/features/design-review/api/reviewApi";
 import type {
   CurrentUserRead,
   FindingDecision,
+  ReviewFindingRead,
   ReviewGate,
   ReviewGateSummaryRead,
 } from "@/features/design-review/api/reviewApi";
@@ -37,6 +39,9 @@ type ReviewStore = {
   // 区切りのレビューを流す。受け付けたら区切りを取り直す(実行中になる)。受け付けたかを返す
   runReview: (projectId: string, gate: ReviewGate) => Promise<boolean>;
   decide: (projectId: string, findingId: string, decision: FindingDecision) => Promise<void>;
+  // 採用したヒアリングの指摘で聞き直す(観点を未決に戻し、チャットに問いかけを出す)。受け付けたかを返す
+  rehear: (projectId: string, findingIds: string[]) => Promise<boolean>;
+  rehearing: boolean;
 };
 
 const PROJECT_INITIAL = {
@@ -47,6 +52,7 @@ const PROJECT_INITIAL = {
   requesting: null,
   decidingId: null,
   actionError: null,
+  rehearing: false,
 } as const;
 
 const messageOf = (err: unknown, fallback: string) => (err instanceof Error ? err.message : fallback);
@@ -102,6 +108,18 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
     }
   },
 
+  rehear: async (projectId, findingIds) => {
+    set({ rehearing: true, actionError: null });
+    try {
+      await requestRehearing(projectId, findingIds);
+      set({ rehearing: false });
+      return true;
+    } catch (err) {
+      set({ rehearing: false, actionError: messageOf(err, "聞き直しを始められませんでした") });
+      return false;
+    }
+  },
+
   decide: async (projectId, findingId, decision) => {
     set({ decidingId: findingId, actionError: null });
     try {
@@ -109,11 +127,14 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
       if (get().projectId !== projectId) return;
       set({
         decidingId: null,
-        gates: get().gates.map((g) =>
-          g.run
-            ? { ...g, run: { ...g.run, findings: g.run.findings.map((f) => (f.id === updated.id ? updated : f)) } }
-            : g,
-        ),
+        gates: get().gates.map((g) => {
+          const replace = (f: ReviewFindingRead) => (f.id === updated.id ? updated : f);
+          return {
+            ...g,
+            run: g.run ? { ...g.run, findings: g.run.findings.map(replace) } : g.run,
+            adopted_before: g.adopted_before.map(replace),
+          };
+        }),
       });
     } catch (err) {
       set({ decidingId: null, actionError: messageOf(err, "採否を記録できませんでした") });

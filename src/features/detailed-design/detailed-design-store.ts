@@ -64,13 +64,15 @@ type DetailedDesignStore = {
     stage: number,
     model: Record<string, unknown>,
   ) => Promise<boolean>;
-  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる
+  // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる。
+  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘
   generate: (
     projectId: string,
     stage: number,
     functionIds?: string[],
     logics?: LogicTarget[],
     unitIds?: string[],
+    findingIds?: string[],
   ) => Promise<void>;
   // 段階の印を確認済み(reviewed=false で未確認)にする。確認できたら true
   reviewMarks: (
@@ -219,10 +221,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return saved;
     },
 
-    generate: async (projectId, stage, functionIds, logics, unitIds) => {
+    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds) => {
       set({ requestingGeneration: true, actionError: null });
       try {
-        await generateDesignStage(projectId, stage, functionIds, logics, unitIds);
+        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds);
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
         const invalid = err instanceof ApiError && err.code === "DESIGN_STAGE_INVALID";

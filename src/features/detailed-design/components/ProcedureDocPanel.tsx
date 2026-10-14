@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
-import { unreviewedNotice } from "@/features/design-review/model";
+import { joinNotices, unaddressedNotice, unreviewedNotice } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import {
   FINDING_LEVELS,
@@ -150,7 +150,7 @@ export function ProcedureDocPanel({
   const [selection, setSelection] = useState<string[]>([]);
   // 作り直しの確認を出しているか(選んだ単位に手順書のあるものが含まれるとき)
   const [confirming, setConfirming] = useState(false);
-  // 生成を始めたときの、未レビューの区切りの知らせ(止めはしない)
+  // 生成を始めたときの、採用したまま直していない指摘・未レビューの区切りの知らせ(止めはしない)
   const [reviewNotice, setReviewNotice] = useState<string | null>(null);
   const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
   const reviewGates = useReviewStore((s) => s.gates);
@@ -184,7 +184,7 @@ export function ProcedureDocPanel({
 
   const startGeneration = () => {
     setConfirming(false);
-    setReviewNotice(reviewEffective ? unreviewedNotice(reviewGates) : null);
+    setReviewNotice(reviewEffective ? joinNotices(unaddressedNotice(reviewGates), unreviewedNotice(reviewGates)) : null);
     void generate(projectId, stage.stage, undefined, undefined, selection);
   };
   const saveBar = (

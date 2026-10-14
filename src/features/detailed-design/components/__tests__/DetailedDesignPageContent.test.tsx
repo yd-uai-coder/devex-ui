@@ -252,6 +252,34 @@ describe("DetailedDesignPageContent", () => {
     await waitFor(() => expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument());
   });
 
+  it("段階6を承認したとき、採用したまま直していない指摘があれば知らせる", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          gate: "stage6",
+          status: "reviewed",
+          run: run({ gate: "stage6", findings: [finding({ decision: "adopted", followup: "unaddressed" })] }),
+        }),
+      ],
+    });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(
+      await screen.findByText(/採用したまま直していない指摘があります\(段階6の承認の後 1件\)。/),
+    ).toBeInTheDocument();
+    useReviewStore.setState({ gates: [] });
+  });
+
   it("レビューがオフなら、承認のダイアログにレビューの操作を出さない", async () => {
     const u = userEvent.setup();
     useReviewStore.setState({ me: reviewUser({ review_enabled: false, review_effective: false }) });

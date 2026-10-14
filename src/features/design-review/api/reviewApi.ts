@@ -6,6 +6,19 @@ export type GateStatus = "not_ready" | "unreviewed" | "running" | "reviewed" | "
 export type ReviewLevel = "critical" | "major" | "minor";
 export type ReviewCause = "hearing" | "design" | "inconsistency";
 export type FindingDecision = "pending" | "adopted" | "rejected" | "held";
+// 採用した指摘の追跡。unaddressed = 関連文書・段階の版が変わっていない / target_unchanged = 版は
+// 変わったが対象の行が変わっていない / changed = 対象が変わった・比べられない
+export type FollowupState = "unaddressed" | "target_unchanged" | "changed";
+export type FixVerdict = "fixed" | "partial" | "not_fixed" | "unsure";
+
+// 採用した指摘が直ったかの判定(Claude Haiku。シャドーモード)。今の版について判定したものだけ
+export type FixCheckRead = {
+  verdict: FixVerdict | null;
+  reason: string;
+  model: string;
+  error_code: string | null;
+  created_at: string;
+};
 
 export type ReviewFindingRead = {
   id: string;
@@ -23,6 +36,10 @@ export type ReviewFindingRead = {
   reason: string;
   suggestion: string;
   decision: FindingDecision;
+  // 採用した指摘の追跡(採用していなければ null)
+  followup: FollowupState | null;
+  // 今の版についての「直ったか」の判定(判定していなければ null)
+  fix_check: FixCheckRead | null;
 };
 
 export type ReviewRunRead = {
@@ -48,6 +65,8 @@ export type ReviewGateSummaryRead = {
   ready: boolean;
   status: GateStatus;
   run: ReviewRunRead | null;
+  // 前の回で採用した指摘(新しい回から。作り直しの後の自動のレビューで最新の回が替わっても残す)
+  adopted_before: ReviewFindingRead[];
 };
 
 // ログイン中のユーザー(GET /users/me)。レビューに要る項目だけを型にする
@@ -88,5 +107,13 @@ export function decideFinding(
   return apiFetch<ReviewFindingRead>(`/api/v1/projects/${projectId}/reviews/findings/${findingId}`, {
     method: "PUT",
     body: JSON.stringify({ decision }),
+  });
+}
+
+// 採用したヒアリングの指摘の観点を未決に戻し、チャットで聞き直す(最初の問いかけはサーバーが作る)
+export function requestRehearing(projectId: string, findingIds: string[]): Promise<unknown> {
+  return apiFetch<unknown>(`/api/v1/projects/${projectId}/reviews/rehearing`, {
+    method: "POST",
+    body: JSON.stringify({ finding_ids: findingIds }),
   });
 }

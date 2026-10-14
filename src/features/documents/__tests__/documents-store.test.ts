@@ -97,6 +97,14 @@ describe("useDocumentsStore", () => {
     expect(stub.requests[1].init?.body).toBeUndefined();
   });
 
+  it("regenerate()に採用した指摘を渡すと本文の finding_ids で送る", async () => {
+    stub.queue({ status: 202, body: null });
+
+    await useDocumentsStore.getState().regenerate("p1", undefined, ["f1", "f2"]);
+
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ finding_ids: ["f1", "f2"] });
+  });
+
   it("fetchProgress()は進み具合を読み、完了したら消す", async () => {
     useDocumentsStore.setState({ projectId: "p1", regenerating: true });
     const progress = { targets: ["implementation_plan"], done: [], current: "implementation_plan" };

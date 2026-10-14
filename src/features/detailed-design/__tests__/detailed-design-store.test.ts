@@ -224,6 +224,16 @@ describe("useDetailedDesignStore", () => {
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ unit_ids: ["M-01-T01"] });
   });
 
+  it("generateは修正指示に入れる指摘を本文の finding_ids で渡す", async () => {
+    useDetailedDesignStore.setState({ projectId: "p1", stages: makeStages() });
+    stub.queue({ status: 202, body: makeStages()[0] });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().generate("p1", 1, undefined, undefined, undefined, ["f1"]);
+
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ finding_ids: ["f1"] });
+  });
+
   it("jumpToは段階を選んで移動先を覚え、clearFocus・selectStageで消える", () => {
     useDetailedDesignStore.setState({ selectedStage: 5, actionError: "前の失敗" });
 

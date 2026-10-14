@@ -85,10 +85,15 @@ export function markPointNotApplicable(projectId: string, pointKey: string): Pro
 // 202 Acceptedを返す(バックグラウンドタスクとして生成をトリガーするのみ)。
 // 完了はGET /api/v1/projects/{id}のstatusをポーリングして検知する(ChatPageContent参照)。
 // startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部(チャットからの生成)。
-export function triggerGeneration(projectId: string, startFrom?: string): Promise<void> {
+// findingIds は再生成の指示に入れる、AI 設計レビューの採用した指摘(設計・不整合)。
+export function triggerGeneration(projectId: string, startFrom?: string, findingIds: string[] = []): Promise<void> {
+  const body = {
+    ...(startFrom ? { start_from: startFrom } : {}),
+    ...(findingIds.length > 0 ? { finding_ids: findingIds } : {}),
+  };
   return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, {
     method: "POST",
-    ...(startFrom ? { body: JSON.stringify({ start_from: startFrom }) } : {}),
+    ...(Object.keys(body).length > 0 ? { body: JSON.stringify(body) } : {}),
   });
 }
 

@@ -6,11 +6,12 @@ import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import type { ReviewGate } from "@/features/design-review/api/reviewApi";
-import { GATE_LABEL } from "@/features/design-review/model";
+import { GATE_LABEL, unaddressedNotice } from "@/features/design-review/model";
 import type { TargetActionOf } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { ChangeImpactPanel } from "@/features/detailed-design/components/ChangeImpactPanel";
 import { DesignDocumentBar } from "@/features/detailed-design/components/DesignDocumentBar";
+import { StageSendbackPanel } from "@/features/detailed-design/components/StageSendbackPanel";
 import { StageStepper } from "@/features/detailed-design/components/StageStepper";
 import { StageWorkArea } from "@/features/detailed-design/components/StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
@@ -38,6 +39,7 @@ export function DetailedDesignPageContent({
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
   const runReview = useReviewStore((s) => s.runReview);
+  const reviewGates = useReviewStore((s) => s.gates);
   // 承認を終えた段階(完了のダイアログを出している間だけ値を持つ)
   const [approvedStage, setApprovedStage] = useState<number | null>(null);
   // 最重要の指摘が残ったまま承認しようとしている段階8の、最重要の数(確認を出している間だけ値を持つ)
@@ -104,6 +106,8 @@ export function DetailedDesignPageContent({
       {stages.length > 0 ? (
         <ReviewPanel projectId={projectId} targetAction={targetAction} refreshKey={stagesKey} />
       ) : null}
+      {/* 差し戻し: 段階6・7 の採用した指摘で段階を作り直す(レビューがオンで、採用した指摘があるときだけ) */}
+      {stages.length > 0 && !simple ? <StageSendbackPanel projectId={projectId} /> : null}
 
       {stages.length > 0 ? (
         <XStack gap="$5" alignItems="flex-start" flexWrap="wrap">
@@ -145,6 +149,10 @@ export function DetailedDesignPageContent({
             // 説明は段落の中に出るので、ブロック要素(XStack など)を入れない
             <>
               {`段階${approvedStage}-${STAGE_TITLES[approvedStage] ?? ""}を承認しました。`}
+              {/* 段階6・7 の承認では、採用したまま直していない指摘を知らせる(止めはしない) */}
+              {reviewEffective && (approvedStage === 6 || approvedStage === 7) && unaddressedNotice(reviewGates)
+                ? ` ${unaddressedNotice(reviewGates)}`
+                : null}
               {reviewGate !== null ? (
                 <>
                   {reviewGate === "stage6"

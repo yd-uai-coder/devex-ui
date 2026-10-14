@@ -7,7 +7,7 @@ import { ProcedureDocPanel } from "../ProcedureDocPanel";
 import { StageWorkArea } from "../StageWorkArea";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useReviewStore } from "@/features/design-review/review-store";
-import { gate, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
+import { finding, gate, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import {
   impactWith,
   makeMark,
@@ -319,6 +319,30 @@ describe("ProcedureDocPanel", () => {
 
     expect(useDetailedDesignStore.getState().generate).toHaveBeenCalled();
     expect(screen.getByText("未レビューの区切りがあります(段階7の承認の後)。このまま手順書を生成できます。")).toBeInTheDocument();
+  });
+
+  it("採用したまま直していない指摘があれば、未レビューの知らせより先に知らせる", async () => {
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [
+        gate({
+          gate: "stage7",
+          status: "unreviewed",
+          adopted_before: [finding({ decision: "adopted", followup: "unaddressed" })],
+        }),
+      ],
+    });
+    const u = userEvent.setup();
+    renderPanel(stage8({ model: makeProcedureDoc(), version: 1 }));
+
+    await u.click(screen.getByLabelText("M-01-T01 を生成する"));
+    await u.click(screen.getByRole("button", { name: "選んだ単位の手順書を生成する(1/5)" }));
+
+    expect(
+      screen.getByText(
+        "採用したまま直していない指摘があります(段階7の承認の後 1件)。 未レビューの区切りがあります(段階7の承認の後)。このまま手順書を生成できます。",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("レビューがオフなら知らせない", async () => {

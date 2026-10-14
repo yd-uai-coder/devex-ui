@@ -21,6 +21,8 @@ export function finding(overrides: Partial<ReviewFindingRead> = {}): ReviewFindi
     reason: "理由",
     suggestion: "改善案",
     decision: "pending",
+    followup: null,
+    fix_check: null,
     ...overrides,
   };
 }
@@ -45,7 +47,7 @@ export function run(overrides: Partial<ReviewRunRead> = {}): ReviewRunRead {
 }
 
 export function gate(overrides: Partial<ReviewGateSummaryRead> = {}): ReviewGateSummaryRead {
-  return { gate: "documents", ready: true, status: "unreviewed", run: null, ...overrides };
+  return { gate: "documents", ready: true, status: "unreviewed", run: null, adopted_before: [], ...overrides };
 }
 
 export function user(overrides: Partial<CurrentUserRead> = {}): CurrentUserRead {
