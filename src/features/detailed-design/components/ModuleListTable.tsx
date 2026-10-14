@@ -3,6 +3,7 @@
 import { Paragraph, Text, YStack } from "tamagui";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { ModuleListModel } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
@@ -14,6 +15,7 @@ import {
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addModule,
@@ -39,6 +41,7 @@ export function ModuleListTable({
 }) {
   const duplicated = duplicatePaths(model);
   const impact = useStageImpact(4);
+  const review = useStageReview(4);
 
   return (
     <YStack gap="$2">
@@ -81,6 +84,7 @@ export function ModuleListTable({
                         <div style={{ fontSize: 11, color: "var(--red10)" }}>パスが重複しています</div>
                       ) : null}
                       <ImpactBadge mark={impact.mark(elementKey.module(row.path))} />
+                      <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.module(row.path))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 110 }}>
                       <select

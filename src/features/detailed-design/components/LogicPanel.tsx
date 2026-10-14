@@ -10,6 +10,7 @@ import {
   type LogicModel,
   type LogicTarget,
 } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { LogicSpecEditor } from "@/features/detailed-design/components/LogicSpecEditor";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
@@ -19,6 +20,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   buildReverseIndex,
@@ -93,6 +95,7 @@ export function LogicPanel({
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const clearFocus = useDetailedDesignStore((s) => s.clearFocus);
   const impact = useStageImpact(stage.stage);
+  const review = useStageReview(stage.stage);
 
   const procedures = toProcedures(stage5Model);
   const candidates = logicCandidates(procedures);
@@ -387,6 +390,7 @@ export function LogicPanel({
                         <td style={{ ...CELL, ...MONO }}>
                           {id}
                           <ImpactBadge mark={impact.mark(elementKey.logic(row.module, row.function))} />
+                          <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.logic(row.module, row.function))} />
                         </td>
                         <td style={{ ...CELL, ...MONO }}>{row.function}</td>
                         <td style={{ ...CELL, ...MONO }}>{row.module}</td>

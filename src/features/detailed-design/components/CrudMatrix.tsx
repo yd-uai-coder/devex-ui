@@ -7,10 +7,12 @@ import type {
   DfdAccess,
   FunctionRow,
 } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { accessOf, cellOf, countDrafts, setCellOps } from "@/features/detailed-design/crudOps";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 
 // AI の下書きのまま(人が確定していない)セルの背景
@@ -40,6 +42,7 @@ export function CrudMatrix({
 }) {
   const drafts = countDrafts(model);
   const impact = useStageImpact(3);
+  const review = useStageReview(3);
 
   return (
     <YStack gap="$2">
@@ -105,6 +108,7 @@ export function CrudMatrix({
                           }
                         />
                         <ImpactBadge mark={impact.mark(key)} />
+                        <ReviewFindingBadge projectId={review.projectId} items={review.findings(key)} />
                       </td>
                     );
                   })}

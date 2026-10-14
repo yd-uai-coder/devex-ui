@@ -1,9 +1,11 @@
 "use client";
 
 import { Paragraph, Text, YStack } from "tamagui";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import type { ErSemanticModel } from "@/features/uml/api/types";
 
@@ -15,6 +17,7 @@ const mark = (on: boolean) => (on ? "○" : "");
 // テーブルの見出しの行に、変更の影響の印と「表で見る」の強調を付ける。
 export function TableDefinitionTable({ model }: { model: ErSemanticModel | null }) {
   const impact = useStageImpact(3);
+  const review = useStageReview(3);
   if (model === null) return null;
 
   return (
@@ -50,6 +53,7 @@ export function TableDefinitionTable({ model }: { model: ErSemanticModel | null 
                     <span style={MONO}>{table.name}</span>
                     {table.description ? `  ${table.description}` : ""}{" "}
                     <ImpactBadge mark={impact.mark(elementKey.table(table.name))} />
+                    <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.table(table.name))} />
                   </th>
                 </tr>
                 {table.columns.map((column, index) => (

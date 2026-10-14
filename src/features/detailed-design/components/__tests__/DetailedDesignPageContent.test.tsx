@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { useReviewStore } from "@/features/design-review/review-store";
+import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import {
   makeFunctionList,
   makeImpact,
+  makeLogics,
   makePlan,
   makeProcedureDoc,
   makeSimpleImpact,
@@ -24,6 +27,14 @@ function renderContent() {
 
 describe("DetailedDesignPageContent", () => {
   beforeEach(() => {
+    // レビューのパネルは API を呼ばない(ユーザーが無ければパネルを出さない)
+    useReviewStore.setState({
+      me: null,
+      gates: [],
+      fetchMe: vi.fn().mockResolvedValue(undefined),
+      fetchGates: vi.fn().mockResolvedValue(undefined),
+      runReview: vi.fn().mockResolvedValue(true),
+    });
     useDetailedDesignStore.setState({
       projectId: "p1",
       stages: makeStages({
@@ -219,5 +230,58 @@ describe("DetailedDesignPageContent", () => {
     expect(within(panel).getAllByText("M-01-T02 の手順書").length).toBeGreaterThan(0);
 
     useDetailedDesignStore.setState({ impact: null });
+  });
+
+  it("段階6を承認したら、レビューがオンなら承認のダイアログから段階6の区切りのレビューを流せる", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({ me: reviewUser() });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(await screen.findByText(/段階6-処理ロジックの詳細\(任意\)を承認しました。/)).toBeInTheDocument();
+    await u.click(screen.getByLabelText("段階6の承認の後のレビューをする"));
+
+    expect(useReviewStore.getState().runReview).toHaveBeenCalledWith("p1", "stage6");
+    await waitFor(() => expect(screen.queryByText(/を承認しました。/)).not.toBeInTheDocument());
+  });
+
+  it("レビューがオフなら、承認のダイアログにレビューの操作を出さない", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({ me: reviewUser({ review_enabled: false, review_effective: false }) });
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        6: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makeLogics() },
+      }),
+      selectedStage: 6,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await u.click(screen.getByRole("button", { name: "承認する" }));
+    expect(await screen.findByText(/段階6-処理ロジックの詳細\(任意\)を承認しました。/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("段階6の承認の後のレビューをする")).not.toBeInTheDocument();
+  });
+
+  it("レビューのパネルを置き、指摘の対象から段階の表へ移る", async () => {
+    const u = userEvent.setup();
+    useReviewStore.setState({
+      me: reviewUser(),
+      gates: [gate({ status: "reviewed", run: run({ findings: [finding({ targets: ["F-01", "SCR-004"] })] }) })],
+    });
+    useDetailedDesignStore.setState({ jumpTo: vi.fn() });
+    renderContent();
+
+    expect(useReviewStore.getState().fetchGates).toHaveBeenCalledWith("p1");
+    await u.click(screen.getByRole("button", { name: "文書の生成の後の指摘を開く" }));
+    await u.click(screen.getByRole("button", { name: "F-01" }));
+    expect(useDetailedDesignStore.getState().jumpTo).toHaveBeenCalledWith(1, "F-01");
+    expect(screen.queryByRole("button", { name: "SCR-004" })).not.toBeInTheDocument();
   });
 });

@@ -9,6 +9,7 @@ import {
   type Priority,
   type UnitKind,
 } from "@/features/detailed-design/api/types";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import {
@@ -20,6 +21,7 @@ import {
   TABLE,
 } from "@/features/detailed-design/components/tableStyles";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import { UNIT_KIND_LABELS } from "@/features/detailed-design/labels";
 import {
@@ -56,6 +58,7 @@ type TableProps = {
 export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
   const missing = missingTopics(model);
   const impact = useStageImpact(7);
+  const review = useStageReview(7);
   return (
     <YStack gap="$2">
       <Text fontWeight="700">07 横断事項</Text>
@@ -92,6 +95,7 @@ export function CrossCuttingTable({ model, disabled, onChange }: TableProps) {
                         onChange={(e) => update({ topic: e.target.value })}
                       />
                       <ImpactBadge mark={impact.mark(elementKey.cc(row.topic))} />
+                      <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.cc(row.topic))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 320 }}>
                       <textarea
@@ -268,6 +272,7 @@ function TaskTable({
   const id = milestoneId(milestone);
   const tasks = model.milestones[milestone].tasks;
   const impact = useStageImpact(7);
+  const review = useStageReview(7);
   return (
     <YStack gap="$2">
       {tasks.length === 0 ? (
@@ -299,6 +304,7 @@ function TaskTable({
                     <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
                       {label}
                       <ImpactBadge mark={impact.mark(elementKey.task(task.key || label))} />
+                      <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.task(task.key || label))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 90 }}>
                       <select

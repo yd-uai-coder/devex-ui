@@ -63,6 +63,18 @@ export type GeneratedDocumentRead = {
   implementation_plan?: ImplementationPlanSummaryRead | null;
 };
 
+// devex-api app/schemas/document.py の GenerationProgressRead に対応する(生成していなければ null)。
+// targets は作り直す文書(上流から)、done はできた文書、current は今作っている文書。
+export type GenerationProgressRead = {
+  targets: DocType[];
+  done: DocType[];
+  current: DocType | null;
+};
+
+export function getGenerationProgress(projectId: string): Promise<GenerationProgressRead | null> {
+  return apiFetch<GenerationProgressRead | null>(`/api/v1/projects/${projectId}/generation-progress`);
+}
+
 export function listDocuments(projectId: string): Promise<GeneratedDocumentRead[]> {
   return apiFetch<GeneratedDocumentRead[]>(`/api/v1/projects/${projectId}/documents`);
 }

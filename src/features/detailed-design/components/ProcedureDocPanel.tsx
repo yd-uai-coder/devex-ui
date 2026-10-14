@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
+import { unreviewedNotice } from "@/features/design-review/model";
+import { useReviewStore } from "@/features/design-review/review-store";
 import {
   FINDING_LEVELS,
   MAX_PROCEDURE_DOC_TARGETS,
@@ -12,6 +14,7 @@ import {
   type ProcedureDocModel,
 } from "@/features/detailed-design/api/types";
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -21,6 +24,7 @@ import { UnitProcedureEditor } from "@/features/detailed-design/components/UnitP
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   FINDING_LEVEL_LABELS,
@@ -136,6 +140,7 @@ export function ProcedureDocPanel({
   const generate = useDetailedDesignStore((s) => s.generate);
   const jumpTo = useDetailedDesignStore((s) => s.jumpTo);
   const impact = useStageImpact(stage.stage);
+  const review = useStageReview(stage.stage);
   const setTab = useDetailedDesignStore((s) => s.setTab);
   const [filter, setFilter] = useState<FindingLevel | "all">("all");
 
@@ -145,6 +150,10 @@ export function ProcedureDocPanel({
   const [selection, setSelection] = useState<string[]>([]);
   // 作り直しの確認を出しているか(選んだ単位に手順書のあるものが含まれるとき)
   const [confirming, setConfirming] = useState(false);
+  // 生成を始めたときの、未レビューの区切りの知らせ(止めはしない)
+  const [reviewNotice, setReviewNotice] = useState<string | null>(null);
+  const reviewEffective = useReviewStore((s) => s.me?.review_effective ?? false);
+  const reviewGates = useReviewStore((s) => s.gates);
   // 詳細を開いている単位。保存・生成でパネルが作り直されても同じ単位に戻す
   const [opened, setOpenedState] = useState<string | null>(
     () => useDetailedDesignStore.getState().tabs[TAB_KEY] ?? null,
@@ -175,6 +184,7 @@ export function ProcedureDocPanel({
 
   const startGeneration = () => {
     setConfirming(false);
+    setReviewNotice(reviewEffective ? unreviewedNotice(reviewGates) : null);
     void generate(projectId, stage.stage, undefined, undefined, selection);
   };
   const saveBar = (
@@ -249,6 +259,7 @@ export function ProcedureDocPanel({
                       {unit.id}
                     </button>
                     <ImpactBadge mark={impact.mark(elementKey.unit(unit.key))} />
+                    <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.unit(unit.key))} />
                   </td>
                   <td style={NOWRAP}>{UNIT_KIND_LABELS[unit.kind]}</td>
                   <td style={CELL}>{unit.title}</td>
@@ -279,6 +290,11 @@ export function ProcedureDocPanel({
               : "単位が参照する設計から、AI が単位ごとに手順書を下書きします。選ばなかった単位の手順書はそのまま残ります。"}
           </Text>
         </XStack>
+        {reviewNotice ? (
+          <Text role="status" color="$orange10" fontSize="$2">
+            {reviewNotice}
+          </Text>
+        ) : null}
         {generating && timedOut ? (
           <Text role="status" color="$color11">
             生成に時間がかかっています。しばらくしてから画面を読み込み直してください。

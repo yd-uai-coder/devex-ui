@@ -11,6 +11,7 @@ import {
 } from "@/features/detailed-design/api/types";
 import { DataDictionaryTable } from "@/features/detailed-design/components/DataDictionaryTable";
 import { DfdEditorTabs } from "@/features/detailed-design/components/DfdEditorTabs";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
@@ -27,6 +28,7 @@ import { useDetailedDesignStore } from "@/features/detailed-design/detailed-desi
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 
 // 段階2(データフロー)の作業領域の中身。DFD を描く機能グループの選択、AIの下書きの生成、
@@ -52,6 +54,7 @@ export function DataFlowPanel({
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
   const impact = useStageImpact(stage.stage);
+  const review = useStageReview(stage.stage);
 
   const functionList = toFunctionList(stage1Model);
   const saved = toDataFlow(stage.model);
@@ -191,6 +194,7 @@ export function DataFlowPanel({
                       <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
                         {fn.id}
                         <ImpactBadge mark={impact.mark(elementKey.summary(fn.id))} />
+                        <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.summary(fn.id))} />
                       </td>
                       <td style={{ ...CELL, minWidth: 140 }}>{fn.name}</td>
                       <td style={{ ...CELL, whiteSpace: "nowrap" }}>{fn.group}</td>

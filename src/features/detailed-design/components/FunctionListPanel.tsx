@@ -5,6 +5,7 @@ import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { StyledInput } from "@/components/ui/primitives/StyledInput";
+import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { ListInput } from "@/features/detailed-design/components/ListInput";
 import type {
@@ -24,6 +25,7 @@ import {
 } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact";
+import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
   addGroup,
@@ -57,6 +59,7 @@ export function FunctionListPanel({
   const save = useDetailedDesignStore((s) => s.save);
   const generate = useDetailedDesignStore((s) => s.generate);
   const impact = useStageImpact(stage.stage);
+  const review = useStageReview(stage.stage);
 
   const saved = toFunctionList(stage.model);
   const [draft, setDraft] = useState<FunctionListModel>(saved);
@@ -193,6 +196,7 @@ export function FunctionListPanel({
                     <td style={{ ...CELL, ...MONO, whiteSpace: "nowrap" }}>
                       {row.id}
                       <ImpactBadge mark={impact.mark(elementKey.fn(row.id))} />
+                      <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.fn(row.id))} />
                     </td>
                     <td style={{ ...CELL, minWidth: 160 }}>
                       <input

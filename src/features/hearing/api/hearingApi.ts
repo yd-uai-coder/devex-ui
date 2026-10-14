@@ -84,8 +84,12 @@ export function markPointNotApplicable(projectId: string, pointKey: string): Pro
 
 // 202 Acceptedを返す(バックグラウンドタスクとして生成をトリガーするのみ)。
 // 完了はGET /api/v1/projects/{id}のstatusをポーリングして検知する(ChatPageContent参照)。
-export function triggerGeneration(projectId: string): Promise<void> {
-  return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, { method: "POST" });
+// startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部(チャットからの生成)。
+export function triggerGeneration(projectId: string, startFrom?: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, {
+    method: "POST",
+    ...(startFrom ? { body: JSON.stringify({ start_from: startFrom }) } : {}),
+  });
 }
 
 export function getProject(projectId: string): Promise<ProjectRead> {

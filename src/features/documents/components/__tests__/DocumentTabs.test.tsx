@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
@@ -42,5 +42,24 @@ describe("DocumentTabs", () => {
     await user.click(screen.getByRole("tab", { name: "外部設計" }));
 
     expect(screen.getByRole("heading", { name: "外部設計" })).toBeInTheDocument();
+  });
+
+  it("選んでいる文書を親が持つときは、その文書を出し、タブの切り替えを親へ伝える", async () => {
+    const user = userEvent.setup();
+    const onActiveTypeChange = vi.fn();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentTabs
+          projectId="p1"
+          documents={DOCS}
+          activeType="external_design"
+          onActiveTypeChange={onActiveTypeChange}
+        />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getByRole("heading", { name: "外部設計" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "要件定義" }));
+    expect(onActiveTypeChange).toHaveBeenCalledWith("requirements");
   });
 });
