@@ -10,10 +10,13 @@ import { useReviewStore } from "@/features/design-review/review-store";
 import type { TargetActionOf } from "@/features/design-review/model";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { DocumentTabs } from "@/features/documents/components/DocumentTabs";
+import { TestSpecPanel } from "@/features/documents/components/TestSpecPanel";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import {
   DOC_LABEL,
   modeDocTypes,
+  progressDocTypes,
   progressText,
   regenerationTargets,
   startLabel,
@@ -36,7 +39,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const fetchProgress = useDocumentsStore((s) => s.fetchProgress);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // 再生成の起点(その文書から下流を作り直す)
-  const docTypes = modeDocTypes(projectMode === "detailed" ? "detailed" : "simple");
+  const mode = projectMode === "detailed" ? "detailed" : "simple";
+  const docTypes = modeDocTypes(mode);
   const [startFrom, setStartFrom] = useState<DocType>("requirements");
   // 表示中の文書のタブ(レビューの指摘の対象から移る)
   const [activeType, setActiveType] = useState<DocType | null>(null);
@@ -46,6 +50,10 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documentsGate = reviewGates.find((g) => g.gate === "documents");
   const sendback = reviewEffective && documentsGate ? regenerableFindings(documentsGate) : [];
   const [findingIds, setFindingIds] = useState<string[]>([]);
+  // テスト仕様書(簡易モードだけ。4文書に続けて作る。詳細設計モードは詳細設計画面に出す)
+  const testSpec = useTestSpecStore((s) => s.testSpec);
+  const testSpecStatus = useTestSpecStore((s) => s.status);
+  const fetchTestSpec = useTestSpecStore((s) => s.fetchTestSpec);
 
   useEffect(() => {
     void fetchDocuments(projectId);
@@ -70,6 +78,27 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   };
   // 文書の版が変わったら(生成・再生成・復元)、レビューの区切りを取り直す
   const versionsKey = documents.map((doc) => `${doc.doc_type}:${doc.version}`).join(",");
+  // テスト仕様書は、文書の版が変わったときと、再生成(テスト仕様書だけのときも)が終わったときに取り直す
+  const simple = projectMode === "simple";
+  useEffect(() => {
+    if (simple && !regenerating) void fetchTestSpec(projectId);
+  }, [simple, regenerating, versionsKey, projectId, fetchTestSpec]);
+  const testSpecTab = simple
+    ? function TestSpecTab() {
+        return (
+          <TestSpecPanel
+            projectId={projectId}
+            testSpec={testSpec}
+            loading={testSpecStatus === "loading"}
+            generating={regenerating}
+            generateError={null}
+            readiness={{ ready: true, reason: null }}
+            emptyNotice="このプロジェクトには、まだテスト仕様書がありません(4文書を再生成すると一緒に作られます)。"
+            onGenerate={() => void regenerate(projectId, "test_spec")}
+          />
+        );
+      }
+    : undefined;
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -118,7 +147,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
       {/* 文書ごとの進み具合(要件定義：生成完了 外部設計：生成中 …) */}
       {regenerating && progress ? (
         <Text role="status" color="$color11" aria-label="再生成の進み具合">
-          {progressText(docTypes, progress)}
+          {progressText(progressDocTypes(mode), progress)}
         </Text>
       ) : null}
       {/* 待つ時間の上限(3分)を過ぎたら待つのをやめる。読み込み直すと、まだ生成中なら続きを待つ */}
@@ -147,6 +176,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         documents={documents}
         activeType={activeType}
         onActiveTypeChange={setActiveType}
+        testSpecTab={testSpecTab}
       />
 
       <ConfirmDialog

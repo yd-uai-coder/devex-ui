@@ -5,6 +5,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentsPageContent } from "../DocumentsPageContent";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 
@@ -60,6 +61,8 @@ describe("DocumentsPageContent", () => {
       fetchProgress: vi.fn().mockResolvedValue(undefined),
     });
     useReviewStore.setState({ me: null, gates: [] });
+    useTestSpecStore.setState({ testSpec: null, status: "idle", fetchTestSpec: vi.fn().mockResolvedValue(undefined) });
+    tabsProps.mockReset();
   });
 
   it("マウント時にfetchDocuments(projectId)とfetchProjectMode(projectId)を呼ぶ", () => {
@@ -127,13 +130,18 @@ describe("DocumentsPageContent", () => {
   it("再生成中は文書ごとの進み具合を出し、取り直す", () => {
     useDocumentsStore.setState({
       regenerating: true,
-      progress: { targets: ["external_design", "internal_design", "implementation_plan"], done: ["external_design"], current: "internal_design" },
+      progress: {
+        targets: ["external_design", "internal_design", "implementation_plan", "test_spec"],
+        done: ["external_design"],
+        current: "internal_design",
+      },
     });
     renderContent();
 
     expect(useDocumentsStore.getState().fetchProgress).toHaveBeenCalledWith("p1");
+    // 簡易モードは、テスト仕様書も4文書に続けて作り直すので並べる
     expect(screen.getByLabelText("再生成の進み具合")).toHaveTextContent(
-      "要件定義：対象外 外部設計：生成完了 内部設計：生成中 実装計画：待ち",
+      "要件定義：対象外 外部設計：生成完了 内部設計：生成中 実装計画：待ち テスト仕様：待ち",
     );
   });
 
@@ -226,5 +234,32 @@ describe("DocumentsPageContent", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("再生成に時間がかかっています");
     expect(screen.queryByText("再生成しています。しばらくお待ちください...")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "再生成中..." })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("簡易モードはテスト仕様書を取り、テスト仕様のタブを渡す。作り直すとテスト仕様書だけを起点に再生成する", () => {
+    useDocumentsStore.setState({
+      documents: [{ id: "d1", doc_type: "requirements", content: "# 要件", version: 1, created_at: "", is_current: true }],
+      status: "success",
+    });
+    renderContent();
+
+    expect(useTestSpecStore.getState().fetchTestSpec).toHaveBeenCalledWith("p1");
+    const { testSpecTab: TestSpecTab } = tabsProps.mock.lastCall?.[0] as { testSpecTab?: () => React.JSX.Element };
+    expect(TestSpecTab).toBeDefined();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        {TestSpecTab ? <TestSpecTab /> : null}
+      </TamaguiProvider>,
+    );
+    act(() => screen.getByRole("button", { name: "テスト仕様書を作る" }).click());
+    expect(useDocumentsStore.getState().regenerate).toHaveBeenCalledWith("p1", "test_spec");
+  });
+
+  it("詳細設計モードは、テスト仕様書を取らず、タブも渡さない(詳細設計画面に出す)", () => {
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    renderContent();
+
+    expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
+    expect(tabsProps.mock.lastCall?.[0]).toMatchObject({ testSpecTab: undefined });
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
+import { Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { joinNotices, unaddressedNotice, unreviewedNotice } from "@/features/design-review/model";
@@ -10,9 +10,9 @@ import {
   FINDING_LEVELS,
   MAX_PROCEDURE_DOC_TARGETS,
   type DesignStageRead,
-  type FindingLevel,
   type ProcedureDocModel,
 } from "@/features/detailed-design/api/types";
+import { FindingLevelFilter, type FindingFilter } from "@/features/detailed-design/components/FindingLevelFilter";
 import { FixTargetButton } from "@/features/detailed-design/components/FixTargetButton";
 import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFindingBadge";
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
@@ -27,6 +27,7 @@ import { useStageImpact } from "@/features/detailed-design/hooks/useStageImpact"
 import { useStageReview } from "@/features/detailed-design/hooks/useStageReview";
 import { elementKey } from "@/features/detailed-design/impactOps";
 import {
+  FINDING_LEVEL_COLORS,
   FINDING_LEVEL_LABELS,
   FINDING_SOURCE_LABELS,
   UNIT_KIND_LABELS,
@@ -55,11 +56,6 @@ const TAB_KEY = "8:unit";
 // 作業単位は段階8の plan(詳細設計モードは段階7、簡易モードは実装計画書の WBS)から読む。簡易モードは
 // 直す先が文書なので、「〇〇書を直す(再生成)」で文書の画面へ移る。
 
-const LEVEL_COLOR: Record<FindingLevel, string> = {
-  critical: "var(--red10)",
-  major: "var(--orange10)",
-  minor: "var(--color10)",
-};
 const NOWRAP = { ...CELL, whiteSpace: "nowrap" } as const;
 
 function LevelCounts({ findings }: { findings: Finding[] }) {
@@ -68,7 +64,7 @@ function LevelCounts({ findings }: { findings: Finding[] }) {
   return (
     <>
       {FINDING_LEVELS.filter((level) => counts[level] > 0).map((level) => (
-        <span key={level} style={{ color: LEVEL_COLOR[level], marginRight: 6, whiteSpace: "nowrap" }}>
+        <span key={level} style={{ color: FINDING_LEVEL_COLORS[level], marginRight: 6, whiteSpace: "nowrap" }}>
           {FINDING_LEVEL_LABELS[level]} {counts[level]}
         </span>
       ))}
@@ -101,7 +97,7 @@ function FindingTable({
         <tbody>
           {findings.map((finding, index) => (
             <tr key={`${finding.unit}-${finding.target}-${index}`}>
-              <td style={{ ...NOWRAP, color: LEVEL_COLOR[finding.level] }}>
+              <td style={{ ...NOWRAP, color: FINDING_LEVEL_COLORS[finding.level] }}>
                 {FINDING_LEVEL_LABELS[finding.level]}
               </td>
               <td style={NOWRAP}>{FINDING_SOURCE_LABELS[finding.source]}</td>
@@ -142,7 +138,7 @@ export function ProcedureDocPanel({
   const impact = useStageImpact(stage.stage);
   const review = useStageReview(stage.stage);
   const setTab = useDetailedDesignStore((s) => s.setTab);
-  const [filter, setFilter] = useState<FindingLevel | "all">("all");
+  const [filter, setFilter] = useState<FindingFilter>("all");
 
   const saved = toProcedureDoc(stage.model);
   const [doc, setDoc] = useState<ProcedureDocModel>(saved);
@@ -354,27 +350,7 @@ export function ProcedureDocPanel({
             ? "「検証」は実装計画書・内部設計書の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、直す先の文書を再生成して直してください(手順が要る単位は、詳細設計モードで詰めることも検討してください)。文書を再生成すると、この段階は「古い」になります。"
             : "「検証」は設計の ID・パスの突き合わせ、「AI」は手順書を作った AI の指摘です。手順書の上では決めず、対象の段階で直してください。直した段階は差し戻され、この段階は「古い」になります。"}
         </Paragraph>
-        <XStack gap="$2" flexWrap="wrap">
-          <Button
-            size="$2"
-            theme={filter === "all" ? "blue" : undefined}
-            aria-pressed={filter === "all"}
-            onPress={() => setFilter("all")}
-          >
-            {`すべて(${findings.length})`}
-          </Button>
-          {FINDING_LEVELS.map((level) => (
-            <Button
-              key={level}
-              size="$2"
-              theme={filter === level ? "blue" : undefined}
-              aria-pressed={filter === level}
-              onPress={() => setFilter(level)}
-            >
-              {`${FINDING_LEVEL_LABELS[level]}(${counts[level]})`}
-            </Button>
-          ))}
-        </XStack>
+        <FindingLevelFilter filter={filter} counts={counts} onChange={setFilter} />
         <FindingTable
           projectId={projectId}
           findings={filterFindings(findings, filter)}

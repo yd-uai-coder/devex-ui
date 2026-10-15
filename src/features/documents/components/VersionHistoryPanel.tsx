@@ -8,6 +8,7 @@ import {
 } from "@/features/documents/api/documentsApi";
 import type { DocType, GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
 import { useDocumentsStore } from "@/features/documents/documents-store";
+import { useTestSpecStore } from "@/features/documents/test-spec-store";
 
 type VersionHistoryPanelProps = {
   projectId: string;
@@ -52,8 +53,9 @@ export function VersionHistoryPanel({ projectId, docType }: VersionHistoryPanelP
         current.map((doc) => ({ ...doc, is_current: doc.version === restored.version })),
       );
       // documents-storeを force再取得し、DocumentMarkdownViewが表示する内容(=ダウンロード対象)を
-      // 復元した版へ更新する。
-      void useDocumentsStore.getState().fetchDocuments(projectId, { force: true });
+      // 復元した版へ更新する。テスト仕様書は文書の一覧に無いので、テスト仕様書を取り直す。
+      if (docType === "test_spec") void useTestSpecStore.getState().fetchTestSpec(projectId);
+      else void useDocumentsStore.getState().fetchDocuments(projectId, { force: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "復元に失敗しました");
     } finally {

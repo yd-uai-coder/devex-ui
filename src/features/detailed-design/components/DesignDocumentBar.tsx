@@ -22,6 +22,8 @@ type DownloadItem = {
   // zip の元になる段階。すべて承認済み(古くない)になるまで押せない(サーバーも 409 で断る)
   stages: number[];
   download: (projectId: string) => Promise<DownloadedDocument>;
+  // テスト仕様書を(古くなければ)同梱する zip か
+  includesTestSpec?: boolean;
 };
 
 // 詳細設計書(01〜07章)と実装計画は段階1〜7、実装手順書は段階8から作る
@@ -30,6 +32,7 @@ export const DOWNLOADS: DownloadItem[] = [
     label: "詳細設計書・実装計画をダウンロード(.zip)",
     stages: [1, 2, 3, 4, 5, 6, 7],
     download: downloadDetailedDesign,
+    includesTestSpec: true,
   },
   {
     label: "実装手順書をダウンロード(.zip)",
@@ -53,12 +56,15 @@ export function availableDownloads(stages: DesignStageRead[]): DownloadItem[] {
 // SCR-008 の上部に置く、2つの zip(詳細設計書・実装計画 / 実装手順書)のダウンロード。
 // 元になる段階が承認されるまでボタンを押せなくし(透過表示)、どの段階が未承認かを横に出す。
 // 簡易モードのプロジェクトは段階8だけを持つので、実装手順書の zip だけを出す。
+// testSpecNote は、詳細設計書の zip にテスト仕様書が入るか(古くない今の版だけ入る)の注記。
 export function DesignDocumentBar({
   projectId,
   stages,
+  testSpecNote = null,
 }: {
   projectId: string;
   stages: DesignStageRead[];
+  testSpecNote?: string | null;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +102,11 @@ export function DesignDocumentBar({
                 ? "承認済みです。"
                 : `段階${missing.join("・")}が未承認です。承認するとダウンロードできます。`}
             </Text>
+            {item.includesTestSpec && testSpecNote ? (
+              <Text color="$color11" fontSize="$2" aria-label="テスト仕様書の同梱">
+                {testSpecNote}
+              </Text>
+            ) : null}
           </XStack>
         );
       })}

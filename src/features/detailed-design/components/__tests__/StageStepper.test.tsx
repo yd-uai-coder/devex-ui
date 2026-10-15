@@ -88,4 +88,27 @@ describe("StageStepper", () => {
     expect(screen.getByText("見直し 2")).toBeInTheDocument();
     expect(screen.getAllByText(/^見直し/)).toHaveLength(1);
   });
+
+  it("テスト仕様書の行を渡すと、段階8の下に状態つきで出し、選んでいる間は段階を選んでいない表示にする", async () => {
+    const user = userEvent.setup();
+    const onSelectTestSpec = vi.fn();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <StageStepper
+          stages={makeStages()}
+          selectedStage={1}
+          onSelect={vi.fn()}
+          testSpec={{ status: "outdated", selected: true, onSelect: onSelectTestSpec }}
+        />
+      </TamaguiProvider>,
+    );
+
+    const row = screen.getByRole("button", { name: "テスト仕様書(結合・総合)(古い)" });
+    expect(row).toHaveAttribute("aria-current", "step");
+    expect(screen.getAllByRole("button").at(-1)).toBe(row);
+    expect(screen.getByRole("button", { name: /^段階1 / })).not.toHaveAttribute("aria-current");
+
+    await user.click(row);
+    expect(onSelectTestSpec).toHaveBeenCalled();
+  });
 });

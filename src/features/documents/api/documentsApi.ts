@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/client";
+import { ApiError, apiFetch } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { parseFilename } from "@/lib/api/download";
@@ -76,6 +76,27 @@ export type GenerationProgressRead = {
   done: DocType[];
   current: DocType | null;
 };
+
+// devex-api app/schemas/document.py の TestSpecRead に対応する。counts はテストの件数、issues は
+// 決定的な検証の指摘、outdated は生成した時点の入力(文書の版・段階の承認した版)が今と違うか、
+// design_gaps は「設計に無い」と印を付けたテストの件数。
+export type TestSpecRead = {
+  document: GeneratedDocumentRead;
+  counts: { integration: number; system: number };
+  issues: DocumentIssueRead[];
+  outdated: boolean;
+  design_gaps: number;
+};
+
+// テスト仕様書の今の版。まだ無ければ(404)null。
+export async function getTestSpec(projectId: string): Promise<TestSpecRead | null> {
+  try {
+    return await apiFetch<TestSpecRead>(`/api/v1/projects/${projectId}/test-spec`);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
 
 export function getGenerationProgress(projectId: string): Promise<GenerationProgressRead | null> {
   return apiFetch<GenerationProgressRead | null>(`/api/v1/projects/${projectId}/generation-progress`);

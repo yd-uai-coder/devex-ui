@@ -46,6 +46,12 @@ export const FINDING_LEVEL_LABELS: Record<FindingLevel, string> = {
   major: "中程度",
   minor: "軽微",
 };
+// 重要度の文字色(段階8の未定義・要決定とテスト仕様書の検証の結果で共有する)
+export const FINDING_LEVEL_COLORS: Record<FindingLevel, string> = {
+  critical: "var(--red10)",
+  major: "var(--orange10)",
+  minor: "var(--color10)",
+};
 export const FINDING_SOURCE_LABELS: Record<"check" | "ai", string> = { check: "検証", ai: "AI" };
 
 // 段階8の手順書のファイルの種類

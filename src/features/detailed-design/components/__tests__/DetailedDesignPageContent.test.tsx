@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { useReviewStore } from "@/features/design-review/review-store";
+import { useTestSpecStore } from "@/features/documents/test-spec-store";
+import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import {
   makeFunctionList,
@@ -48,6 +50,14 @@ describe("DetailedDesignPageContent", () => {
       fetchStages: vi.fn().mockResolvedValue(undefined),
       selectStage: vi.fn(),
       approve: vi.fn().mockResolvedValue(undefined),
+    });
+    useTestSpecStore.setState({
+      testSpec: null,
+      status: "success",
+      generating: false,
+      generateError: null,
+      fetchTestSpec: vi.fn().mockResolvedValue(undefined),
+      generate: vi.fn().mockResolvedValue(undefined),
     });
   });
 
@@ -311,5 +321,71 @@ describe("DetailedDesignPageContent", () => {
     await u.click(screen.getByRole("button", { name: "F-01" }));
     expect(useDetailedDesignStore.getState().jumpTo).toHaveBeenCalledWith(1, "F-01");
     expect(screen.queryByRole("button", { name: "SCR-004" })).not.toBeInTheDocument();
+  });
+
+  it("詳細設計モードは、ステッパーのテスト仕様書の行で作業領域にテスト仕様書を出す(前提の段階が未承認なら作れない)", async () => {
+    const user = userEvent.setup();
+    renderContent();
+
+    expect(useTestSpecStore.getState().fetchTestSpec).toHaveBeenCalledWith("p1");
+    expect(screen.getByLabelText("テスト仕様書の同梱")).toHaveTextContent("まだ無い");
+    await user.click(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(未作成)" }));
+
+    expect(screen.getByRole("heading", { level: 3, name: "テスト仕様書(結合・総合)" })).toBeInTheDocument();
+    expect(screen.queryByText("段階1 機能一覧")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "テスト仕様書を作る" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/段階1・7が承認されていません/)).toBeInTheDocument();
+
+    // 段階を選ぶと段階の作業領域に戻る
+    await user.click(screen.getByRole("button", { name: /^段階1 / }));
+    expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(1);
+    expect(screen.getByText("段階1 機能一覧")).toBeInTheDocument();
+  });
+
+  it("段階1・7 が承認済みなら作れ、できたテスト仕様書は件数・検証の結果を出す", async () => {
+    const user = userEvent.setup();
+    useDetailedDesignStore.setState({
+      stages: makeStages({ 1: { state: "approved" }, 7: { state: "approved" } }),
+    });
+    renderContent();
+    await user.click(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(未作成)" }));
+
+    await user.click(screen.getByRole("button", { name: "テスト仕様書を作る" }));
+    expect(useTestSpecStore.getState().generate).toHaveBeenCalledWith("p1");
+
+    act(() => useTestSpecStore.setState({ testSpec: makeTestSpec() }));
+    expect(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(作成済み)" })).toBeInTheDocument();
+    expect(screen.getByLabelText("テストの件数")).toHaveTextContent("結合 12 件・総合 5 件");
+    expect(screen.getByRole("table", { name: "テスト仕様書の検証の結果" })).toBeInTheDocument();
+    expect(screen.getByLabelText("テスト仕様書の同梱")).toHaveTextContent("test_spec.md");
+  });
+
+  it("段階7 を承認したダイアログから、テスト仕様書へ移れる", async () => {
+    const user = userEvent.setup();
+    useDetailedDesignStore.setState({
+      stages: makeStages({
+        7: { is_open: true, missing_inputs: [], state: "reviewing", version: 1, model: makePlan() },
+      }),
+      selectedStage: 7,
+      approve: vi.fn().mockResolvedValue(true),
+    });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "承認する" }));
+    expect(await screen.findByText(/テスト仕様書を作れます。/)).toBeInTheDocument();
+    await user.click(screen.getByLabelText("テスト仕様書を開く"));
+
+    expect(screen.getByRole("heading", { level: 3, name: "テスト仕様書(結合・総合)" })).toBeInTheDocument();
+  });
+
+  it("簡易モードはテスト仕様書の行を出さない(プレビューのタブに出す)", () => {
+    useDetailedDesignStore.setState({
+      stages: makeStages({ 8: { mode: "simple", is_open: true, missing_inputs: [] } }).filter((s) => s.stage === 8),
+      selectedStage: 8,
+    });
+    renderContent();
+
+    expect(screen.queryByRole("button", { name: /^テスト仕様書/ })).not.toBeInTheDocument();
+    expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
   });
 });

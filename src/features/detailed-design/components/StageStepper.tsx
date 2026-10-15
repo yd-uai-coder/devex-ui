@@ -7,6 +7,11 @@ import type {
   StageState,
 } from "@/features/detailed-design/api/types";
 import { STAGE_TITLES, STATE_LABELS } from "@/features/detailed-design/labels";
+import {
+  TEST_SPEC_STATUS_LABELS,
+  TEST_SPEC_TITLE,
+  type TestSpecStatus,
+} from "@/features/documents/testSpecOps";
 
 const STATE_COLORS: Record<StageState, string> = {
   not_started: "$color10",
@@ -48,16 +53,33 @@ function DisabledStage({ stage }: { stage: number }) {
   );
 }
 
+const TEST_SPEC_STATUS_COLORS: Record<TestSpecStatus, string> = {
+  none: "$color10",
+  outdated: "$red10",
+  ready: "$green10",
+};
+
+// ステッパーの段階8の下に置く「テスト仕様書」の行(詳細設計モードだけ)。段階ではないので承認は無く、
+// 状態は 未作成・古い・作成済み。
+export type TestSpecStep = {
+  status: TestSpecStatus;
+  selected: boolean;
+  onSelect: () => void;
+};
+
 // 段階1〜8の縦のステッパー。各段階の状態を色とラベルで示し、押すとその段階を選ぶ。
 // 簡易ドキュメントモード(段階8だけ)は、段階1〜7を使えない行として前に並べ、その旨を添える。
+// 詳細設計モードは、段階8の下に「テスト仕様書」の行を置く(testSpec を渡したとき)。
 export function StageStepper({
   stages,
   selectedStage,
   onSelect,
+  testSpec,
 }: {
   stages: DesignStageRead[];
   selectedStage: number;
   onSelect: (stage: number) => void;
+  testSpec?: TestSpecStep;
 }) {
   const simple = stages[0]?.mode === "simple";
   return (
@@ -83,7 +105,7 @@ export function StageStepper({
         </>
       ) : null}
       {stages.map((s) => {
-        const selected = s.stage === selectedStage;
+        const selected = s.stage === selectedStage && !testSpec?.selected;
         return (
           <XStack
             key={s.stage}
@@ -119,6 +141,30 @@ export function StageStepper({
           </XStack>
         );
       })}
+      {testSpec ? (
+        <XStack
+          role="button"
+          aria-current={testSpec.selected ? "step" : undefined}
+          aria-label={`${TEST_SPEC_TITLE}(${TEST_SPEC_STATUS_LABELS[testSpec.status]})`}
+          onPress={testSpec.onSelect}
+          cursor="pointer"
+          padding="$2"
+          marginTop="$2"
+          borderRadius="$3"
+          borderWidth={1}
+          borderStyle="dashed"
+          borderColor={testSpec.selected ? "$color9" : "$borderColor"}
+          backgroundColor={testSpec.selected ? "$color3" : "transparent"}
+          justifyContent="space-between"
+          alignItems="center"
+          gap="$2"
+        >
+          <Text>{TEST_SPEC_TITLE}</Text>
+          <Text fontSize="$2" color={TEST_SPEC_STATUS_COLORS[testSpec.status]}>
+            {TEST_SPEC_STATUS_LABELS[testSpec.status]}
+          </Text>
+        </XStack>
+      ) : null}
     </YStack>
   );
 }

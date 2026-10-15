@@ -24,10 +24,10 @@ const V2 = {
   is_current: true,
 };
 
-function renderPanel() {
+function renderPanel(docType: "requirements" | "test_spec" = "requirements") {
   return render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <VersionHistoryPanel projectId="p1" docType="requirements" />
+      <VersionHistoryPanel projectId="p1" docType={docType} />
     </TamaguiProvider>,
   );
 }
@@ -96,6 +96,23 @@ describe("VersionHistoryPanel", () => {
     expect(screen.getByText(/v2\(最新\)/)).not.toHaveTextContent("(表示中)");
     expect(screen.queryByText(/v3/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "この内容で復元する" })).toBeInTheDocument(); // 今度はv2側
+  });
+
+  it("テスト仕様書を復元したら、文書の一覧ではなくテスト仕様書を取り直す", async () => {
+    const spec = { ...V1, doc_type: "test_spec" as const };
+    stub.queue({ status: 200, body: [{ ...spec, version: 2, is_current: true }, spec] });
+    stub.queue({ status: 200, body: { ...spec, is_current: true } });
+    stub.queue({ status: 404, body: { detail: "test_spec not found" } });
+    const user = userEvent.setup();
+    renderPanel("test_spec");
+    await user.click(screen.getByRole("button", { name: "バージョン履歴" }));
+    await screen.findByText(/v2\(最新\)\(表示中\)/);
+
+    await user.click(screen.getByRole("button", { name: "この内容で復元する" }));
+
+    await vi.waitFor(() => expect(stub.requests).toHaveLength(3));
+    expect(stub.requests[1].url).toContain("/documents/test_spec/versions/1/restore");
+    expect(stub.requests[2].url).toContain("/test-spec");
   });
 
   it("取得失敗時はエラーを表示する", async () => {

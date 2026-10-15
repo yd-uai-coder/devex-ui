@@ -136,4 +136,15 @@ describe("DesignDocumentBar", () => {
       "true",
     );
   });
+
+  it("テスト仕様書の注記を、詳細設計書の zip の行にだけ出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DesignDocumentBar projectId="p1" stages={makeStages()} testSpecNote="テスト仕様書は古いため、zip には入りません。" />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getAllByLabelText("テスト仕様書の同梱")).toHaveLength(1);
+    expect(screen.getByLabelText("テスト仕様書の同梱")).toHaveTextContent("古いため");
+  });
 });

@@ -62,4 +62,19 @@ describe("DocumentTabs", () => {
     await user.click(screen.getByRole("tab", { name: "要件定義" }));
     expect(onActiveTypeChange).toHaveBeenCalledWith("requirements");
   });
+
+  it("テスト仕様書のタブの中身を渡すと、4文書の後ろに「テスト仕様書(結合・総合)」のタブを足す", async () => {
+    const user = userEvent.setup();
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentTabs projectId="p1" documents={DOCS} testSpecTab={() => <p>テスト仕様書の中身</p>} />
+      </TamaguiProvider>,
+    );
+
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    expect(tabs).toEqual(["要件定義", "外部設計", "テスト仕様書(結合・総合)"]);
+
+    await user.click(screen.getByRole("tab", { name: "テスト仕様書(結合・総合)" }));
+    expect(screen.getByText("テスト仕様書の中身")).toBeInTheDocument();
+  });
 });
