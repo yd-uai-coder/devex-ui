@@ -10,6 +10,7 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
   external_design: "外部設計",
   internal_design: "内部設計",
   implementation_plan: "実装計画",
+  test_spec: "テスト仕様",
 };
 
 const DOC_TYPE_ORDER: DocType[] = [

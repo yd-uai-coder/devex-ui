@@ -3,7 +3,13 @@ import { useAuthStore } from "@/components/auth/auth-store";
 import { API_BASE_URL } from "@/lib/api/base-url";
 import { parseFilename } from "@/lib/api/download";
 
-export type DocType = "requirements" | "external_design" | "internal_design" | "implementation_plan";
+// test_spec(テスト仕様書)は生成の進み具合の対象に出る。文書の一覧(GET /documents)には出ない
+export type DocType =
+  | "requirements"
+  | "external_design"
+  | "internal_design"
+  | "implementation_plan"
+  | "test_spec";
 
 export type RequirementSource = "user" | "adopted" | "assumed";
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { DocType } from "@/features/documents/api/documentsApi";
 import {
+  DOC_LABEL,
   modeDocTypes,
   progressStates,
   progressText,
@@ -34,5 +36,16 @@ describe("regenerationOps", () => {
     const read = { targets: [...progress.targets], done: [...progress.done], current: progress.current };
     expect(progressStates(simple, read).map((s) => s.state)).toEqual(["excluded", "done", "running", "waiting"]);
     expect(progressText(simple, read)).toBe("要件定義：対象外　外部設計：生成完了　内部設計：生成中　実装計画：待ち");
+  });
+
+  it("テスト仕様書は進み具合の対象に出るが、プレビューの文書の並びには入れない", () => {
+    const read = {
+      targets: ["implementation_plan", "test_spec"] as DocType[],
+      done: ["implementation_plan"] as DocType[],
+      current: "test_spec" as const,
+    };
+    expect(simple).not.toContain("test_spec");
+    expect(DOC_LABEL.test_spec).toBe("テスト仕様");
+    expect(progressText(simple, read)).toBe("要件定義：対象外　外部設計：対象外　内部設計：対象外　実装計画：生成完了");
   });
 });

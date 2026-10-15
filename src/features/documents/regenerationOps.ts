@@ -11,6 +11,7 @@ export const DOC_LABEL: Record<DocType, string> = {
   external_design: "外部設計",
   internal_design: "内部設計",
   implementation_plan: "実装計画",
+  test_spec: "テスト仕様",
 };
 
 // モードの文書(上流から)。詳細設計モードのプレビューは要件定義・外部設計だけ
