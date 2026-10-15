@@ -1,7 +1,11 @@
-// E2E の spec が共有する操作(登録とログイン、モードを選んだプロジェクトの作成、ヒアリングから
-// 設計書の生成まで、段階8の手順書の生成)。簡易ドキュメントモード(devex-flow.spec.ts)と
+// E2E の spec が共有する操作(登録とログイン、superuser への昇格、モードを選んだプロジェクトの作成、
+// ヒアリングから設計書の生成まで、段階8の手順書の生成)。簡易ドキュメントモード(devex-flow.spec.ts)と
 // 詳細設計モード(detailed-design-flow.spec.ts)の両方が、この順で始まり、段階8で終わる。
+import { execFileSync } from "node:child_process";
 import { expect, type Page } from "@playwright/test";
+
+// playwright.config.ts と同じ(devex-api は兄弟ディレクトリ。違う配置なら DEVEX_API_DIR で上書きする)
+const DEVEX_API_DIR = process.env.DEVEX_API_DIR ?? "../devex-api";
 
 export type ProjectMode = "simple" | "detailed";
 
@@ -18,8 +22,8 @@ function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}@example.com`;
 }
 
-// 新しい利用者を登録してログインし、ダッシュボードまで進む。
-export async function registerAndLogin(page: Page, prefix: string, name = "E2E Tester") {
+// 新しい利用者を登録してログインし、ダッシュボードまで進む。戻り値は登録したメールアドレス。
+export async function registerAndLogin(page: Page, prefix: string, name = "E2E Tester"): Promise<string> {
   const email = uniqueEmail(prefix);
 
   await page.goto("/register");
@@ -33,6 +37,25 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
   await page.getByLabel("パスワード", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "ログイン" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
+  return email;
+}
+
+// 利用者を superuser にする(設計レビューを切り替えられるのは superuser だけで、画面や API からは
+// 昇格できない。本番と同じく DB を直接更新する)。E2E の backend と同じ docker compose の DB を使う。
+// 画面は自分の情報を読み直すまで昇格を知らないので、呼んだ後にページを読み込み直す。
+export function promoteToSuperuser(email: string) {
+  const sql = `UPDATE users SET is_superuser = true WHERE email = '${email}'`;
+  execFileSync("docker", [
+    "compose",
+    "-f",
+    `${DEVEX_API_DIR}/docker-compose.yml`,
+    "exec",
+    "-T",
+    "postgres",
+    "sh",
+    "-c",
+    `psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "${sql}"`,
+  ]);
 }
 
 // ダッシュボードからモードを選んでプロジェクトを作り、チャット画面まで進む(モード選択ダイアログの

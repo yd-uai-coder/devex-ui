@@ -15,11 +15,4 @@ export const MENU_TREE: MenuGroup[] = [
       { label: "ログイン", href: "/login" },
     ],
   },
-  {
-    label: "開発用",
-    children: [
-      // AI 設計レビューの見せ方の提案(仮データ)
-      { label: "AI 設計レビューデモ", href: "/design-review-demo" },
-    ],
-  },
 ];

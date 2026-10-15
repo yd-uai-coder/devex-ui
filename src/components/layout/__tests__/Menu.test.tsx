@@ -63,15 +63,10 @@ describe("Menu", () => {
     );
   });
 
-  it("開発用のグループに AI 設計レビューデモへのリンクを置く", async () => {
-    const user = userEvent.setup();
+  it("開発用のグループを置かない(デモのページは URL を直接開けば見られる)", () => {
     renderMenu();
 
-    await user.click(screen.getByRole("button", { name: "開発用" }));
-
-    expect(screen.getByRole("link", { name: "AI 設計レビューデモ" })).toHaveAttribute(
-      "href",
-      "/design-review-demo",
-    );
+    expect(screen.queryByRole("button", { name: "開発用" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "AI 設計レビューデモ" })).toBeNull();
   });
 });
