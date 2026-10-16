@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { H2, XStack, YStack } from "tamagui";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
@@ -19,7 +19,11 @@ export default function DashboardPage() {
           <H2>ダッシュボード</H2>
           <StyledButton onPress={() => setModeDialogOpen(true)}>新規プロジェクトを作成</StyledButton>
         </XStack>
-        <ProjectList />
+        {/* ProjectList は一覧の条件を URL から読む(useSearchParams)ため、Next.js の規約で
+            Suspense 境界が必要になる */}
+        <Suspense fallback={null}>
+          <ProjectList />
+        </Suspense>
       </YStack>
       <ModeSelectDialog open={modeDialogOpen} onClose={() => setModeDialogOpen(false)} />
     </RequireAuth>

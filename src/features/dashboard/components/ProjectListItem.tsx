@@ -4,7 +4,7 @@ import { StyledCard } from "@/components/ui/primitives/StyledCard";
 import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 
-const STATUS_LABEL: Record<ProjectRead["status"], string> = {
+export const STATUS_LABEL: Record<ProjectRead["status"], string> = {
   interviewing: "ヒアリング中",
   generating: "生成中",
   completed: "完了",

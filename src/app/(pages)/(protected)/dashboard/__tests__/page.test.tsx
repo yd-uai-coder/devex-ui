@@ -9,9 +9,11 @@ import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
 const push = vi.fn();
+const searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace: vi.fn() }),
+  useSearchParams: () => searchParams,
 }));
 
 describe("DashboardPage", () => {
@@ -19,7 +21,14 @@ describe("DashboardPage", () => {
 
   beforeEach(() => {
     useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
-    useDashboardStore.setState({ projects: [], status: "idle", error: null, fetchedAt: null });
+    useDashboardStore.setState({
+      items: [],
+      total: 0,
+      status: "idle",
+      error: null,
+      key: null,
+      fetchedAt: null,
+    });
     stub = stubFetch();
   });
 
@@ -28,7 +37,7 @@ describe("DashboardPage", () => {
   });
 
   it("ログイン済みならプロジェクト一覧を表示し、新規作成ボタンでモード選択ダイアログを開く", async () => {
-    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { items: [], total: 0 } });
     const user = userEvent.setup();
 
     render(
@@ -38,6 +47,8 @@ describe("DashboardPage", () => {
     );
 
     expect(await screen.findByText(/まだプロジェクトがありません/)).toBeInTheDocument();
+    // 一覧は検索・絞込みの部品と一緒に出る(Suspense の中で URL の条件を読む)
+    expect(screen.getByLabelText("タイトルで検索")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "新規プロジェクトを作成" }));
     expect(await screen.findByText("モードを選んでください")).toBeInTheDocument();
   });
