@@ -27,7 +27,7 @@ export async function registerAndLogin(page: Page, prefix: string, name = "E2E T
   const email = uniqueEmail(prefix);
 
   await page.goto("/register");
-  await page.getByLabel("氏名").fill(name);
+  await page.getByLabel("ユーザーネーム").fill(name);
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "登録する" }).click();

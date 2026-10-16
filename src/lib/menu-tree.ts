@@ -21,6 +21,7 @@ export const MENU_TREE: MenuGroup[] = [
       { kind: "link", label: "ダッシュボード", href: "/dashboard" },
       // mode なしで開くと、作成画面がモード選択ダイアログを出す
       { kind: "link", label: "新規プロジェクト作成", href: "/projects/new" },
+      { kind: "link", label: "マイページ", href: "/mypage" },
     ],
   },
   {

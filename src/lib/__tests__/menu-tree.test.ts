@@ -10,13 +10,18 @@ describe("MENU_TREE", () => {
     expect(MENU_TREE.map((group) => group.label)).toEqual(["TOP", "CONTENTS", "Authentication", "Guide"]);
     expect(MENU_TREE[0]).toEqual({ label: "TOP", href: "/", children: [] });
   });
+
+  it("CONTENTS の最後にマイページ(/mypage)がある", () => {
+    const contents = MENU_TREE.find((group) => group.label === "CONTENTS");
+    expect(contents?.children.at(-1)).toEqual({ kind: "link", label: "マイページ", href: "/mypage" });
+  });
 });
 
 describe("visibleMenuTree", () => {
   it("未ログインならログイン・ユーザー登録を出し、ログアウトを出さない", () => {
     expect(labels(visibleMenuTree(MENU_TREE, "guest"))).toEqual([
       ["TOP", []],
-      ["CONTENTS", ["ダッシュボード", "新規プロジェクト作成"]],
+      ["CONTENTS", ["ダッシュボード", "新規プロジェクト作成", "マイページ"]],
       ["Authentication", ["ログイン", "ユーザー登録"]],
       ["Guide", ["作成予定"]],
     ]);

@@ -13,7 +13,7 @@ import { apiFetch, ApiError } from "@/lib/api/client";
 import { registerSchema } from "@/features/auth/schemas";
 import type { RegisterValues } from "@/features/auth/schemas";
 
-const DEFAULT_VALUES: RegisterValues = { fullName: "", email: "", password: "" };
+const DEFAULT_VALUES: RegisterValues = { userName: "", email: "", password: "" };
 
 export function RegisterForm() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export function RegisterForm() {
               body: JSON.stringify({
                 email: values.email,
                 password: values.password,
-                full_name: values.fullName,
+                user_name: values.userName,
               }),
             });
             resolve(true);
@@ -57,18 +57,18 @@ export function RegisterForm() {
   return (
     <FormGeneral buttonName="登録する" onBeforeSubmit={handleBeforeSubmit} onSubmitted={handleSubmitted}>
       <Controller
-        name="fullName"
+        name="userName"
         control={control}
         render={({ field, fieldState }) => (
           <InputSimpleText
-            label="氏名"
+            label="ユーザーネーム"
             width="100%"
-            name="fullName"
+            name="userName"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
             errorMessage={fieldState.error?.message}
-            placeholder="名前を入力"
+            placeholder="ユーザーネームを入力"
           />
         )}
       />

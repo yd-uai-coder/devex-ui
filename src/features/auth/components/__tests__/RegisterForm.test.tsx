@@ -36,7 +36,7 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("氏名"), "Erin");
+    await user.type(screen.getByLabelText("ユーザーネーム"), "Erin");
     await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
     await user.type(screen.getByLabelText("パスワード"), "short");
     await user.click(screen.getByRole("button", { name: "登録する" }));
@@ -49,7 +49,7 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("氏名"), "Erin");
+    await user.type(screen.getByLabelText("ユーザーネーム"), "Erin");
     await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
     // 8文字以上だが英小文字のみ(大文字・数字・記号を含まない)
     await user.type(screen.getByLabelText("パスワード"), "alllowercase");
@@ -59,15 +59,15 @@ describe("RegisterForm", () => {
     expect(stub.requests).toHaveLength(0);
   });
 
-  it("成功時はfull_nameを含めてPOSTし、/loginへ遷移する(自動ログインはしない)", async () => {
+  it("成功時はuser_nameを含めてPOSTし、/loginへ遷移する(自動ログインはしない)", async () => {
     stub.queue({
       status: 201,
-      body: { id: "u1", email: "erin@example.com", full_name: "Erin", is_active: true },
+      body: { id: "u1", email: "erin@example.com", user_name: "Erin", is_active: true },
     });
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("氏名"), "Erin");
+    await user.type(screen.getByLabelText("ユーザーネーム"), "Erin");
     await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
     await user.type(screen.getByLabelText("パスワード"), "S3cret-Pass");
     await user.click(screen.getByRole("button", { name: "登録する" }));
@@ -77,7 +77,7 @@ describe("RegisterForm", () => {
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({
       email: "erin@example.com",
       password: "S3cret-Pass",
-      full_name: "Erin",
+      user_name: "Erin",
     });
   });
 
@@ -86,7 +86,7 @@ describe("RegisterForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText("氏名"), "Erin");
+    await user.type(screen.getByLabelText("ユーザーネーム"), "Erin");
     await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
     await user.type(screen.getByLabelText("パスワード"), "S3cret-Pass");
     await user.click(screen.getByRole("button", { name: "登録する" }));
