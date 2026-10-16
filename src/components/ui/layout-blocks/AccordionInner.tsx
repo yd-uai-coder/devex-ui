@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
-import { Accordion, Paragraph, Square, type FontSizeTokens } from "tamagui";
+import { Accordion, Paragraph, Square, type AccordionItemProps, type FontSizeTokens } from "tamagui";
 import { ChevronDown } from "lucide-react";
 import { StyledAccordionHeader } from "@/components/ui/primitives/StyledAccordionHeader";
 
@@ -9,6 +9,9 @@ type AccordionInnerProps = {
   title:string,
   title_size?:FontSizeTokens,
   children: ReactNode;
+  // 既定の flex={1} は横に並べる(AccordionExclusive)ためのもの。縦に並べるときは
+  // flex-basis: 0 で項目の高さが潰れ、見出しが重なるので、呼び出し側で "unset" に替える
+  flex?: AccordionItemProps["flex"];
 };
 
 export function AccordionInner({
@@ -16,9 +19,10 @@ export function AccordionInner({
   title,
   title_size,
   children,
+  flex = 1,
 }: AccordionInnerProps) {
   return(
-    <Accordion.Item value={value} flex={1}>
+    <Accordion.Item value={value} flex={flex}>
       <StyledAccordionHeader>
         {({ open }: { open: boolean }) => (
           <>
