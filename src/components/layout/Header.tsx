@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { H3, XStack } from "tamagui";
 import { MenuToggleButton } from "@/components/ui/primitives/MenuToggleButton";
 import { ThemeToggleButton } from "@/components/ui/primitives/ThemeToggleButton";
 import { HEADER_HEIGHT } from "./layout-constants";
+import styles from "./Menu.module.css";
 
 export function Header() {
   return (
@@ -31,7 +33,10 @@ export function Header() {
         fontSize="$7"
         $md={{ fontSize: "$9" }}
       >
-        Devex
+        {/* タイトルはトップページへのリンク */}
+        <Link href="/" className={styles.titleLink}>
+          Devex
+        </Link>
       </H3>
       <ThemeToggleButton />
     </XStack>

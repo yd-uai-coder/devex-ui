@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Button, TextArea, Text, XStack, YStack } from "tamagui";
 import { ChoiceCards } from "@/features/hearing/components/ChoiceCards";
 import { MessageBubble } from "@/features/hearing/components/MessageBubble";
@@ -8,6 +8,7 @@ import { latestAiMessage, pendingAnswers } from "@/features/hearing/cards";
 import { HearingCompletionBanner } from "@/features/hearing/components/HearingCompletionBanner";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import type { HearingCard } from "@/features/hearing/api/hearingApi";
+import { FOOTER_HEIGHT } from "@/components/layout/layout-constants";
 import { ApiError } from "@/lib/api/client";
 
 // 最新の AI の発言のカード。選択中の状態はここだけがストアから読む(選ぶたびにチャット全体を
@@ -36,8 +37,29 @@ function LatestChoiceCards({
 
 const NO_DRAFTS: Record<string, number> = {};
 
+// 会話の領域の高さの上限。配置を測るまでの見積もり(ヘッダー・見出し・入力欄の分を引く)
+const HISTORY_STYLE: CSSProperties = {
+  maxHeight: "max(240px, calc(100vh - 380px))",
+  overflowY: "auto",
+};
+const MIN_HISTORY_HEIGHT = 240;
+// 会話の領域と入力欄の間(YStack の gap="$4")
+const STACK_GAP = 16;
+
+// 入力欄がページを動かさずに画面に収まる、会話の領域の高さ(下限 240px)。
+// historyTop は領域の上端の文書上の位置(ページを先頭までスクロールしたときの画面上の位置)
+export function fittedHistoryHeight(viewportHeight: number, historyTop: number, inputHeight: number): number {
+  const fitted = viewportHeight - historyTop - STACK_GAP - inputHeight - (FOOTER_HEIGHT + 16);
+  return Math.max(MIN_HISTORY_HEIGHT, Math.floor(fitted));
+}
+// 入力欄を画面に入れるとき、固定のフッターに隠れないよう下に余白を取る
+const INPUT_STYLE: CSSProperties = { scrollMarginBottom: FOOTER_HEIGHT + 16 };
+// 最下部からこの距離(px)以内なら「最下部にいる」とみなし、新しい発言に追従する
+const FOLLOW_THRESHOLD = 80;
+
 export function ChatPanel({ projectId }: { projectId: string }) {
   const messages = useHearingStore((s) => s.messages);
+  const historyStatus = useHearingStore((s) => s.historyStatus);
   const streamingReply = useHearingStore((s) => s.streamingReply);
   const sending = useHearingStore((s) => s.sending);
   const connectionLost = useHearingStore((s) => s.connectionLost);
@@ -57,6 +79,81 @@ export function ChatPanel({ projectId }: { projectId: string }) {
   useEffect(() => {
     void loadHistory(projectId);
   }, [projectId, loadHistory]);
+
+  // 会話は専用の領域でスクロールする。履歴を読み込んだら最下部へ移し、入力欄を画面に入れる。
+  // 読み込みの開始(loading)を見てから待つので、前に開いたプロジェクトの success では動かない。
+  // 完了のバナーと観点の表は履歴の後に届き、会話の高さ・幅を変えるので、届いたときにも合わせ直し、
+  // 観点の表が届いたところで終える(以後は利用者の操作に任せる)
+  const historyRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+  const settling = useRef(false);
+  const atBottom = useRef(true);
+  const [historyMaxHeight, setHistoryMaxHeight] = useState<number | null>(null);
+
+  function scrollToBottom() {
+    const el = historyRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+
+  // 領域の高さを今の配置から決める。固定の見積もりでは、上に増える行(生成済みのドキュメントへの
+  // リンク・狭い画面の観点の表)の分だけ入力欄がはみ出し、ページが動いて見出しがヘッダーに隠れる。
+  // 続けてスクロールの位置を測るので、DOM にもすぐ当てる(state は描き直しで同じ値を保つため)
+  function fitHistoryHeight() {
+    const history = historyRef.current;
+    const input = inputRef.current;
+    if (!history || !input) return;
+    const top = history.getBoundingClientRect().top + window.scrollY;
+    const height = fittedHistoryHeight(window.innerHeight, top, input.offsetHeight);
+    history.style.maxHeight = `${height}px`;
+    setHistoryMaxHeight(height);
+  }
+
+  useEffect(() => {
+    if (historyStatus === "loading") {
+      settling.current = true;
+      return;
+    }
+    if (historyStatus !== "success" || !settling.current) return;
+    atBottom.current = true;
+    fitHistoryHeight();
+    scrollToBottom();
+    inputRef.current?.scrollIntoView({ block: "nearest" });
+    if (points !== null) settling.current = false;
+  }, [historyStatus, completion, points]);
+
+  // 送信・ストリーミングで発言が増えたら、利用者が最下部にいるときだけ追従する
+  // (遡って読んでいるときに引き戻さない)
+  useEffect(() => {
+    if (atBottom.current) scrollToBottom();
+  }, [messages, streamingReply]);
+
+  // 発言の Markdown の描画や幅の変化で高さが変わったときも、最下部にいれば追従する
+  useEffect(() => {
+    // 領域の中身(発言の一覧)の高さを見る
+    const content = historyRef.current?.firstElementChild;
+    if (!content) return;
+    const observer = new ResizeObserver(() => {
+      if (atBottom.current) scrollToBottom();
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
+  // 画面の大きさが変わったら高さを決め直す(狭い画面で観点の表を開閉したときは決め直さず、
+  // ページのスクロールに任せる。開いた表の分だけ会話が縮みすぎないため)
+  useEffect(() => {
+    function handleResize() {
+      fitHistoryHeight();
+      if (atBottom.current) scrollToBottom();
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  function handleHistoryScroll() {
+    const el = historyRef.current;
+    if (el) atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight <= FOLLOW_THRESHOLD;
+  }
 
   // 選べるのは最新の AI の発言のカードだけ。カードを選んでいれば、文が空でも送れる
   const latestAi = latestAiMessage(messages);
@@ -144,64 +241,74 @@ export function ChatPanel({ projectId }: { projectId: string }) {
         </XStack>
       ) : null}
 
-      <YStack gap="$3">
-        {/* sender='attachment'(添付ファイル抽出結果)・sender='others'(生成後の自己診断結果)は
-            ヒアリング・ドキュメント生成のLLMコンテキスト/記録としては使うが、チャット画面には
-            表示しない(添付ファイル名自体は最初のintake要約バブルに表示される。自己診断結果は
-            チャットに戻った際に毎回再表示されると煩雑なため、ドキュメントプレビュー画面側で
-            確認する設計に統一する)。 */}
-        {messages
-          .filter((message) => message.sender !== "attachment" && message.sender !== "others")
-          .map((message) => (
-            <YStack key={message.id} gap="$2">
-              <MessageBubble message={message} />
-              {message.cards && message.cards.length > 0 ? (
-                message === latestAi ? (
-                  <LatestChoiceCards
-                    cards={message.cards}
-                    onSend={handleSendCard}
-                    disabled={sending || generationTriggered}
-                  />
-                ) : (
-                  <ChoiceCards cards={message.cards} drafts={NO_DRAFTS} />
-                )
-              ) : null}
-            </YStack>
-          ))}
-        {streamingReply ? (
-          <MessageBubble
-            message={{ id: "streaming", sender: "ai", message: streamingReply, created_at: "" }}
+      <div
+        ref={historyRef}
+        role="log"
+        aria-label="チャットの履歴"
+        style={historyMaxHeight === null ? HISTORY_STYLE : { ...HISTORY_STYLE, maxHeight: historyMaxHeight }}
+        onScroll={handleHistoryScroll}
+      >
+        <YStack gap="$3">
+          {/* sender='attachment'(添付ファイル抽出結果)・sender='others'(生成後の自己診断結果)は
+              ヒアリング・ドキュメント生成のLLMコンテキスト/記録としては使うが、チャット画面には
+              表示しない(添付ファイル名自体は最初のintake要約バブルに表示される。自己診断結果は
+              チャットに戻った際に毎回再表示されると煩雑なため、ドキュメントプレビュー画面側で
+              確認する設計に統一する)。 */}
+          {messages
+            .filter((message) => message.sender !== "attachment" && message.sender !== "others")
+            .map((message) => (
+              <YStack key={message.id} gap="$2">
+                <MessageBubble message={message} />
+                {message.cards && message.cards.length > 0 ? (
+                  message === latestAi ? (
+                    <LatestChoiceCards
+                      cards={message.cards}
+                      onSend={handleSendCard}
+                      disabled={sending || generationTriggered}
+                    />
+                  ) : (
+                    <ChoiceCards cards={message.cards} drafts={NO_DRAFTS} />
+                  )
+                ) : null}
+              </YStack>
+            ))}
+          {streamingReply ? (
+            <MessageBubble
+              message={{ id: "streaming", sender: "ai", message: streamingReply, created_at: "" }}
+            />
+          ) : null}
+          {/* 完了のバナーは会話の末尾に置く(長くても入力欄を画面の外へ押し出さない) */}
+          {completion && !generationTriggered ? (
+            <HearingCompletionBanner
+              completion={completion}
+              onApprove={handleApprove}
+              approving={approving}
+              optionalPoints={optionalPoints}
+              onContinueOptional={handleContinueOptional}
+              sending={sending}
+            />
+          ) : null}
+          {approveError ? (
+            <Text role="alert" color="$color9" fontSize="$2">
+              {approveError}
+            </Text>
+          ) : null}
+        </YStack>
+      </div>
+
+      <div ref={inputRef} style={INPUT_STYLE}>
+        <YStack gap="$2">
+          <TextArea
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="メッセージを入力"
+            disabled={sending || generationTriggered}
           />
-        ) : null}
-      </YStack>
-
-      {completion && !generationTriggered ? (
-        <HearingCompletionBanner
-          completion={completion}
-          onApprove={handleApprove}
-          approving={approving}
-          optionalPoints={optionalPoints}
-          onContinueOptional={handleContinueOptional}
-          sending={sending}
-        />
-      ) : null}
-      {approveError ? (
-        <Text role="alert" color="$color9" fontSize="$2">
-          {approveError}
-        </Text>
-      ) : null}
-
-      <YStack gap="$2">
-        <TextArea
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="メッセージを入力"
-          disabled={sending || generationTriggered}
-        />
-        <Button onPress={handleSend} disabled={!canSend}>
-          {sending ? "送信中..." : selectedCount > 0 ? `送信(カード ${selectedCount} 件の選択を含む)` : "送信"}
-        </Button>
-      </YStack>
+          <Button onPress={handleSend} disabled={!canSend}>
+            {sending ? "送信中..." : selectedCount > 0 ? `送信(カード ${selectedCount} 件の選択を含む)` : "送信"}
+          </Button>
+        </YStack>
+      </div>
     </YStack>
   );
 }
