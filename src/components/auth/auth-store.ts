@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiFetch } from "@/lib/api/client";
+import { clearLoginFlag, setLoginFlag } from "@/lib/auth-flag";
 import type { AsyncStatus } from "@/lib/api/types";
 
 export type AccessTokenResponse = { access_token: string; token_type: string };
@@ -30,8 +31,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   // (RequireAuthはこれを見て、復元が終わるまでログイン必須ダイアログの表示を保留する)。
   status: "loading",
   error: null,
+  // ログインの印の cookie(proxy が認証ページを飛ばすのに使う)は、トークンを持つ・失う
+  // ところ(login・logout・refreshTokens の成否)で付け外しする。apiFetch の 401 もここを通る。
   login: (accessToken) => {
     set({ accessToken, status: "success", error: null });
+    setLoginFlag();
     scheduleSilentRefresh(accessToken);
   },
   // アクセストークンを破棄しログアウト状態に戻す。リフレッシュトークンはhttpOnly Cookieのため
@@ -41,6 +45,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   logout: () => {
     scheduleSilentRefresh(null);
     set({ accessToken: null, status: "idle", error: null });
+    clearLoginFlag();
     void apiFetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
   },
   bootstrap: async () => {
@@ -96,10 +101,12 @@ export function refreshTokens(): Promise<boolean> {
         method: "POST",
       });
       useAuthStore.setState({ accessToken: tokens.access_token, status: "success", error: null });
+      setLoginFlag();
       scheduleSilentRefresh(tokens.access_token);
       return true;
     } catch {
       useAuthStore.setState({ accessToken: null, status: "idle", error: null });
+      clearLoginFlag();
       return false;
     } finally {
       refreshPromise = null;

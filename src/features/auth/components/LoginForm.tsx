@@ -12,6 +12,7 @@ import { apiFetch, ApiError } from "@/lib/api/client";
 import { useAuthStore } from "@/components/auth/auth-store";
 import type { AccessTokenResponse } from "@/components/auth/auth-store";
 import { loginSchema } from "@/features/auth/schemas";
+import { safeRedirectPath } from "@/lib/redirect-path";
 import type { LoginValues } from "@/features/auth/schemas";
 
 const DEFAULT_VALUES: LoginValues = { email: "", password: "" };
@@ -50,8 +51,7 @@ export function LoginForm() {
     });
 
   const handleSubmitted = () => {
-    const redirect = searchParams.get("redirect");
-    router.push(redirect && redirect.startsWith("/") ? redirect : "/dashboard");
+    router.push(safeRedirectPath(searchParams.get("redirect")) ?? "/dashboard");
   };
 
   return (

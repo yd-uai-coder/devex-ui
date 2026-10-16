@@ -76,6 +76,19 @@ describe("LoginForm", () => {
     });
   });
 
+  it("redirectパラメータが別のオリジンと読まれるパスなら、/dashboardへ遷移する", async () => {
+    stub.queue({ status: 200, body: { access_token: "new-token", token_type: "bearer" } });
+    searchParams = new URLSearchParams("redirect=//evil.example.com");
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText("メールアドレス"), "erin@example.com");
+    await user.type(screen.getByLabelText("パスワード"), "s3cret-pass");
+    await user.click(screen.getByRole("button", { name: "ログイン" }));
+
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+  });
+
   it("失敗時はエラーメッセージを表示し、ログイン状態にしない", async () => {
     stub.queue({ status: 401, body: { detail: "Incorrect email or password" } });
     const user = userEvent.setup();
