@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import type { ReviewGate } from "@/features/design-review/api/reviewApi";
 import { GATE_LABEL, unaddressedNotice } from "@/features/design-review/model";
@@ -38,6 +40,7 @@ export function DetailedDesignPageContent({
 }: {
   projectId: string;
 }) {
+  const router = useRouter();
   const stages = useDetailedDesignStore((s) => s.stages);
   const selectedStage = useDetailedDesignStore((s) => s.selectedStage);
   const status = useDetailedDesignStore((s) => s.status);
@@ -120,9 +123,13 @@ export function DetailedDesignPageContent({
     <YStack paddingVertical="$4" gap="$4">
       <XStack justifyContent="space-between" alignItems="center">
         <H2>{simple ? "実装手順書" : "詳細設計"}</H2>
-        <Link href={`/projects/${projectId}/documents`}>
-          <Text color="$blue10">← ドキュメントに戻る</Text>
-        </Link>
+        <XStack gap="$3" alignItems="center">
+          <Link href={`/projects/${projectId}/documents`}>
+            <Text color="$blue10">← ドキュメントに戻る</Text>
+          </Link>
+          {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
+          <DeleteProjectButton projectId={projectId} onDeleted={() => router.push("/dashboard")} />
+        </XStack>
       </XStack>
 
       {status === "loading" && stages.length === 0 ? (

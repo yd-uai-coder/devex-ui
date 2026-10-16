@@ -29,6 +29,8 @@ type DocumentsStore = {
   // プロジェクトのモード。詳細設計モードでは、詳細設計(SCR-008)へのリンクを出す。
   // 取得するまでは null。
   projectMode: ProjectMode | null;
+  // プロジェクトの名前(削除の確認・知らせに出す)。取得するまでは null。
+  projectTitle: string | null;
   // 「採用にする」を押している要件ID と、その失敗
   adoptingId: string | null;
   adoptError: string | null;
@@ -56,6 +58,7 @@ const PROJECT_INITIAL = {
   regenerateError: null,
   progress: null,
   projectMode: null,
+  projectTitle: null,
   adoptingId: null,
   adoptError: null,
 } as const;
@@ -70,6 +73,7 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   regenerateError: null,
   progress: null,
   projectMode: null,
+  projectTitle: null,
   adoptingId: null,
   adoptError: null,
 
@@ -97,10 +101,14 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       if (get().projectId !== projectId) return;
       // 生成中なら、再生成中として扱う(読み込み直した後・待つ時間の上限の後も、ボタンを押せなくし、
       // 完了を待ち直す。押すとサーバーは409を返すため)
-      set({ projectMode: project.mode, ...(project.status === "generating" ? { regenerating: true } : {}) });
+      set({
+        projectMode: project.mode,
+        projectTitle: project.title,
+        ...(project.status === "generating" ? { regenerating: true } : {}),
+      });
     } catch {
       // モードが分からなくても文書の表示は続ける(遷移先のリンクを出さないだけ)
-      set({ projectMode: null });
+      set({ projectMode: null, projectTitle: null });
     }
   },
 

@@ -12,6 +12,7 @@ function resetStore() {
     regenerating: false,
     regenerateError: null,
     projectMode: null,
+    projectTitle: null,
     adoptingId: null,
     adoptError: null,
   });
@@ -130,15 +131,17 @@ describe("useDocumentsStore", () => {
     expect(stub.requests[0].url).toContain("/documents");
   });
 
-  it("fetchProjectMode()はプロジェクトのmodeを保持し、失敗時はnullにする", async () => {
-    stub.queue({ status: 200, body: { id: "p1", mode: "detailed" } });
+  it("fetchProjectMode()はプロジェクトのmodeと名前を保持し、失敗時はnullにする", async () => {
+    stub.queue({ status: 200, body: { id: "p1", mode: "detailed", title: "備品予約" } });
     await useDocumentsStore.getState().fetchProjectMode("p1");
     expect(useDocumentsStore.getState().projectMode).toBe("detailed");
+    expect(useDocumentsStore.getState().projectTitle).toBe("備品予約");
     expect(stub.requests[0].url).toContain("/api/v1/projects/p1");
 
     stub.queue({ status: 500, body: { detail: "error" } });
     await useDocumentsStore.getState().fetchProjectMode("p1");
     expect(useDocumentsStore.getState().projectMode).toBeNull();
+    expect(useDocumentsStore.getState().projectTitle).toBeNull();
   });
 
   it("regenerate()が受け付けられなければregeneratingを下ろし、理由を保持する", async () => {

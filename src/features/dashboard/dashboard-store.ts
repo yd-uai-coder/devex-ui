@@ -14,6 +14,8 @@ type DashboardStore = {
   fetchProjects: (options?: { force?: boolean }) => Promise<void>;
   // mutation(プロジェクト作成等)の後に呼び、次回のfetchProjects()を強制的に再取得させる。
   invalidate: () => void;
+  // 削除したプロジェクトを一覧から外す(取り直さずに、すぐ画面から消すため)。
+  removeProject: (projectId: string) => void;
 };
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
@@ -35,4 +37,6 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
   invalidate: () => set({ fetchedAt: null }),
+  removeProject: (projectId) =>
+    set((state) => ({ projects: state.projects.filter((p) => p.id !== projectId) })),
 }));

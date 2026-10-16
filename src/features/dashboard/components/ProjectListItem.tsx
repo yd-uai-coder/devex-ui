@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Text, XStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
 import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 
 const STATUS_LABEL: Record<ProjectRead["status"], string> = {
   interviewing: "ヒアリング中",
@@ -26,11 +27,17 @@ export function projectHref(project: Pick<ProjectRead, "id" | "status">): string
     : `/projects/${project.id}/chat`;
 }
 
+// カードの中で、遷移のリンク(モードと題名)と削除ボタンを兄弟に置く(リンクの <a> の中に <button> は置けないため)。
+// リンクは残りの幅を占め、カードの大部分を押すと開く。
 export function ProjectListItem({ project }: { project: ProjectRead }) {
   return (
-    <Link href={projectHref(project)} aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}>
-      <StyledCard hoverStyle={{ borderColor: "$color8" }}>
-        <XStack justifyContent="space-between" alignItems="center" gap="$3">
+    <StyledCard hoverStyle={{ borderColor: "$color8" }}>
+      <XStack justifyContent="space-between" alignItems="center" gap="$3">
+        <Link
+          href={projectHref(project)}
+          aria-label={`${project.title}(${STATUS_LABEL[project.status]})`}
+          style={{ flex: 1, minWidth: 0 }}
+        >
           <XStack alignItems="center" gap="$2" flexShrink={1}>
             <Text
               fontSize="$1"
@@ -48,11 +55,14 @@ export function ProjectListItem({ project }: { project: ProjectRead }) {
               {project.title}
             </Text>
           </XStack>
+        </Link>
+        <XStack alignItems="center" gap="$2" flexShrink={0}>
           <Text fontSize="$2" color="$color11">
             {STATUS_LABEL[project.status]}
           </Text>
+          <DeleteProjectButton projectId={project.id} title={project.title} variant="icon" />
         </XStack>
-      </StyledCard>
-    </Link>
+      </XStack>
+    </StyledCard>
   );
 }

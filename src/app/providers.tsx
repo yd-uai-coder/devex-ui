@@ -4,6 +4,7 @@ import { useRef, type ReactNode } from "react";
 import { useServerInsertedHTML } from "next/navigation";
 import { NextThemeProvider, useRootTheme } from "@tamagui/next-theme";
 import { TamaguiProvider } from "tamagui";
+import { AppToastProvider } from "@/components/layout/AppToast";
 import tamaguiConfig from "../../tamagui.config";
 
 // NextThemeProvider's own theme-detection script (below) is injected via
@@ -50,7 +51,8 @@ export function Providers({ children }: { children: ReactNode }) {
       onChangeTheme={(next) => setTheme(next as "light" | "dark")}
     >
       <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-        {children}
+        {/* 操作の完了の知らせ(トースト)。ルートに置くので、画面を移っても消えない */}
+        <AppToastProvider>{children}</AppToastProvider>
       </TamaguiProvider>
     </NextThemeProvider>
   );

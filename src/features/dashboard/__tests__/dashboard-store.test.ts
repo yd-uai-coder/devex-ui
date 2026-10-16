@@ -10,6 +10,7 @@ const SAMPLE_PROJECT = {
   id: "p1",
   title: "Project 1",
   status: "interviewing" as const,
+  mode: "simple" as const,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };
@@ -65,6 +66,16 @@ describe("useDashboardStore", () => {
     await useDashboardStore.getState().fetchProjects();
 
     expect(stub.requests).toHaveLength(2);
+  });
+
+  it("removeProject()は削除したプロジェクトだけを一覧から外す(取り直さない)", () => {
+    const other = { ...SAMPLE_PROJECT, id: "p2", title: "Project 2" };
+    useDashboardStore.setState({ projects: [SAMPLE_PROJECT, other], status: "success" });
+
+    useDashboardStore.getState().removeProject("p1");
+
+    expect(useDashboardStore.getState().projects).toEqual([other]);
+    expect(stub.requests).toHaveLength(0);
   });
 
   it("失敗時はstatusをerrorにしメッセージを保持する", async () => {

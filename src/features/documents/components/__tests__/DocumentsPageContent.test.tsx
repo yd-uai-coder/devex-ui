@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
@@ -8,6 +8,12 @@ import { useDocumentsStore } from "@/features/documents/documents-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+
+// 削除した後の遷移(router.push)と、完了の知らせ(toast)を差し替える
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: vi.fn() }) }));
 
 const useGenerationPollingMock = vi.fn();
 vi.mock("@/hooks/useGenerationPolling", () => ({
@@ -53,6 +59,7 @@ describe("DocumentsPageContent", () => {
       regenerating: false,
       regenerateError: null,
       projectMode: "simple",
+      projectTitle: "備品予約",
       fetchDocuments: vi.fn().mockResolvedValue(undefined),
       fetchProjectMode: vi.fn().mockResolvedValue(undefined),
       regenerate: vi.fn().mockResolvedValue(undefined),
@@ -63,6 +70,23 @@ describe("DocumentsPageContent", () => {
     useReviewStore.setState({ me: null, gates: [] });
     useTestSpecStore.setState({ testSpec: null, status: "idle", fetchTestSpec: vi.fn().mockResolvedValue(undefined) });
     tabsProps.mockReset();
+  });
+
+  it("並びの右端の「削除」は確認してから削除し、ダッシュボードへ戻る(生成中でも押せる)", async () => {
+    const user = userEvent.setup();
+    const stub = stubFetch();
+    push.mockReset();
+    useDocumentsStore.setState({ regenerating: true });
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "削除" }));
+    expect(screen.getByText(/「備品予約」と、そのチャット・文書/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    await user.click(screen.getByLabelText("削除する"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+    expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
+    stub.restore();
   });
 
   it("マウント時にfetchDocuments(projectId)とfetchProjectMode(projectId)を呼ぶ", () => {

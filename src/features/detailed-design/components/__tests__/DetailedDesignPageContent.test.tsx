@@ -9,6 +9,7 @@ import { useReviewStore } from "@/features/design-review/review-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
+import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 import {
   makeFunctionList,
   makeImpact,
@@ -18,6 +19,11 @@ import {
   makeSimpleImpact,
   makeStages,
 } from "../../test-utils/stageFixtures";
+
+// 削除した後の遷移(router.push)と、完了の知らせ(toast)を差し替える
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: vi.fn() }) }));
 
 function renderContent() {
   return render(
@@ -74,6 +80,23 @@ describe("DetailedDesignPageContent", () => {
     expect(
       screen.getByRole("link", { name: "← ドキュメントに戻る" }),
     ).toHaveAttribute("href", "/projects/p1/documents");
+  });
+
+  it("「ドキュメントに戻る」の右の「削除」は確認してから削除し、ダッシュボードへ戻る", async () => {
+    const user = userEvent.setup();
+    const stub = stubFetch();
+    push.mockReset();
+    renderContent();
+
+    await user.click(screen.getByRole("button", { name: "削除" }));
+    // この画面はプロジェクトの名前を読み込まないので「このプロジェクト」と書く
+    expect(screen.getByText(/^このプロジェクトと、そのチャット・文書/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    await user.click(screen.getByLabelText("削除する"));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
+    expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
+    stub.restore();
   });
 
   it("詳細設計書のダウンロードを上部に出す", () => {

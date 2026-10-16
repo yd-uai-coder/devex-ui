@@ -24,3 +24,8 @@ export type ProjectRead = {
 export function listProjects(): Promise<ProjectRead[]> {
   return apiFetch<ProjectRead[]>("/api/v1/projects");
 }
+
+// プロジェクトを削除する(204)。生成中でも削除できる。
+export function deleteProject(projectId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/projects/${projectId}`, { method: "DELETE" });
+}

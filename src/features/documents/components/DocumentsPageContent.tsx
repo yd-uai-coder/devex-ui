@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import { LEVEL_LABEL, documentOfTarget, regenerableFindings, regenerationStartFor } from "@/features/design-review/model";
 import { useReviewStore } from "@/features/design-review/review-store";
@@ -34,6 +36,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const regenerate = useDocumentsStore((s) => s.regenerate);
   const onRegenerationCompleted = useDocumentsStore((s) => s.onRegenerationCompleted);
   const projectMode = useDocumentsStore((s) => s.projectMode);
+  const projectTitle = useDocumentsStore((s) => s.projectTitle);
+  const router = useRouter();
   const fetchProjectMode = useDocumentsStore((s) => s.fetchProjectMode);
   const progress = useDocumentsStore((s) => s.progress);
   const fetchProgress = useDocumentsStore((s) => s.fetchProgress);
@@ -133,6 +137,12 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           >
             {regenerating ? "再生成中..." : "再生成する"}
           </Button>
+          {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
+          <DeleteProjectButton
+            projectId={projectId}
+            title={projectTitle}
+            onDeleted={() => router.push("/dashboard")}
+          />
         </XStack>
       </XStack>
 
