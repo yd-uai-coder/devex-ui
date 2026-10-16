@@ -18,7 +18,7 @@ import type {
 import type { AsyncStatus } from "@/lib/api/types";
 
 // 設計レビューのパネル(プレビュー SCR-005・作業領域 SCR-008 で共通)のストア。区切りの状態は
-// プロジェクトごと、ログイン中のユーザー(superuser か・設定)はプロジェクトによらない。
+// プロジェクトごと、ログイン中のユーザー(レビューを使えるか・設定)はプロジェクトによらない。
 type ReviewStore = {
   projectId: string | null;
   gates: ReviewGateSummaryRead[];

@@ -74,8 +74,10 @@ export type CurrentUserRead = {
   id: string;
   email: string;
   is_superuser: boolean;
-  // 保存した設定。使うかどうかは review_effective(superuser かつ設定がオン。サーバーで判定)
+  // 保存した設定。使うかどうかは review_effective(使えるアカウントで設定がオン。サーバーで判定)
   review_enabled: boolean;
+  // レビューを使えるアカウントか(superuser、またはレビューの用途の AI の自分のキーがある。サーバーで判定)
+  review_allowed: boolean;
   review_effective: boolean;
 };
 

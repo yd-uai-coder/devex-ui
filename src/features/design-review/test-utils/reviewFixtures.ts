@@ -56,6 +56,7 @@ export function user(overrides: Partial<CurrentUserRead> = {}): CurrentUserRead 
     email: "example-super-user@example.com",
     is_superuser: true,
     review_enabled: true,
+    review_allowed: true,
     review_effective: true,
     ...overrides,
   };
