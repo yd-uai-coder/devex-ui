@@ -57,10 +57,12 @@ const TEST_SPEC_STATUS_COLORS: Record<TestSpecStatus, string> = {
   none: "$color10",
   outdated: "$red10",
   ready: "$green10",
+  generating: "$orange10",
+  failed: "$red10",
 };
 
 // ステッパーの段階8の下に置く「テスト仕様書」の行(詳細設計モードだけ)。段階ではないので承認は無く、
-// 状態は 未作成・古い・作成済み。
+// 状態は 未作成・古い・作成済みと、作っている間・直近の作成の失敗。
 export type TestSpecStep = {
   status: TestSpecStatus;
   selected: boolean;

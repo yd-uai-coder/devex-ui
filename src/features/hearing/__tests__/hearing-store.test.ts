@@ -399,6 +399,27 @@ describe("useHearingStore", () => {
     expect(stub.requests[0].url).toContain("/generate");
   });
 
+  it("loadHistory()は直近の生成の失敗を持ち(生成の前に戻った状態で、もう一度生成できる)、"
+    + "approveAndGenerate()で消す", async () => {
+    const failure = {
+      reason_code: "GENERATION_FAILED",
+      message: "設計書の生成に失敗しました。時間をおいて再度お試しください。",
+      targets: ["requirements"],
+      failed_at: "2026-10-17T06:00:00Z",
+    };
+    stub.queue({ status: 200, body: [] });
+    stub.queue({ status: 200, body: { id: "p1", status: "interviewing", generation_failure: failure } });
+    stub.queue({ status: 200, body: { is_sufficient: true, summary: "要約", missing_points: [] } });
+
+    await useHearingStore.getState().loadHistory("p1");
+
+    expect(useHearingStore.getState()).toMatchObject({ generationFailure: failure, generationTriggered: false });
+    expect(useHearingStore.getState().completion?.is_sufficient).toBe(true);
+    stub.queue({ status: 202, body: null });
+    await useHearingStore.getState().approveAndGenerate("p1");
+    expect(useHearingStore.getState().generationFailure).toBeNull();
+  });
+
   it("approveAndGenerate()は使用済みの完了判定を破棄し、projectStatusをgeneratingにする", async () => {
     useHearingStore.setState({
       projectStatus: "interviewing",

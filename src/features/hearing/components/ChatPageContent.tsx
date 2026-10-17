@@ -8,8 +8,10 @@ import { ChatPanel } from "@/features/hearing/components/ChatPanel";
 import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsPanel";
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
 import { ApiError } from "@/lib/api/client";
+import { failureFor } from "@/lib/generation-failure";
 
 // POST /generateは202のみ返す(プッシュ通知が無い)ため、生成完了検知は
 // useGenerationPolling(ドキュメントプレビュー画面の再生成と共有)に委ねる。
@@ -17,6 +19,8 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const router = useRouter();
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const projectStatus = useHearingStore((s) => s.projectStatus);
+  const generationFailure = useHearingStore((s) => s.generationFailure);
+  const loadHistory = useHearingStore((s) => s.loadHistory);
   const points = useHearingStore((s) => s.points);
   const skipPoint = useHearingStore((s) => s.skipPoint);
   const [skippingKey, setSkippingKey] = useState<string | null>(null);
@@ -36,13 +40,20 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
     }
   }
 
-  const { timedOut } = useGenerationPolling(projectId, generationTriggered, () => {
-    router.push(`/projects/${projectId}/documents`);
+  // 成功したらプレビューへ移る。失敗したら(状態が生成の前に戻る)ここに留まり、読み直して
+  // 失敗の知らせと、もう一度生成できる完了のバナーを出す
+  const { timedOut } = useGenerationPolling(projectId, generationTriggered, (project) => {
+    if (project.status === "completed" && !project.generation_failure) {
+      router.push(`/projects/${projectId}/documents`);
+      return;
+    }
+    void loadHistory(projectId);
   });
 
   return (
     <YStack paddingVertical="$4" gap="$4">
       <H2>ヒアリングチャット</H2>
+      {generationTriggered ? null : <GenerationFailureNotice failure={failureFor(generationFailure)} />}
       {generationTriggered && !timedOut ? (
         <Text color="$color11">設計書を生成しています。しばらくお待ちください...</Text>
       ) : null}

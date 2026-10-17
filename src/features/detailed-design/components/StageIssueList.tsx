@@ -2,15 +2,15 @@
 
 import { Text, YStack } from "tamagui";
 import type { StageIssue } from "@/features/detailed-design/api/types";
-import { visibleIssues } from "@/features/detailed-design/labels";
+import { STAGE_ISSUE_LIST_ID, visibleIssues } from "@/features/detailed-design/labels";
 
 // 保存した内容の検証の結果(エラー・警告)の一覧。段階1・2のパネルで共有する。指摘が無ければ何も出さない。図の未承認は承認を押したときに
-// 出すので、ここには出さない。
+// 出すので、ここには出さない。承認できない理由(StageWorkArea)から移れるように id を持つ。
 export function StageIssueList({ issues: all }: { issues: StageIssue[] }) {
   const issues = visibleIssues(all);
   if (issues.length === 0) return null;
   return (
-    <YStack gap="$1" aria-label="検証の結果">
+    <YStack id={STAGE_ISSUE_LIST_ID} gap="$1" aria-label="検証の結果">
       <Text fontWeight="700">検証の結果(保存した内容)</Text>
       {issues.map((issue, index) => (
         <Text

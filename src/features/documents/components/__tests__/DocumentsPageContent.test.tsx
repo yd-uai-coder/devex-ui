@@ -58,6 +58,7 @@ describe("DocumentsPageContent", () => {
       fetchedAt: null,
       regenerating: false,
       regenerateError: null,
+      generationFailure: null,
       projectMode: "simple",
       projectTitle: "備品予約",
       fetchDocuments: vi.fn().mockResolvedValue(undefined),
@@ -87,6 +88,33 @@ describe("DocumentsPageContent", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/dashboard"));
     expect(stub.requests.map((r) => r.init?.method)).toEqual(["DELETE"]);
     stub.restore();
+  });
+
+  it("直近の再生成の失敗を、前の版を表示している旨と一緒に出す(再生成中は出さない)", () => {
+    const failure = {
+      reason_code: "GENERATION_FAILED",
+      message: "設計書の生成に失敗しました。時間をおいて再度お試しください。",
+      targets: ["requirements"],
+      failed_at: "2026-10-17T06:00:00Z",
+    };
+    useDocumentsStore.setState({
+      generationFailure: failure,
+      documents: [{ id: "d1", doc_type: "requirements", content: "# 要件", version: 1, created_at: "", is_current: true }],
+      status: "success",
+    });
+
+    const { rerender } = renderContent();
+
+    const alert = screen.getByRole("alert", { name: "生成の失敗" });
+    expect(alert).toHaveTextContent(failure.message);
+    expect(alert).toHaveTextContent("前の版を表示しています");
+    act(() => useDocumentsStore.setState({ regenerating: true }));
+    rerender(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentsPageContent projectId="p1" />
+      </TamaguiProvider>,
+    );
+    expect(screen.queryByRole("alert", { name: "生成の失敗" })).not.toBeInTheDocument();
   });
 
   it("マウント時にfetchDocuments(projectId)とfetchProjectMode(projectId)を呼ぶ", () => {
@@ -183,9 +211,11 @@ describe("DocumentsPageContent", () => {
     renderContent();
 
     expect(useGenerationPollingMock).toHaveBeenCalledWith("p1", true, expect.any(Function));
-    const onCompleted = useGenerationPollingMock.mock.calls[0][2] as () => void;
-    onCompleted();
-    expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1");
+    // 終わったら、読んだプロジェクト(失敗の記録つき)をストアへ渡す
+    const project = { id: "p1", status: "revising" };
+    const onFinished = useGenerationPollingMock.mock.calls[0][2] as (p: unknown) => void;
+    onFinished(project);
+    expect(useDocumentsStore.getState().onRegenerationCompleted).toHaveBeenCalledWith("p1", project);
   });
 
   it("簡易ドキュメントモードでは、詳細設計へ進むリンクを出さない", () => {

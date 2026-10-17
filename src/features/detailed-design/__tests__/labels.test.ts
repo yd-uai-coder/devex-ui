@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   APPROVAL_TIME_CODES,
   approvalBlockers,
+  approveBlocker,
   canApprove,
   describeMissingInput,
   firstStageToApprove,
@@ -16,6 +17,38 @@ describe("describeMissingInput", () => {
   it("段階と文書の不足を言葉にする", () => {
     expect(describeMissingInput("stage:1")).toBe("段階1(機能一覧)の承認");
     expect(describeMissingInput("doc:external_design")).toBe("外部設計書");
+  });
+});
+
+describe("approveBlocker", () => {
+  const ERROR = { severity: "error" as const, code: "EMPTY_FUNCTIONS", message: "処理がありません", target: null };
+
+  it("検証のエラーで止まっていれば件数を言い、エラーの一覧へのリンクを求める", () => {
+    const [stage1] = makeStages({
+      1: { state: "regenerated", version: 2, model: MODEL, issues: [ERROR, { ...ERROR, code: "X" }] },
+    });
+    expect(approveBlocker(stage1)).toEqual({
+      message: "検証のエラーが2件あるため承認できません。エラーを直して保存してから承認してください。",
+      errors: true,
+    });
+  });
+
+  it("生成中・内容が無いときはその理由。図の未承認(承認時に出す)と警告は数えない", () => {
+    const [stage1] = makeStages({ 1: { state: "regenerated", version: 2, model: MODEL } });
+    expect(approveBlocker({ ...stage1, generation_status: "generating" })?.message).toContain("生成しています");
+    expect(approveBlocker({ ...stage1, version: null, model: null })?.message).toContain("まだ内容がありません");
+    const onlyApprovalTime = {
+      ...stage1,
+      issues: [{ ...ERROR, code: "DFD_NOT_APPROVED" }, { ...ERROR, severity: "warning" as const }],
+    };
+    expect(approveBlocker(onlyApprovalTime)).toBeNull();
+  });
+
+  it("承認できる・承認済み・閉じた段階は null", () => {
+    const [stage1, stage2] = makeStages({ 1: { state: "reviewing", version: 1, model: MODEL } });
+    expect(approveBlocker(stage1)).toBeNull();
+    expect(approveBlocker({ ...stage1, state: "approved", issues: [ERROR] })).toBeNull();
+    expect(approveBlocker(stage2)).toBeNull();
   });
 });
 

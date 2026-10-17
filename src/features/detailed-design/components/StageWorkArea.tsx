@@ -11,12 +11,15 @@ import { LogicPanel } from "@/features/detailed-design/components/LogicPanel";
 import { PlanPanel } from "@/features/detailed-design/components/PlanPanel";
 import { ProcedureDocPanel } from "@/features/detailed-design/components/ProcedureDocPanel";
 import { ProcedurePanel } from "@/features/detailed-design/components/ProcedurePanel";
+import { StageGenerationFindings } from "@/features/detailed-design/components/StageGenerationFindings";
 import { StructurePanel } from "@/features/detailed-design/components/StructurePanel";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import {
+  approveBlocker,
   canApprove,
   describeMissingInput,
   firstStageToApprove,
+  STAGE_ISSUE_LIST_ID,
   STAGE_TITLES,
   STATE_LABELS,
 } from "@/features/detailed-design/labels";
@@ -67,6 +70,10 @@ export function StageWorkArea({
   const reopenState = stages.find((s) => s.stage === reopen)?.state;
   const Panel = stage.is_open ? STAGE_PANELS[stage.stage] : undefined;
   const hasPanel = Panel !== undefined;
+  // 承認できない理由(検証のエラーなら、エラーの一覧へ移るリンクも出す)
+  const blocker = approveBlocker(stage);
+  // 差し戻しで作り直した内容に、その作り直しで渡した指摘を添える(承認した後は出さない)
+  const sentFindings = stage.state === "approved" ? [] : (stage.generation_findings ?? []);
 
   return (
     <YStack flex={1} gap="$3">
@@ -135,6 +142,8 @@ export function StageWorkArea({
         </YStack>
       )}
 
+      {Panel ? <StageGenerationFindings findings={sentFindings} /> : null}
+
       {actionError ? (
         <Text role="alert" color="$red10">
           {actionError}
@@ -150,6 +159,20 @@ export function StageWorkArea({
           <Text color="$color11" fontSize="$2">
             他の段階・文書から届いた見直しの印は、確認済みにしてから承認し直してください。
           </Text>
+        ) : blocker ? (
+          <XStack gap="$2" alignItems="center" flexShrink={1} flexWrap="wrap" justifyContent="flex-end">
+            <Text role="status" aria-label="承認できない理由" color="$red10" fontSize="$2">
+              {blocker.message}
+            </Text>
+            {blocker.errors ? (
+              // ページ内のリンク(キーボードでも移れる。移る先は StageIssueList の id)
+              <a href={`#${STAGE_ISSUE_LIST_ID}`}>
+                <Text color="$blue10" fontSize="$2">
+                  検証の結果へ
+                </Text>
+              </a>
+            ) : null}
+          </XStack>
         ) : null}
         <StyledButton
           disabled={!canApprove(stage) || approving || (hasPanel && dirty)}

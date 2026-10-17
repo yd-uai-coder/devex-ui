@@ -21,6 +21,7 @@ import type {
   HearingPointsView,
 } from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
+import type { GenerationFailure } from "@/lib/generation-failure";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // 「任意項目についてヒアリングを続ける」で、サーバーが利用者の発言として残す文(楽観表示も同じ文)
@@ -53,6 +54,9 @@ type HearingStore = {
   generationTriggered: boolean;
   // ダッシュボードの状態表示・チャット画面での「生成済みドキュメントへの常設リンク」表示判定に使う。
   projectStatus: ProjectStatus | null;
+  // 直近の生成の失敗(プロジェクトの記録。次の生成を始めるまで出す)。失敗するとサーバーは状態を
+  // 生成の前に戻すので、loadHistory で読み直すと完了のバナーの「生成」をもう一度押せる
+  generationFailure: GenerationFailure | null;
 
   loadHistory: (projectId: string) => Promise<void>;
   // 選択中のカードの回答も一緒に送る(選んだ内容と text を1つの発言にする)。cardIds を渡すと、
@@ -84,6 +88,7 @@ const PROJECT_INITIAL = {
   cardDrafts: {} as Record<string, number>,
   generationTriggered: false,
   projectStatus: null,
+  generationFailure: null,
 } as const;
 
 type StoreGet = () => HearingStore;
@@ -113,6 +118,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   cardDrafts: {},
   generationTriggered: false,
   projectStatus: null,
+  generationFailure: null,
 
   loadHistory: async (projectId) => {
     if (get().projectId !== projectId) {
@@ -127,7 +133,13 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       // 取得中に別のプロジェクトへ移っていたら、古い結果で上書きしない
       if (get().projectId !== projectId) return;
       const generationTriggered = project.status === "generating";
-      set({ messages, historyStatus: "success", generationTriggered, projectStatus: project.status });
+      set({
+        messages,
+        historyStatus: "success",
+        generationTriggered,
+        projectStatus: project.status,
+        generationFailure: project.generation_failure ?? null,
+      });
 
       if (project.status === "interviewing" || project.status === "revising") {
         // ヒアリング完了バナーは画面更新・再遷移をまたいでも消えないよう、
@@ -249,7 +261,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
 
   approveAndGenerate: async (projectId) => {
     await triggerGeneration(projectId);
-    set({ generationTriggered: true, projectStatus: "generating", completion: null });
+    set({ generationTriggered: true, projectStatus: "generating", completion: null, generationFailure: null });
   },
 
   dismissConnectionLost: () => set({ connectionLost: false, streamError: null }),

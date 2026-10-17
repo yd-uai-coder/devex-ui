@@ -20,6 +20,8 @@ describe("StageIssueList", () => {
 
     expect(screen.getByText("エラー: エラーの中身")).toBeInTheDocument();
     expect(screen.getByText("警告: 警告の中身")).toBeInTheDocument();
+    // 承認できない理由のリンクの移り先
+    expect(screen.getByLabelText("検証の結果")).toHaveAttribute("id", "stage-issue-list");
 
     rerender(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">

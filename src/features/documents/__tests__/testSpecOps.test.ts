@@ -21,6 +21,12 @@ describe("testSpecOps", () => {
     expect(testSpecStatus(makeTestSpec())).toBe("ready");
   });
 
+  it("作っている間・直近の作成の失敗は、版の状態より先に出す", () => {
+    expect(testSpecStatus(makeTestSpec(), { generating: true, failed: true })).toBe("generating");
+    expect(testSpecStatus(makeTestSpec(), { failed: true })).toBe("failed");
+    expect(testSpecStatus(null, { failed: true })).toBe("failed");
+  });
+
   it("件数の文は、「設計に無い」があるときだけ後ろに足す", () => {
     expect(countText(makeTestSpec())).toBe("結合 12 件・総合 5 件");
     expect(countText(makeTestSpec({ design_gaps: 3 }))).toBe("結合 12 件・総合 5 件(「設計に無い」3 件)");

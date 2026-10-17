@@ -39,6 +39,14 @@ export type StageIssue = {
   fix_document?: DesignDocument | null;
 };
 
+// 段階の直近の生成の修正指示に入れた、設計レビューの指摘1件の要約(devex-api の GenerationFindingRead)
+export type GenerationFinding = {
+  id: string;
+  level: string;
+  targets: string[];
+  problem: string;
+};
+
 // AIの下書きの生成の状態。null はまだ生成していない。
 export type StageGenerationStatus = "generating" | "completed" | "failed";
 
@@ -77,6 +85,8 @@ export type DesignStageRead = {
   // 記録した変更の影響の印のうち、未確認の件数と確認済みの件数(古いバックエンドの応答には無い)
   impact_open?: number;
   impact_reviewed?: number;
+  // 直近の生成(差し戻しの作り直し)の修正指示に入れた指摘(渡した順。古いバックエンドの応答には無い)
+  generation_findings?: GenerationFinding[];
 };
 
 // 段階1 機能(処理)一覧の意味モデル(devex-api app/detailed_design/function_list.py)。

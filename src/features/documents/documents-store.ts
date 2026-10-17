@@ -11,7 +11,8 @@ import type {
 // (プロジェクトの生成トリガー自体はヒアリング画面の承認・ドキュメント画面の再生成の
 // どちらでも同じ1エンドポイントであり、機能固有のロジックを持たないため)。
 import { getProject, triggerGeneration } from "@/features/hearing/api/hearingApi";
-import type { ProjectMode } from "@/features/dashboard/api/projects";
+import type { ProjectMode, ProjectRead } from "@/features/dashboard/api/projects";
+import type { GenerationFailure } from "@/lib/generation-failure";
 import type { AsyncStatus } from "@/lib/api/types";
 
 type DocumentsStore = {
@@ -26,6 +27,9 @@ type DocumentsStore = {
   regenerating: boolean;
   // 再生成の受け付けの失敗(生成中の 409 DOC_GENERATION_IN_PROGRESS など)
   regenerateError: string | null;
+  // 直近の生成(再生成・テスト仕様書の作り直し)の失敗。プロジェクトの記録を読み、次の再生成を
+  // 始めるまで出す(開き直しても残る)
+  generationFailure: GenerationFailure | null;
   // プロジェクトのモード。詳細設計モードでは、詳細設計(SCR-008)へのリンクを出す。
   // 取得するまでは null。
   projectMode: ProjectMode | null;
@@ -43,9 +47,9 @@ type DocumentsStore = {
   // 再生成の進み具合(生成していなければ null)。再生成中に取り直す
   progress: GenerationProgressRead | null;
   fetchProgress: (projectId: string) => Promise<void>;
-  // useGenerationPollingのcompletedコールバックから呼ぶ。regeneratingを下ろし、
-  // 一覧をforce再取得して新しいバージョンを反映する。
-  onRegenerationCompleted: (projectId: string) => void;
+  // useGenerationPollingの終わりのコールバックから呼ぶ。regeneratingを下ろし、読んだプロジェクトの
+  // 失敗の記録を持ち、一覧をforce再取得して新しいバージョンを反映する(失敗なら前の版のまま)。
+  onRegenerationCompleted: (projectId: string, project?: ProjectRead) => void;
   // 推測の要件を「採用」にし、返った要件定義書で一覧の同じ文書を置き換える
   adoptRequirement: (projectId: string, reqId: string) => Promise<void>;
 };
@@ -56,6 +60,7 @@ const PROJECT_INITIAL = {
   fetchedAt: null,
   regenerating: false,
   regenerateError: null,
+  generationFailure: null,
   progress: null,
   projectMode: null,
   projectTitle: null,
@@ -71,6 +76,7 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   fetchedAt: null,
   regenerating: false,
   regenerateError: null,
+  generationFailure: null,
   progress: null,
   projectMode: null,
   projectTitle: null,
@@ -104,6 +110,7 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       set({
         projectMode: project.mode,
         projectTitle: project.title,
+        generationFailure: project.generation_failure ?? null,
         ...(project.status === "generating" ? { regenerating: true } : {}),
       });
     } catch {
@@ -114,7 +121,8 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
 
   regenerate: async (projectId, startFrom, findingIds = []) => {
     // 押した時点で regenerating にし、ボタンを無効にする(二度押しの防止。バックエンドも生成中は409)
-    set({ regenerating: true, regenerateError: null, progress: null });
+    // 前の失敗の知らせは、次の再生成を始めたら消す(サーバーも受け付けで記録を消す)
+    set({ regenerating: true, regenerateError: null, generationFailure: null, progress: null });
     try {
       await triggerGeneration(projectId, startFrom, findingIds);
     } catch (err) {
@@ -137,8 +145,12 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
     }
   },
 
-  onRegenerationCompleted: (projectId) => {
-    set({ regenerating: false, progress: null });
+  onRegenerationCompleted: (projectId, project) => {
+    set({
+      regenerating: false,
+      progress: null,
+      ...(project ? { generationFailure: project.generation_failure ?? null } : {}),
+    });
     void get().fetchDocuments(projectId, { force: true });
   },
 

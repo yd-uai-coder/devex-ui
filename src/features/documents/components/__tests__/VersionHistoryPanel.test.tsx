@@ -110,9 +110,11 @@ describe("VersionHistoryPanel", () => {
 
     await user.click(screen.getByRole("button", { name: "この内容で復元する" }));
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(3));
+    // テスト仕様書と一緒に、作っているか・直近の失敗を知るためにプロジェクトも読む
+    await vi.waitFor(() => expect(stub.requests).toHaveLength(4));
     expect(stub.requests[1].url).toContain("/documents/test_spec/versions/1/restore");
     expect(stub.requests[2].url).toContain("/test-spec");
+    expect(stub.requests[3].url).toMatch(/\/projects\/p1$/);
   });
 
   it("取得失敗時はエラーを表示する", async () => {

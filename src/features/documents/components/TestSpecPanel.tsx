@@ -1,11 +1,13 @@
 "use client";
 
 import { Paragraph, Text, XStack, YStack } from "tamagui";
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import type { TestSpecRead } from "@/features/documents/api/documentsApi";
 import { DocumentMarkdownView } from "@/features/documents/components/DocumentMarkdownView";
 import { TestSpecIssuePanel } from "@/features/documents/components/TestSpecIssuePanel";
 import { countText, type Readiness } from "@/features/documents/testSpecOps";
+import type { GenerationFailure } from "@/lib/generation-failure";
 
 type TestSpecPanelProps = {
   projectId: string;
@@ -15,6 +17,10 @@ type TestSpecPanelProps = {
   // 生成を受け付けてから完了するまで true(ボタンを押せなくする)
   generating: boolean;
   generateError: string | null;
+  // 直近の作成の失敗(詳細設計画面だけが渡す。簡易モードはプレビューの上に出す)
+  failure?: GenerationFailure | null;
+  // 待つ時間の上限(3分)を過ぎたか
+  timedOut?: boolean;
   // 作れるか(詳細設計モードは段階1・段階7 の承認が要る。簡易はいつでも作れる)
   readiness: Readiness;
   // 作っていないときの案内(モードで違う)
@@ -30,6 +36,8 @@ export function TestSpecPanel({
   loading,
   generating,
   generateError,
+  failure = null,
+  timedOut = false,
   readiness,
   emptyNotice,
   onGenerate,
@@ -54,7 +62,20 @@ export function TestSpecPanel({
           {generateError}
         </Text>
       ) : null}
-      {generating ? <Text color="$color11">テスト仕様書を作っています。しばらくお待ちください...</Text> : null}
+      {generating ? null : (
+        <GenerationFailureNotice
+          failure={failure}
+          note={testSpec !== null ? "下は前の版です。もう一度作り直してください。" : undefined}
+        />
+      )}
+      {generating && !timedOut ? (
+        <Text color="$color11">テスト仕様書を作っています。しばらくお待ちください...</Text>
+      ) : null}
+      {generating && timedOut ? (
+        <Text role="alert" color="$color9">
+          テスト仕様書の作成に時間がかかっています。しばらくしてから画面を読み込み直してください(作っている途中なら続きを待ちます)。
+        </Text>
+      ) : null}
 
       {testSpec === null ? (
         loading ? (

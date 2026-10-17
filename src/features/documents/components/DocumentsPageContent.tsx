@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
+import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
@@ -25,6 +26,7 @@ import {
 } from "@/features/documents/regenerationOps";
 import { POLL_INTERVAL_MS, useGenerationPolling } from "@/hooks/useGenerationPolling";
 import { useInterval } from "@/hooks/useInterval";
+import { failureFor } from "@/lib/generation-failure";
 
 export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
@@ -32,6 +34,7 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const error = useDocumentsStore((s) => s.error);
   const regenerating = useDocumentsStore((s) => s.regenerating);
   const regenerateError = useDocumentsStore((s) => s.regenerateError);
+  const generationFailure = useDocumentsStore((s) => s.generationFailure);
   const fetchDocuments = useDocumentsStore((s) => s.fetchDocuments);
   const regenerate = useDocumentsStore((s) => s.regenerate);
   const onRegenerationCompleted = useDocumentsStore((s) => s.onRegenerationCompleted);
@@ -65,8 +68,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   }, [projectId, fetchDocuments, fetchProjectMode]);
 
   // 再生成トリガー後の完了検知は、ヒアリング画面と同じuseGenerationPollingを使う。
-  const { timedOut } = useGenerationPolling(projectId, regenerating, () => {
-    onRegenerationCompleted(projectId);
+  const { timedOut } = useGenerationPolling(projectId, regenerating, (project) => {
+    onRegenerationCompleted(projectId, project);
   });
   // 再生成中は、文書ごとの進み具合も取り直す(初めの1回はすぐ取る)
   useEffect(() => {
@@ -146,6 +149,13 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         </XStack>
       </XStack>
 
+      {/* 直近の再生成の失敗(次の再生成を始めるまで出す。作れた文書は無く、前の版のまま) */}
+      {regenerating ? null : (
+        <GenerationFailureNotice
+          failure={failureFor(generationFailure)}
+          note={documents.length > 0 ? "下のプレビューは前の版を表示しています。もう一度「再生成する」を押してください。" : undefined}
+        />
+      )}
       {regenerateError ? (
         <Text role="alert" color="$color9">
           {regenerateError}

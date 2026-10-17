@@ -10,15 +10,24 @@ export const TEST_SPEC_STAGES = [1, 7];
 // 画面での名前(扱うのは結合・総合テストだけ。単体テストは実装手順書のテスト観点で見る)
 export const TEST_SPEC_TITLE = "テスト仕様書(結合・総合)";
 
-export type TestSpecStatus = "none" | "outdated" | "ready";
+export type TestSpecStatus = "none" | "outdated" | "ready" | "generating" | "failed";
 
 export const TEST_SPEC_STATUS_LABELS: Record<TestSpecStatus, string> = {
   none: "未作成",
   outdated: "古い",
   ready: "作成済み",
+  generating: "作っています",
+  failed: "前回の作成に失敗",
 };
 
-export function testSpecStatus(spec: TestSpecRead | null): TestSpecStatus {
+// 作っている間はそれを、直近の作成が失敗していればそれを、どちらでもなければ版の状態を返す
+// (失敗しても前の版は残るので、版より先に出す)。
+export function testSpecStatus(
+  spec: TestSpecRead | null,
+  { generating = false, failed = false }: { generating?: boolean; failed?: boolean } = {},
+): TestSpecStatus {
+  if (generating) return "generating";
+  if (failed) return "failed";
   if (spec === null) return "none";
   return spec.outdated ? "outdated" : "ready";
 }

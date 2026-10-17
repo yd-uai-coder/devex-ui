@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import { toSearchParams } from "@/features/dashboard/list-params";
 import type { ProjectListParams } from "@/features/dashboard/list-params";
+import type { GenerationFailure } from "@/lib/generation-failure";
 
 export type ProjectStatus = "interviewing" | "generating" | "completed" | "revising";
 
@@ -19,6 +20,8 @@ export type ProjectRead = {
   title: string;
   status: ProjectStatus;
   mode: ProjectMode;
+  // 直近の生成の失敗(次の生成を受け付けると消える)。古い応答・テストの値には無い
+  generation_failure?: GenerationFailure | null;
   created_at: string;
   updated_at: string;
 };

@@ -153,6 +153,31 @@ describe("StageWorkArea", () => {
     ).toBeEnabled();
   });
 
+  it("差し戻しで作り直した段階にエラーがあれば、承認の横に理由とエラーへのリンク、渡した指摘を出す", () => {
+    const [stage1] = makeStages({
+      1: {
+        state: "regenerated",
+        version: 3,
+        model: makeFunctionList(),
+        issues: [{ severity: "error", code: "DUPLICATE_GROUP", message: "グループが重なっています", target: "g1" }],
+        generation_findings: [
+          { id: "f1", level: "critical", targets: ["F-02"], problem: "予約の取消の処理が無い" },
+        ],
+      },
+    });
+    useDetailedDesignStore.setState({ stages: [stage1] });
+    renderArea(stage1);
+
+    expect(screen.getByRole("button", { name: "承認する" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("status", { name: "承認できない理由" })).toHaveTextContent(
+      "検証のエラーが1件あるため承認できません。",
+    );
+    expect(screen.getByRole("link", { name: "検証の結果へ" })).toHaveAttribute("href", "#stage-issue-list");
+    expect(screen.getByLabelText("この作り直しで渡した指摘")).toHaveTextContent(
+      "[最重要] 対象: F-02 ── 予約の取消の処理が無い",
+    );
+  });
+
   it("承認の失敗を表示する", () => {
     const [stage1] = makeStages({ 1: { state: "reviewing", version: 2 } });
     renderArea(stage1, vi.fn(), "承認に失敗しました");

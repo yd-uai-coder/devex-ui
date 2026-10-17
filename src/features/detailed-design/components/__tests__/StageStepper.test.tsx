@@ -111,4 +111,19 @@ describe("StageStepper", () => {
     await user.click(row);
     expect(onSelectTestSpec).toHaveBeenCalled();
   });
+
+  it("テスト仕様書を作っている間は、その状態を行に出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <StageStepper
+          stages={makeStages()}
+          selectedStage={1}
+          onSelect={vi.fn()}
+          testSpec={{ status: "generating", selected: false, onSelect: vi.fn() }}
+        />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "テスト仕様書(結合・総合)(作っています)" })).toBeInTheDocument();
+  });
 });

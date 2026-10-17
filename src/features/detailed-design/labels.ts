@@ -130,6 +130,33 @@ export function hasErrors(stage: DesignStageRead): boolean {
   return visibleIssues(stage.issues).some((issue) => issue.severity === "error");
 }
 
+// 検証の結果の一覧(StageIssueList)の要素の id。承認できない理由から、そこへ移るのに使う
+// (作業領域には段階を1つずつ出すので、段階ごとに分けない)。
+export const STAGE_ISSUE_LIST_ID = "stage-issue-list";
+
+// 承認ボタンを押せない理由(承認の横に出す)。押せるとき・閉じた段階(足りない入力を別に出す)・
+// 承認済みのときは null。`errors` は検証のエラーで止まっていること(エラーの一覧へのリンクを出す)。
+export function approveBlocker(stage: DesignStageRead): { message: string; errors: boolean } | null {
+  if (!stage.is_open || canApprove(stage) || stage.state === "approved") return null;
+  if (stage.generation_status === "generating") {
+    return { message: "下書きを生成しています。終わってから承認できます。", errors: false };
+  }
+  if (stage.version === null || stage.model === null) {
+    return {
+      message: "まだ内容がありません。下書きを生成するか、編集して保存してから承認できます。",
+      errors: false,
+    };
+  }
+  const count = visibleIssues(stage.issues).filter((issue) => issue.severity === "error").length;
+  if (count > 0) {
+    return {
+      message: `検証のエラーが${count}件あるため承認できません。エラーを直して保存してから承認してください。`,
+      errors: true,
+    };
+  }
+  return null;
+}
+
 // 承認ボタンを押せるか。古い段階は、内容を変えずに承認し直せる(入力の版を記録し直す)。
 // 生成中・内容が空・検証のエラーがある段階は承認できない(バックエンドも409で断る)。
 export function canApprove(stage: DesignStageRead): boolean {
