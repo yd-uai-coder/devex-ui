@@ -29,6 +29,10 @@ export type LayoutGridProps = {
 // このプロジェクト全体で768pxブレークポイントの上書きに使われているTamaguiの
 // `$md={{...}}`という命名に揃えており、見た目の書き味だけをTamaguiのレスポンシブprop
 // に近づけている。
+// グリッドの入れ物はTamaguiのYStackでなく素のdivにする。YStackには`.is_View`
+// (display:flex)が付き、本番ビルドではTamaguiの<style>がCSS Moduleの<link>より後ろに
+// 入るため、同じ詳細度の`.grid`のdisplay:gridが負けて縦1列になる(開発では順が逆で
+// 再現しない)。divならTamaguiのクラスが付かず、読み込み順に左右されない。
 export function LayoutGrid({
   children,
   columns,
@@ -39,8 +43,7 @@ export function LayoutGrid({
   const cells = Children.toArray(children).filter(isValidElement);
 
   return (
-    <YStack
-      gap="$1"
+    <div
       className={styles.grid}
       style={
         {
@@ -62,6 +65,6 @@ export function LayoutGrid({
           {cell}
         </YStack>
       ))}
-    </YStack>
+    </div>
   );
 }
