@@ -1,6 +1,8 @@
-// SUT: AccountSection(今の値を読み、3つのフォームを並べる)と UserNameForm(ユーザーネームの変更)
+// SUT: AccountSection(今の値を読み、パスワードの有無でフォームを出し分け、Google の連携の枠を置く)と
+// UserNameForm(ユーザーネームの変更)。パスワードの設定から表示の切り替え(連携の解除が出る)までは、
+// PasswordSetForm と GoogleLinkSection も通して確かめる
 // ドライバ: 各テスト(描画とユーザーの操作)
-// スタブ: fetch(stubFetch。GET /users/me と PATCH の応答)と、トーストの useToastController(vi.mock。
+// スタブ: fetch(stubFetch。GET /users/me・PATCH・POST /users/me/password の応答)と、トーストの useToastController(vi.mock。
 // 呼ばれたことを見る)
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -13,7 +15,8 @@ import { AccountSection } from "../AccountSection";
 const { toastShow } = vi.hoisted(() => ({ toastShow: vi.fn() }));
 vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: toastShow }) }));
 
-const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil" };
+const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil", has_password: true, google_linked: false };
+const GOOGLE_ONLY = { ...ACCOUNT, has_password: false, google_linked: true };
 
 function renderSection() {
   return render(
@@ -44,6 +47,32 @@ describe("AccountSection", () => {
     for (const name of ["ユーザーネームを変える", "メールアドレスを変える", "パスワードを変える"]) {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
     }
+  });
+
+  it("パスワードの無い人には、変更の代わりに設定を出し、メールの変更を出さない", async () => {
+    stub.queue({ body: GOOGLE_ONLY });
+    renderSection();
+
+    expect(await screen.findByRole("button", { name: "パスワードを設定する" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "パスワードを変える" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "メールアドレスを変える" })).not.toBeInTheDocument();
+    expect(screen.getByText("Google の連携")).toBeInTheDocument();
+  });
+
+  it("パスワードを設定したら、読み直さずにメールの変更とパスワードの変更を出す", async () => {
+    stub.queue({ body: GOOGLE_ONLY });
+    stub.queue({ body: { access_token: "new.token.sig", token_type: "bearer" } });
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.type(await screen.findByLabelText("新しいパスワード"), "New-pass-02");
+    await user.type(screen.getByLabelText("新しいパスワード(確認)"), "New-pass-02");
+    await user.click(screen.getByRole("button", { name: "パスワードを設定する" }));
+
+    expect(await screen.findByRole("button", { name: "メールアドレスを変える" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "パスワードを変える" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "連携を解除する" })).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(2);
   });
 
   it("ユーザーネームを保存して、トーストで知らせる", async () => {

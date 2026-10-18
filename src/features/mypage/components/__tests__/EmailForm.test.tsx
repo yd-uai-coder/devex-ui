@@ -12,7 +12,7 @@ import { EmailForm } from "../EmailForm";
 const { toastShow } = vi.hoisted(() => ({ toastShow: vi.fn() }));
 vi.mock("@tamagui/toast", () => ({ useToastController: () => ({ show: toastShow }) }));
 
-const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil" };
+const ACCOUNT = { id: "u1", email: "gil@example.com", user_name: "Gil", has_password: true, google_linked: false };
 
 function renderForm() {
   const onUpdated = vi.fn();

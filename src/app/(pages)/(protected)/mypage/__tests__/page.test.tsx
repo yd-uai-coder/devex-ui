@@ -29,7 +29,7 @@ describe("MyPage", () => {
 
   it("ログイン済みなら初めはアカウントだけを開く。1つを開くとほかが閉じ、開いた節を読む", async () => {
     useAuthStore.setState({ accessToken: "header.payload.sig", status: "success", error: null });
-    stub.queue({ body: { id: "u1", email: "gil@example.com", user_name: "Gil" } });
+    stub.queue({ body: { id: "u1", email: "gil@example.com", user_name: "Gil", has_password: true, google_linked: false } });
     const user = userEvent.setup();
 
     render(

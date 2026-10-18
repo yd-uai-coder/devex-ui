@@ -88,6 +88,13 @@ describe("GoogleSignInButton", () => {
     expect(google.lastLoginProps?.text).toBe("signup_with");
   });
 
+  it("マイページの連携の文言(continue_with)も渡せる", () => {
+    vi.stubEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "client-123");
+    renderButton("continue_with");
+
+    expect(google.lastLoginProps?.text).toBe("continue_with");
+  });
+
   it("Google が返した credential を onCredential に渡し、credential が無ければ onError", () => {
     vi.stubEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "client-123");
     const { onCredential, onError } = renderButton();

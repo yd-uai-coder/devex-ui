@@ -5,12 +5,12 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { GoogleLinkDialog } from "../GoogleLinkDialog";
 
-function renderDialog(error: string | null = null) {
+function renderDialog(error: string | null = null, texts: { description?: string; submitLabel?: string } = {}) {
   const onSubmit = vi.fn();
   const onCancel = vi.fn();
   render(
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <GoogleLinkDialog open error={error} submitting={false} onSubmit={onSubmit} onCancel={onCancel} />
+      <GoogleLinkDialog open error={error} submitting={false} onSubmit={onSubmit} onCancel={onCancel} {...texts} />
     </TamaguiProvider>,
   );
   return { onSubmit, onCancel };
@@ -46,5 +46,16 @@ describe("GoogleLinkDialog", () => {
     expect(screen.getByText("メールアドレスまたはパスワードが正しくありません")).toBeInTheDocument();
     await user.click(screen.getByLabelText("キャンセル"));
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it("文とボタンの文言を差し替えられる(マイページの連携)", async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = renderDialog(null, { description: "今のパスワードで確かめます。", submitLabel: "連携する" });
+
+    expect(screen.getByText("今のパスワードで確かめます。")).toBeInTheDocument();
+    expect(screen.queryByLabelText("連携してログイン")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("このアカウントのパスワード"), "S3cret-pass");
+    await user.click(screen.getByLabelText("連携する"));
+    expect(onSubmit).toHaveBeenCalledWith("S3cret-pass");
   });
 });

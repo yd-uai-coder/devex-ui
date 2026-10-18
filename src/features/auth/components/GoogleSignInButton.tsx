@@ -7,8 +7,9 @@ import InputSimpleText from "@/components/ui/form/InputSimpleText";
 import { StyledButton } from "@/components/ui/primitives/StyledButton";
 import { googleClientId, isFakeGoogle } from "@/features/auth/google-config";
 
-// Google のボタンの文言。処理はどちらも同じで、画面に合わせて「ログイン」か「登録」かを変える。
-export type GoogleButtonText = "signin_with" | "signup_with";
+// Google のボタンの文言。処理はどれも同じで、画面に合わせて「ログイン」「登録」「続行」(マイページの
+// 連携)を変える。
+export type GoogleButtonText = "signin_with" | "signup_with" | "continue_with";
 
 type GoogleSignInButtonProps = {
   text: GoogleButtonText;
