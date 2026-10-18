@@ -266,6 +266,16 @@ describe("useDetailedDesignStore", () => {
     expect(useDetailedDesignStore.getState().tabs).toEqual({});
   });
 
+  it("fetchStagesが404ならnotFoundを立て、500では立てない", async () => {
+    stub.queue({ status: 404, body: { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" } });
+    await useDetailedDesignStore.getState().fetchStages("p1");
+    expect(useDetailedDesignStore.getState()).toMatchObject({ status: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "boom" } });
+    await useDetailedDesignStore.getState().fetchStages("p1");
+    expect(useDetailedDesignStore.getState()).toMatchObject({ status: "error", notFound: false });
+  });
+
   it("fetchStagesは印か承認後の編集があるときだけ変更の影響も取る", async () => {
     stub.queue({ status: 200, body: makeStages() });
     await useDetailedDesignStore.getState().fetchStages("p1");

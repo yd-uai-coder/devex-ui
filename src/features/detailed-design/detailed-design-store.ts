@@ -19,7 +19,7 @@ import {
   resolveFixTarget,
 } from "@/features/detailed-design/impactOps";
 import { approvalBlockers } from "@/features/detailed-design/labels";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, isNotFound } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // 段階をまたいで移動した先。target は、段階5なら手順ID(F-01#4)、段階6なら関数の鍵
@@ -37,6 +37,8 @@ type DetailedDesignStore = {
   selectedStage: number;
   status: AsyncStatus;
   error: string | null;
+  // 段階の一覧の取得が404だった(プロジェクトが削除された・無い)。画面は本体の代わりに知らせを出す
+  notFound: boolean;
   // 承認の失敗(409 VERSION_CONFLICT など)。段階の一覧の取得の失敗(error)とは分けて出す。
   actionError: string | null;
   approving: boolean;
@@ -121,6 +123,7 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
     selectedStage: 1,
     status: "idle",
     error: null,
+    notFound: false,
     actionError: null,
     approving: false,
     saving: false,
@@ -137,6 +140,7 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       set({
         status: "loading",
         error: null,
+        notFound: false,
         ...(switching
           ? { projectId, stages: [], tabs: {}, impact: null, highlight: null }
           : {}),
@@ -153,6 +157,7 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
         set({
           status: "error",
           error: messageOf(err, "段階の取得に失敗しました"),
+          notFound: isNotFound(err),
         });
         return;
       }

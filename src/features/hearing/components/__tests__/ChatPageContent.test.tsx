@@ -56,6 +56,7 @@ describe("ChatPageContent", () => {
       projectStatus: null,
       points: null,
       generationFailure: null,
+      notFound: false,
     });
     mediaMock.mockReturnValue({ lg: false });
   });
@@ -203,5 +204,21 @@ describe("ChatPageContent", () => {
     renderContent();
 
     expect(screen.queryByRole("button", { name: "規模を対象外にする" })).not.toBeInTheDocument();
+  });
+
+  it("このプロジェクトの読み込みが404なら、チャットの代わりに見つからない知らせを出す", () => {
+    useHearingStore.setState({ projectId: "p1", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "このプロジェクトは見つかりません" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "ヒアリングチャット" })).not.toBeInTheDocument();
+  });
+
+  it("前に開いた別のプロジェクトの404では知らせを出さない(チャットを読み込ませる)", () => {
+    useHearingStore.setState({ projectId: "other", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "ヒアリングチャット" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "このプロジェクトは見つかりません" })).not.toBeInTheDocument();
   });
 });

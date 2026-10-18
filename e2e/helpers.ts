@@ -14,9 +14,9 @@ const MODE_TITLES: Record<ProjectMode, string> = {
   detailed: "詳細設計モード",
 };
 
-const PASSWORD = "S3cret-pass";
+export const PASSWORD = "S3cret-pass";
 
-function uniqueEmail(prefix: string): string {
+export function uniqueEmail(prefix: string): string {
   // docker composeのPostgresボリュームは実行間で永続化されるため、再実行のたびに
   // 一意のメールアドレスを使う(UserAlreadyExistsErrorによる登録失敗を避ける)。
   return `${prefix}-${Date.now()}@example.com`;

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
@@ -45,6 +46,8 @@ export function DetailedDesignPageContent({
   const selectedStage = useDetailedDesignStore((s) => s.selectedStage);
   const status = useDetailedDesignStore((s) => s.status);
   const error = useDetailedDesignStore((s) => s.error);
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useDetailedDesignStore((s) => s.notFound && s.projectId === projectId);
   const actionError = useDetailedDesignStore((s) => s.actionError);
   const approving = useDetailedDesignStore((s) => s.approving);
   const fetchStages = useDetailedDesignStore((s) => s.fetchStages);
@@ -121,6 +124,9 @@ export function DetailedDesignPageContent({
     if (critical > 0) setCriticalLeft(critical);
     else void approveStage(stage);
   };
+
+  // 削除された・無いプロジェクトは、本体(段階・削除のボタンなど)を出さずに知らせだけにする
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

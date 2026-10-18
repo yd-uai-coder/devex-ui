@@ -56,6 +56,16 @@ describe("useDocumentsStore", () => {
     expect(useDocumentsStore.getState().status).toBe("success");
   });
 
+  it("fetchDocuments()が404ならnotFoundを立て、500では立てない", async () => {
+    stub.queue({ status: 404, body: { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" } });
+    await useDocumentsStore.getState().fetchDocuments("p1");
+    expect(useDocumentsStore.getState()).toMatchObject({ status: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "error" } });
+    await useDocumentsStore.getState().fetchDocuments("p1", { force: true });
+    expect(useDocumentsStore.getState()).toMatchObject({ status: "error", notFound: false });
+  });
+
   it("TTL以内であれば再フェッチをスキップし、forceで無視する", async () => {
     stub.queue({ status: 200, body: [] });
     await useDocumentsStore.getState().fetchDocuments("p1");

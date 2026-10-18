@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
 import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
@@ -32,6 +33,8 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
   const status = useDocumentsStore((s) => s.status);
   const error = useDocumentsStore((s) => s.error);
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useDocumentsStore((s) => s.notFound && s.projectId === projectId);
   const regenerating = useDocumentsStore((s) => s.regenerating);
   const regenerateError = useDocumentsStore((s) => s.regenerateError);
   const generationFailure = useDocumentsStore((s) => s.generationFailure);
@@ -106,6 +109,9 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
         );
       }
     : undefined;
+
+  // 削除された・無いプロジェクトは、本体(削除・再生成のボタンなど)を出さずに知らせだけにする
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

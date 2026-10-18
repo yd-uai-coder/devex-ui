@@ -9,6 +9,7 @@ import { HearingPointsPanel } from "@/features/hearing/components/HearingPointsP
 import { useHearingStore } from "@/features/hearing/hearing-store";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 import { GenerationFailureNotice } from "@/components/errors/GenerationFailureNotice";
+import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { HEADER_HEIGHT } from "@/components/layout/layout-constants";
 import { ApiError } from "@/lib/api/client";
 import { failureFor } from "@/lib/generation-failure";
@@ -20,6 +21,8 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
   const generationTriggered = useHearingStore((s) => s.generationTriggered);
   const projectStatus = useHearingStore((s) => s.projectStatus);
   const generationFailure = useHearingStore((s) => s.generationFailure);
+  // 前に開いた別のプロジェクトの404は見ない(ストアは画面をまたいで残る)
+  const notFound = useHearingStore((s) => s.notFound && s.projectId === projectId);
   const loadHistory = useHearingStore((s) => s.loadHistory);
   const points = useHearingStore((s) => s.points);
   const skipPoint = useHearingStore((s) => s.skipPoint);
@@ -49,6 +52,10 @@ export function ChatPageContent({ projectId }: { projectId: string }) {
     }
     void loadHistory(projectId);
   });
+
+  // 削除された・無いプロジェクトは、空のチャットに見せずに知らせを出す(履歴は ChatPanel が
+  // 読み込むので、読み込みが404で終わってから切り替える)
+  if (notFound) return <ProjectNotFoundNotice />;
 
   return (
     <YStack paddingVertical="$4" gap="$4">

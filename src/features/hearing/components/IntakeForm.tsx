@@ -16,6 +16,7 @@ import { CollapsibleSection } from "@/components/ui/form/CollapsibleSection";
 import { FileUploadField } from "@/features/hearing/components/FileUploadField";
 import { TemplateSelectField } from "@/features/hearing/components/TemplateSelectField";
 import type { ProjectMode } from "@/features/dashboard/api/projects";
+import { useDashboardStore } from "@/features/dashboard/dashboard-store";
 import { createProject } from "@/features/hearing/api/createProject";
 import { intakeSchema } from "@/features/hearing/schemas";
 import type { IntakeValues } from "@/features/hearing/schemas";
@@ -110,6 +111,8 @@ export function IntakeForm({ mode = "simple" }: { mode?: ProjectMode }) {
           setSubmitError(null);
           try {
             const project = await createProject({ ...values, mode });
+            // ダッシュボードの一覧の cache を切る(20秒以内に戻っても、作ったプロジェクトが出るように)
+            useDashboardStore.getState().invalidate();
             createdProjectIdRef.current = project.id;
             resolve(true);
           } catch (err) {

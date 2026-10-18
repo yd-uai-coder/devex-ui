@@ -52,9 +52,11 @@ describe("DocumentsPageContent", () => {
   beforeEach(() => {
     useGenerationPollingMock.mockReset().mockReturnValue({ timedOut: false });
     useDocumentsStore.setState({
+      projectId: "p1",
       documents: [],
       status: "idle",
       error: null,
+      notFound: false,
       fetchedAt: null,
       regenerating: false,
       regenerateError: null,
@@ -315,5 +317,16 @@ describe("DocumentsPageContent", () => {
 
     expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
     expect(tabsProps.mock.lastCall?.[0]).toMatchObject({ testSpecTab: undefined });
+  });
+
+  it("文書の一覧が404なら、本体(削除・再生成)の代わりに見つからない知らせを出す", () => {
+    useDocumentsStore.setState({ status: "error", error: "Project p1 not found", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "このプロジェクトは見つかりません" })).toBeInTheDocument();
+    expect(screen.queryByText("Project p1 not found")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "削除" })).not.toBeInTheDocument();
+    // 取得は走る(別のプロジェクトへ移ったときに読み直すため)
+    expect(useDocumentsStore.getState().fetchDocuments).toHaveBeenCalledWith("p1");
   });
 });

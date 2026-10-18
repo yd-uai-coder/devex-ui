@@ -98,6 +98,19 @@ describe("useHearingStore", () => {
     expect(useHearingStore.getState().historyStatus).toBe("success");
   });
 
+  it("loadHistory()は404ならnotFoundを立て、500では立てない", async () => {
+    const notFound = { detail: "Project p1 not found", code: "RESOURCE_NOT_FOUND" };
+    stub.queue({ status: 404, body: notFound });
+    stub.queue({ status: 404, body: notFound });
+    await useHearingStore.getState().loadHistory("p1");
+    expect(useHearingStore.getState()).toMatchObject({ historyStatus: "error", notFound: true });
+
+    stub.queue({ status: 500, body: { detail: "error" } });
+    stub.queue({ status: 500, body: { detail: "error" } });
+    await useHearingStore.getState().loadHistory("p1");
+    expect(useHearingStore.getState()).toMatchObject({ historyStatus: "error", notFound: false });
+  });
+
   it("loadHistory()は別のプロジェクトを開くと、前の会話と完了判定を捨ててから読む", async () => {
     useHearingStore.setState({
       projectId: "p1",

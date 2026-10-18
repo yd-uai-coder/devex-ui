@@ -2,12 +2,17 @@
 
 import { Button, type ButtonProps } from "tamagui";
 
+// 押せないとき(disabled)の不透明度。Tamagui の Button は disabled で押せなくするだけで見た目を
+// 変えないため、押せるボタンと見分けられるように薄くする(呼ぶ側の opacity が優先)。
+const DISABLED_OPACITY = 0.5;
+
 export function StyledButton({
   theme = "green",
   backgroundColor = "$color9",
   color = "white",
   hoverStyle,
   pressStyle,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
@@ -17,6 +22,8 @@ export function StyledButton({
       color={color}
       hoverStyle={{ backgroundColor: "$color10", ...hoverStyle }}
       pressStyle={{ backgroundColor: "$color8", ...pressStyle }}
+      disabled={disabled}
+      opacity={disabled ? DISABLED_OPACITY : undefined}
       {...props}
     />
   );

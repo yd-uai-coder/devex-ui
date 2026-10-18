@@ -22,6 +22,7 @@ import type {
 } from "@/features/hearing/api/hearingApi";
 import type { ProjectStatus } from "@/features/dashboard/api/projects";
 import type { GenerationFailure } from "@/lib/generation-failure";
+import { isNotFound } from "@/lib/api/client";
 import type { AsyncStatus } from "@/lib/api/types";
 
 // 「任意項目についてヒアリングを続ける」で、サーバーが利用者の発言として残す文(楽観表示も同じ文)
@@ -33,6 +34,8 @@ type HearingStore = {
   projectId: string | null;
   messages: ChatHistoryEntry[];
   historyStatus: AsyncStatus;
+  // 最初の読み込みが404だった(プロジェクトが削除された・無い)。画面は本体の代わりに知らせを出す
+  notFound: boolean;
   sending: boolean;
   // ストリーミング中のAI応答本文。完了すると`messages`へ確定エントリとして追加され、
   // 空文字に戻る。
@@ -109,6 +112,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
   projectId: null,
   messages: [],
   historyStatus: "idle",
+  notFound: false,
   sending: false,
   streamingReply: "",
   connectionLost: false,
@@ -124,7 +128,7 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
     if (get().projectId !== projectId) {
       set({ projectId, ...PROJECT_INITIAL });
     }
-    set({ historyStatus: "loading" });
+    set({ historyStatus: "loading", notFound: false });
     try {
       const [messages, project] = await Promise.all([
         getChatHistory(projectId),
@@ -154,8 +158,8 @@ export const useHearingStore = create<HearingStore>((set, get) => ({
       }
       // 観点の表は生成の後も見られるよう、状態によらず取る
       await loadPoints(projectId, get, set);
-    } catch {
-      set({ historyStatus: "error" });
+    } catch (err) {
+      set({ historyStatus: "error", notFound: isNotFound(err) });
     }
   },
 

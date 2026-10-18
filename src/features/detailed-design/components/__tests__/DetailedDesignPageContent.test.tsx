@@ -51,6 +51,7 @@ describe("DetailedDesignPageContent", () => {
       selectedStage: 1,
       status: "success",
       error: null,
+      notFound: false,
       actionError: null,
       approving: false,
       fetchStages: vi.fn().mockResolvedValue(undefined),
@@ -429,5 +430,15 @@ describe("DetailedDesignPageContent", () => {
 
     expect(screen.queryByRole("button", { name: /^テスト仕様書/ })).not.toBeInTheDocument();
     expect(useTestSpecStore.getState().fetchTestSpec).not.toHaveBeenCalled();
+  });
+
+  it("段階の一覧が404なら、本体(段階・削除)の代わりに見つからない知らせを出す", () => {
+    useDetailedDesignStore.setState({ status: "error", error: "Project p1 not found", notFound: true });
+    renderContent();
+
+    expect(screen.getByRole("heading", { name: "このプロジェクトは見つかりません" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ダッシュボードへ戻る →" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.queryByText("Project p1 not found")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "削除" })).not.toBeInTheDocument();
   });
 });

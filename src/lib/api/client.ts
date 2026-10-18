@@ -19,6 +19,11 @@ export class ApiError extends Error {
   }
 }
 
+// 対象が無い(404)失敗か。プロジェクトの画面では、削除された・他人のプロジェクトを開いたときに当たる。
+export function isNotFound(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
+}
+
 // FastAPI/Pydanticのエラーレスポンス({detail: string, code?: string} または 422時の
 // {detail: [{msg: string, ...}, ...]})から、メッセージとcodeを取り出してApiErrorにする。
 export async function toApiError(res: Response): Promise<ApiError> {
