@@ -45,6 +45,8 @@ npm run test:watch        # Vitest watchモード
 - `src/lib/api/cache.ts` — React Query/SWRを使わない代わりのTTLキャッシュ判定(`isCacheFresh`、既定20秒)。各機能のZustandストアが`fetchedAt`を持ち、mutation成功時に`null`へ戻す(invalidate)ことで鮮度を管理する設計(詳細はREADME「APIへのデータ取得の方針」)。
 - `src/components/auth/auth-store.ts` — JWTの`exp`をデコードしてサイレントリフレッシュタイマーを仕掛けるZustand `persist`ストア。同時リフレッシュは1回にまとめる(`refreshPromise`による重複排除)。`RequireAuth`/`GuardedLink`/`LoginRequiredDialog`と組み合わせて使う(`/others/protected-demo`がデモページ)。ログインAPI自体の契約(エンドポイント形状)はアプリごとに異なるため、`login(accessToken, refreshToken)`はトークンを受け取って保存するだけにしてあり、実際のログインフォーム/APIコールは呼び出し側(実アプリ)で実装する。
 
+- `src/features/auth/components/GoogleSignInButton.tsx` — Google でのログインのボタン(`@react-oauth/google`)。`NEXT_PUBLIC_GOOGLE_CLIENT_ID` が無ければ何も出さない。`GoogleOAuthProvider` はアプリ全体でなくこの部品の中に置き、ボタンのある画面でだけ Google のスクリプトを読み込む。`NEXT_PUBLIC_E2E_FAKE_GOOGLE=true`(`playwright.config.ts` が E2E の dev サーバーに渡す)のときは、偽の credential(`fake:<sub>:<email>`)を送る偽のボタンになる。どちらの値もビルドで埋め込まれるので、`process.env.NEXT_PUBLIC_...` と書き下して読む(`src/features/auth/google-config.ts`)。
+
 **テーマ設定(`tamagui.config.ts`)**: quaiz-front(このテンプレートを起点に作られたアプリ)と設定を揃えており、`@tamagui/config/v5`の`defaultConfig`をそのまま展開した上で、`light`/`dark`テーマに以下7キーだけを追加している。以前この設定にあったパステル配色・ベース色相の青緑tint・`$borderColor`をstep7へ昇格させる`getTheme`上書きは廃止済み(`$borderColor`は`@tamagui/config/v5`既定のstep4のまま、境界線のコントラストが低い箇所がある点は許容している)。
   - `background` / `styledHeaderColor` / `styledHeaderShadow` — `src/components/ui/primitives/StyledHeader.tsx`が`boxShadow`等で参照。
   - `cardShadow` — `src/components/ui/primitives/StyledCard.tsx`が`boxShadow`で参照。

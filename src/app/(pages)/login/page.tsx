@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { H2, Text, YStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
+import { GoogleLoginSection } from "@/features/auth/components/GoogleLoginSection";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export default function LoginPage() {
@@ -16,6 +17,8 @@ export default function LoginPage() {
               Suspense境界が必要になる */}
           <Suspense fallback={null}>
             <LoginForm />
+            {/* Google でのログイン(クライアント ID が無い環境では出ない) */}
+            <GoogleLoginSection text="signin_with" />
           </Suspense>
         </StyledCard>
         <Text fontSize="$3">

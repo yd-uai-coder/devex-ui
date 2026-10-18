@@ -31,7 +31,10 @@ export default defineConfig({
     {
       command: "npm run dev",
       url: "http://localhost:3000",
-      name: "devex-ui",
+      name: "devex-ui (NEXT_PUBLIC_E2E_FAKE_GOOGLE=true)",
+      // Google のボタンを偽のボタンにする(devex-api 側の E2E_FAKE_GOOGLE と対)。手元で dev サーバーを
+      // 先に立てていると reuseExistingServer でそれが使われ、この値は効かない。
+      env: { NEXT_PUBLIC_E2E_FAKE_GOOGLE: "true" },
       timeout: 120 * 1000,
       reuseExistingServer: !process.env.CI,
     },

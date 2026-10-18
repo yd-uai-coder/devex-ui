@@ -1,8 +1,10 @@
 "use client"
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { H2, Text, YStack } from "tamagui";
 import { StyledCard } from "@/components/ui/primitives/StyledCard";
+import { GoogleLoginSection } from "@/features/auth/components/GoogleLoginSection";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 
 export default function RegisterPage() {
@@ -12,6 +14,11 @@ export default function RegisterPage() {
         <H2>アカウント登録</H2>
         <StyledCard>
           <RegisterForm />
+          {/* Google での登録はログインと同じ処理(初めての Google アカウントならそのまま登録して
+              ログインする)。戻り先(?redirect=)を読むので、Next.jsの規約で Suspense 境界が要る */}
+          <Suspense fallback={null}>
+            <GoogleLoginSection text="signup_with" />
+          </Suspense>
         </StyledCard>
         <Text fontSize="$3">
           既にアカウントをお持ちの方は<Link href="/login">こちらからログイン</Link>
