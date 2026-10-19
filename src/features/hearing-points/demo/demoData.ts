@@ -1,4 +1,4 @@
-// 構造化した要件定義のデモの仮データ。題材は Devex 自身(appendix/structured-requirements-sample/ と同じ中身)。
+// 構造化した要件定義のデモの仮データ。題材は Devex 自身。
 // 観点の表は、ヒアリングの途中(非機能の一部がまだ未決)から始める。
 import type { FunctionRow, PointState, QuestionCard, Requirement, UnitRow } from "./hearingPointsModel";
 
