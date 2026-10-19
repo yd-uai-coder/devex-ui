@@ -1,15 +1,20 @@
 # devex-ui
 
-[Devex](../README.md)(AIとの対話でヒアリングを行い、要件定義書・外部設計書・内部設計書・実装計画書の4種Markdownドキュメントを自動生成するシステム)のフロントエンドです。Next.js(App Router)+ Tamaguiで構築しています。
+[Devex](https://github.com/yd-uai-coder/devex-project#readme)(AIとの対話で要件を引き出し、要件定義から設計・実装手順・テストまでを、IDでつながった設計情報として組み立てるシステム)のフロントエンドです。Next.js(App Router)+ Tamaguiで構築しています。
 
 ## Devexとしての主な機能
 
-実際のDevex機能は`src/features/`配下に実装しています(バックエンドは[devex-api](../devex-api/README.md))。
+実際のDevex機能は`src/features/`配下に実装しています(バックエンドは[devex-api](https://github.com/yd-uai-coder/devex-api#readme)、機能の全体像はルートの [README](https://github.com/yd-uai-coder/devex-project#readme))。ログインが必要な画面は`src/app/(pages)/(protected)/`の下にあります。
 
-- **認証**(`src/features/auth/`) — ログイン・ユーザー登録画面(`src/app/(pages)/login`・`register`)
-- **ダッシュボード**(`src/features/dashboard/`、`/dashboard`) — プロジェクト一覧・新規作成導線
-- **チャットヒアリング**(`src/features/hearing/`、`/projects/[id]/chat`) — AIとのチャットによるヒアリング。SSEでの応答ストリーミング、ヒアリング完了判定
-- **ドキュメントプレビュー**(`src/features/documents/`、`/projects/[id]/documents`) — 生成された4種ドキュメントのタブ切り替え表示・ダウンロード、生成中のポーリング(`src/hooks/useGenerationPolling.ts`)
+- **認証**(`src/features/auth/`、`/login`・`/register`) — メールとパスワード、または Google アカウントでのログインと登録
+- **ダッシュボード**(`src/features/dashboard/`、`/dashboard`・`/projects/new`) — プロジェクトの一覧(検索・絞り込み・ページ送り)・作成(参考資料の添付)・削除
+- **ヒアリング**(`src/features/hearing/`・`src/features/hearing-points/`、`/projects/[id]/chat`) — AIとのチャット(SSE)、選択肢カードでの回答、観点ごとの状態の表、ヒアリングの完了の判定
+- **文書**(`src/features/documents/`、`/projects/[id]/documents`) — 4文書の生成と進み具合、タブでの表示・版の履歴・ダウンロード、テスト仕様書
+- **詳細設計モード**(`src/features/detailed-design/`・`src/features/uml/`、`/projects/[id]/detailed-design`) — 段階ごとの生成・編集・承認、UML 設計図の編集(React Flow)と draw.io / SVG の出力、実装手順書、陳腐化の印と変更の影響の表示
+- **AI 設計レビュー**(`src/features/design-review/`) — 指摘の一覧と採否、レビュー結果からの再ヒアリング
+- **マイページ**(`src/features/mypage/`、`/mypage`) — アカウントの変更、Google の連携と解除、用途ごとのモデルと API キーの登録
+
+`src/features/*/demo/`と`/design-review-demo`は、仮データで画面の見せ方を確かめる開発用のデモです。
 
 `src/components/ui/`配下は後述するデザインシステム/デモページ集であり、上記のDevex機能はその上に構築されています。
 
@@ -87,12 +92,12 @@ DB/Tursoは実行時のデプロイ要件ではありませんが、`src/db/`一
 
 本アプリを実際のDevexプロジェクト(`src/features/`配下、`/dashboard`・`/projects/*`等)として動かす場合は、上記の一般的なVercelデプロイ手順に加えて以下が必要:
 
-- VercelプロジェクトのEnvironment Variablesに `NEXT_PUBLIC_API_URL` を設定する(値: `devex-api`側の公開URL。`devex-api`はConoHa VPS上でDocker運用する構成で、詳細は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)参照)。未設定時は`http://localhost:8000`にフォールバックするため、本番デプロイ前に必ず設定すること。
+- VercelプロジェクトのEnvironment Variablesに `NEXT_PUBLIC_API_URL` を設定する(値: `devex-api`側の公開URL。`devex-api`はConoHa VPS上でDocker運用する構成で、詳細は[`devex-api/OPERATIONS.md`](https://github.com/yd-uai-coder/devex-api/blob/main/OPERATIONS.md)参照)。未設定時は`http://localhost:8000`にフォールバックするため、本番デプロイ前に必ず設定すること。
 - `devex-api`側の`CORS_ORIGINS`に、Vercelが割り当てたURL(またはカスタムドメイン)を追加しておくこと。未追加のままだと`/dashboard`・`/projects/*`等のAPI呼び出しがすべてCORSエラーになる。
 
 ### CI
 
-`.github/workflows/ci.yml`が、push/PR時にlint・test・buildを実行します(デプロイは行いません)。実際のデプロイはVercelのネイティブGitHub連携が担い、Vercel側でこのリポジトリを一度接続すれば`main`へのpushで自動的にデプロイされます(追加のワークフロー不要)。詳細は[`devex-api/OPERATIONS.md`](../devex-api/OPERATIONS.md)「GitHub Actionsによる自動デプロイ」参照。
+`.github/workflows/ci.yml`が、push/PR時にlint・test・buildを実行します(デプロイは行いません)。実際のデプロイはVercelのネイティブGitHub連携が担い、Vercel側でこのリポジトリを一度接続すれば`main`へのpushで自動的にデプロイされます(追加のワークフロー不要)。詳細は[`devex-api/OPERATIONS.md`](https://github.com/yd-uai-coder/devex-api/blob/main/OPERATIONS.md)「GitHub Actionsによる自動デプロイ」参照。
 
 ## セットアップ
 
