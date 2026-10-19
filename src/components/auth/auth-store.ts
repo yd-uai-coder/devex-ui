@@ -22,8 +22,8 @@ type AuthStore = {
 // アクセストークンの有効期限切れの何秒前にサイレントリフレッシュを走らせるか
 const SILENT_REFRESH_MARGIN_SECONDS = 60;
 
-// リロード後もログイン状態を維持するため、トークンのみlocalStorageへ永続化する
-// (status/errorは一時的なUI状態のため保存しない)。
+// アクセストークンはメモリ(このストア)にのみ保持し、永続化しない
+// (docs/internal_design.md 3.1節: リフレッシュトークンのみhttpOnly Secure Cookieで保持する設計)。
 export const useAuthStore = create<AuthStore>()((set) => ({
   accessToken: null,
   // 初期値はloading: bootstrap()によるセッション復元(Cookieからのリフレッシュ試行)が
