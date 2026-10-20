@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Text, XStack, YStack } from "tamagui";
+import { AgreementStatusPanel } from "@/features/agreements/components/AgreementStatusPanel";
 import { downloadDocument } from "@/features/documents/api/documentsApi";
 import { saveFile } from "@/lib/api/download";
 import type { GeneratedDocumentRead } from "@/features/documents/api/documentsApi";
@@ -10,6 +11,7 @@ import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import { RequirementsSummaryPanel } from "@/features/documents/components/RequirementsSummaryPanel";
 import { SimpleDesignSummaryPanel } from "@/features/documents/components/SimpleDesignSummaryPanel";
 import { VersionHistoryPanel } from "@/features/documents/components/VersionHistoryPanel";
+import { useDocumentsStore } from "@/features/documents/documents-store";
 
 type DocumentMarkdownViewProps = {
   projectId: string;
@@ -21,6 +23,12 @@ type DocumentMarkdownViewProps = {
 export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownViewProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const projectMode = useDocumentsStore((s) => s.projectMode);
+  // 行の合意は詳細設計モードの要件定義書・外部設計書だけ(簡易モードは API も呼ばない)
+  const agreementDocType =
+    projectMode === "detailed" && (document.doc_type === "requirements" || document.doc_type === "external_design")
+      ? document.doc_type
+      : null;
 
   async function handleCopy() {
     try {
@@ -66,6 +74,14 @@ export function DocumentMarkdownView({ projectId, document }: DocumentMarkdownVi
       <RequirementsSummaryPanel projectId={projectId} document={document} />
       <ExternalDesignSummaryPanel document={document} />
       <SimpleDesignSummaryPanel document={document} />
+      {agreementDocType ? (
+        // 版の切り替え(id)と、「採用にする」で同じ版の中身が変わったとき(content)に取り直す
+        <AgreementStatusPanel
+          projectId={projectId}
+          docType={agreementDocType}
+          refreshKey={`${document.id}:${document.content}`}
+        />
+      ) : null}
       <MarkdownBody content={document.content} />
     </YStack>
   );

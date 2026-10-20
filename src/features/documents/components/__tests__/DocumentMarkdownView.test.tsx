@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DocumentMarkdownView } from "../DocumentMarkdownView";
+import { useDocumentsStore } from "@/features/documents/documents-store";
+import { makeStatus } from "@/features/agreements/test-utils/agreementFixtures";
 import type { DocType } from "@/features/documents/api/documentsApi";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
@@ -32,6 +34,7 @@ describe("DocumentMarkdownView", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    useDocumentsStore.setState({ projectMode: null });
   });
 
   it("Markdown本文をレンダリングする", () => {
@@ -141,6 +144,34 @@ describe("DocumentMarkdownView", () => {
     expect(screen.queryByText(/uml:diagram/)).not.toBeInTheDocument();
     // model の無い以前の版なので、書き落としの検証の代わりに再生成の案内を出す
     expect(screen.getByText(/書き落としの検証がありません/)).toBeInTheDocument();
+    expect(stub.requests).toHaveLength(0);
+    stub.restore();
+  });
+
+  it("詳細設計モードの要件定義書・外部設計書だけ、行の合意の状態を出す", async () => {
+    const stub = stubFetch();
+    stub.queue({ body: makeStatus() });
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    renderView();
+
+    expect(await screen.findByLabelText("合意の状態")).toBeInTheDocument();
+    expect(stub.requests[0].url).toContain("/projects/p1/agreements/status?doc_type=requirements");
+    stub.restore();
+  });
+
+  it("簡易モードと、ほかの文書では、合意の状態を出さず API も呼ばない", () => {
+    const stub = stubFetch();
+    useDocumentsStore.setState({ projectMode: "simple" });
+    const { unmount } = renderView();
+    unmount();
+    useDocumentsStore.setState({ projectMode: "detailed" });
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DocumentMarkdownView projectId="p1" document={{ ...SAMPLE_DOC, doc_type: "implementation_plan" }} />
+      </TamaguiProvider>,
+    );
+
+    expect(screen.queryByLabelText("合意の状態")).not.toBeInTheDocument();
     expect(stub.requests).toHaveLength(0);
     stub.restore();
   });
