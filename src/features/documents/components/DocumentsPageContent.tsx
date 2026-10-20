@@ -127,6 +127,17 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
               <Text color="$blue10">詳細設計へ進む →</Text>
             </Link>
           ) : null}
+          {/* 変更要求・合意済みの版(SCR-010)は詳細設計モードだけ */}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/change-requests`}>
+              <Text color="$blue10">変更要求(CR)</Text>
+            </Link>
+          ) : null}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/baselines`}>
+              <Text color="$blue10">合意済みの版</Text>
+            </Link>
+          ) : null}
           {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}
           {projectMode === "simple" ? (
             <Link href={`/projects/${projectId}/detailed-design`}>

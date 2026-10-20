@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Text, XStack, YStack } from "tamagui";
+import { defaultReflectionCr } from "@/features/change-requests/changeRequestOps";
+import { CrReflectionSection } from "@/features/change-requests/components/CrReflectionSection";
+import { useAppliedChangeRequests } from "@/features/change-requests/hooks/useAppliedChangeRequests";
 import type {
   ElementChangeRead,
   ImpactMarkRead,
@@ -30,6 +33,7 @@ import { STAGE_TITLES } from "@/features/detailed-design/labels";
 // 変わったもの → 段階ごとの影響の一覧(置き場・要素・たどった道・理由・状態)→ 再生成の候補を出す。
 // 印を確認済みにし、「表で見る」でその段階の表の行を強調して開く。印も変わったものも無ければ出さない。
 // 全段階を並べると縦に長くなるので、初めは選んでいる段階の分だけを出す(「全段階」「未確認のみ」で切り替える)。
+// 詳細設計モードで反映済みの変更要求(CR)があれば、段階の生成に渡す CR を選ぶ欄を出す。
 export function ChangeImpactPanel({ projectId }: { projectId: string }) {
   const impact = useDetailedDesignStore((s) => s.impact);
   const impactError = useDetailedDesignStore((s) => s.impactError);
@@ -44,6 +48,12 @@ export function ChangeImpactPanel({ projectId }: { projectId: string }) {
   // 絞り込み: 段階はステッパーで選んでいる段階に追従し、allStages で全段階にする
   const [allStages, setAllStages] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
+  // 段階の生成に渡す CR(選ぶまでは、印の出どころの反映済みの CR。「渡さない」を選ぶと null)
+  const detailed = useDetailedDesignStore((s) => s.stages[0]?.mode === "detailed");
+  const applied = useAppliedChangeRequests(projectId, detailed);
+  const [chosenCr, setChosenCr] = useState<number | null | undefined>(undefined);
+  const crNumber =
+    chosenCr !== undefined ? chosenCr : defaultReflectionCr(applied.map((cr) => cr.number), impact);
 
   if (!hasImpact(impact) && !impactError) return null;
 
@@ -126,9 +136,17 @@ export function ChangeImpactPanel({ projectId }: { projectId: string }) {
               onShow={(key) => showInTable(item.stage, key)}
             />
           ))}
+          <CrReflectionSection
+            projectId={projectId}
+            impact={impact}
+            applied={applied}
+            crNumber={crNumber}
+            onChange={setChosenCr}
+          />
           <RegenerationTargets
             projectId={projectId}
             targets={impact.regeneration_targets.filter((t) => inView(t.stage))}
+            crNumber={crNumber ?? undefined}
           />
         </YStack>
       ) : null}

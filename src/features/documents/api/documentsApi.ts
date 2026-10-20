@@ -60,6 +60,10 @@ export type GeneratedDocumentRead = {
   version: number;
   created_at: string;
   is_current: boolean;
+  // 生成したモデル名(この列を足す前の版は null)
+  generated_model?: string | null;
+  // 反映した変更要求の番号(CR を渡した再生成で作った版の、版の履歴の応答だけ)
+  change_request_number?: number | null;
   // 要件定義書で model を持つ版だけ(ほかの文書・以前の版は null)
   requirements?: RequirementsSummaryRead | null;
   // 外部設計書で model を持つ版だけ(ほかの文書・以前の版は null)

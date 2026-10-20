@@ -5,6 +5,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "@/tamagui.config";
 import { DetailedDesignPageContent } from "../DetailedDesignPageContent";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { useReviewStore } from "@/features/design-review/review-store";
 import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
@@ -58,6 +59,8 @@ describe("DetailedDesignPageContent", () => {
       selectStage: vi.fn(),
       approve: vi.fn().mockResolvedValue(undefined),
     });
+    // 「変更の影響」が反映済みの CR を読む(ここでは CR は無い)
+    useChangeRequestsStore.setState({ projectId: "p1", list: [], fetchList: vi.fn().mockResolvedValue(undefined) });
     useTestSpecStore.setState({
       testSpec: null,
       status: "success",
@@ -67,6 +70,24 @@ describe("DetailedDesignPageContent", () => {
       fetchTestSpec: vi.fn().mockResolvedValue(undefined),
       generate: vi.fn().mockResolvedValue(undefined),
     });
+  });
+
+  it("?stage=N で開くと、段階を読んだ後にその段階を選ぶ", async () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <DetailedDesignPageContent projectId="p1" initialStage={3} />
+      </TamaguiProvider>,
+    );
+
+    await waitFor(() => expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(3));
+  });
+
+  it("詳細設計モードは変更要求(CR)と合意済みの版へのリンクを出す", () => {
+    renderContent();
+
+    expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
+    expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");
+    expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();
   });
 
   it("マウント時にfetchStages(projectId)を呼び、ステッパーと選んだ段階を表示する", () => {

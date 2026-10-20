@@ -86,6 +86,10 @@ export function VersionHistoryPanel({ projectId, docType }: VersionHistoryPanelP
                 {index === 0 ? "(最新)" : ""}
                 {doc.is_current ? "(表示中)" : ""} ──{" "}
                 {new Date(doc.created_at).toLocaleString("ja-JP")}
+                {doc.generated_model ? ` ・${doc.generated_model}` : ""}
+                {doc.change_request_number != null
+                  ? ` ・CR-${doc.change_request_number} で反映`
+                  : ""}
               </Text>
               {!doc.is_current ? (
                 <Button

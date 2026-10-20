@@ -226,6 +226,8 @@ describe("DocumentsPageContent", () => {
     renderContent();
 
     expect(screen.queryByRole("link", { name: "詳細設計へ進む →" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "変更要求(CR)" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "合意済みの版" })).not.toBeInTheDocument();
   });
 
   it("詳細設計モードでは、詳細設計へ進むリンクを表示する", () => {
@@ -237,6 +239,11 @@ describe("DocumentsPageContent", () => {
       "href",
       "/projects/p1/detailed-design",
     );
+    expect(screen.getByRole("link", { name: "変更要求(CR)" })).toHaveAttribute(
+      "href",
+      "/projects/p1/change-requests",
+    );
+    expect(screen.getByRole("link", { name: "合意済みの版" })).toHaveAttribute("href", "/projects/p1/baselines");
   });
 
   it("ドキュメントが無ければ空状態メッセージを表示する", () => {

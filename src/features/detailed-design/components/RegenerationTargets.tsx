@@ -11,12 +11,15 @@ import { toggleUnit } from "@/features/detailed-design/procedureDocOps";
 // 「変更の影響」パネルの再生成の候補。部分再生成できる段階(5 手順・6 処理ロジック・8 単位の手順書)
 // の、未確認の印の要素を段階ごとにチェックボックスで並べ(初めは上限まで全部選ぶ)、段階ごとに1回の
 // 部分再生成を呼ぶ。自動では再生成しない。再生成しても印は確認済みにしない(生成は下書きのため)。
+// `crNumber` を渡すと、その変更要求(反映済み)を修正指示に入れる(「変更の影響」で CR を選んだとき)。
 export function RegenerationTargets({
   projectId,
   targets,
+  crNumber,
 }: {
   projectId: string;
   targets: RegenerationTargetRead[];
+  crNumber?: number;
 }) {
   const groups = regenerationGroups(targets);
   if (groups.length === 0) return null;
@@ -33,6 +36,7 @@ export function RegenerationTargets({
           projectId={projectId}
           stage={group.stage}
           targets={group.targets}
+          crNumber={crNumber}
         />
       ))}
     </YStack>
@@ -43,10 +47,12 @@ function StageTargets({
   projectId,
   stage,
   targets,
+  crNumber,
 }: {
   projectId: string;
   stage: number;
   targets: RegenerationTargetRead[];
+  crNumber?: number;
 }) {
   const view = useDetailedDesignStore((s) => s.stages.find((item) => item.stage === stage));
   const requesting = useDetailedDesignStore((s) => s.requestingGeneration);
@@ -62,7 +68,7 @@ function StageTargets({
   const start = () => {
     // 生成の完了は段階のパネルが待つので、先にその段階へ移る(受け付けの失敗も作業領域に出る)
     selectStage(stage);
-    void regenerate(projectId, stage, selected);
+    void regenerate(projectId, stage, selected, crNumber);
   };
 
   return (
@@ -83,7 +89,9 @@ function StageTargets({
       </XStack>
       <XStack gap="$2" alignItems="center" flexWrap="wrap">
         <Button size="$2" disabled={disabled || selected.length === 0} onPress={start}>
-          {`選んだ候補を再生成する(${selected.length}件)`}
+          {crNumber !== undefined
+            ? `選んだ候補を CR-${crNumber} で再生成する(${selected.length}件)`
+            : `選んだ候補を再生成する(${selected.length}件)`}
         </Button>
         {!view?.is_open ? (
           <Text fontSize="$1" color="$color11">

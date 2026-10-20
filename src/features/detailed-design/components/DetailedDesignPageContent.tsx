@@ -38,8 +38,11 @@ import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 // (段階1・段階7 の承認の後に作る。簡易モードのテスト仕様書はプレビューのタブに出す)。
 export function DetailedDesignPageContent({
   projectId,
+  initialStage,
 }: {
   projectId: string;
+  // URL の `?stage=N` で選ぶ段階(変更要求の画面から来たとき)。段階を読んだ後に選ぶ
+  initialStage?: number;
 }) {
   const router = useRouter();
   const stages = useDetailedDesignStore((s) => s.stages);
@@ -73,8 +76,14 @@ export function DetailedDesignPageContent({
   const onTestSpecGenerated = useTestSpecStore((s) => s.onGenerated);
 
   useEffect(() => {
-    void fetchStages(projectId);
-  }, [projectId, fetchStages]);
+    void fetchStages(projectId).then(() => {
+      // 別のプロジェクトを開くと最初の未承認の段階を選び直すので、読んだ後に選ぶ
+      if (initialStage !== undefined) {
+        setShowTestSpec(false);
+        selectStage(initialStage);
+      }
+    });
+  }, [projectId, initialStage, fetchStages, selectStage]);
 
   const current = stages.find((s) => s.stage === selectedStage);
   const simple = stages[0]?.mode === "simple";
@@ -136,6 +145,17 @@ export function DetailedDesignPageContent({
           <Link href={`/projects/${projectId}/documents`}>
             <Text color="$blue10">← ドキュメントに戻る</Text>
           </Link>
+          {/* 変更要求・合意済みの版(SCR-010)は詳細設計モードだけ */}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/change-requests`}>
+              <Text color="$blue10">変更要求(CR) →</Text>
+            </Link>
+          ) : null}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/baselines`}>
+              <Text color="$blue10">合意済みの版 →</Text>
+            </Link>
+          ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
           <DeleteProjectButton projectId={projectId} onDeleted={() => router.push("/dashboard")} />
         </XStack>

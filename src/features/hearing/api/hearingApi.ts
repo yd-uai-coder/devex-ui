@@ -86,10 +86,17 @@ export function markPointNotApplicable(projectId: string, pointKey: string): Pro
 // 完了はGET /api/v1/projects/{id}のstatusをポーリングして検知する(ChatPageContent参照)。
 // startFrom は再生成の起点(その文書から下流を作り直す)。省略で全部(チャットからの生成)。
 // findingIds は再生成の指示に入れる、AI 設計レビューの採用した指摘(設計・不整合)。
-export function triggerGeneration(projectId: string, startFrom?: string, findingIds: string[] = []): Promise<void> {
+// crNumber は反映する合意した変更要求(CR)の番号(詳細設計モード。合意・反映済みの CR だけ)。
+export function triggerGeneration(
+  projectId: string,
+  startFrom?: string,
+  findingIds: string[] = [],
+  crNumber?: number,
+): Promise<void> {
   const body = {
     ...(startFrom ? { start_from: startFrom } : {}),
     ...(findingIds.length > 0 ? { finding_ids: findingIds } : {}),
+    ...(crNumber !== undefined ? { cr_number: crNumber } : {}),
   };
   return apiFetch<void>(`/api/v1/projects/${projectId}/generate`, {
     method: "POST",

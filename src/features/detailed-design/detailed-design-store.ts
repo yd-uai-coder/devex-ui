@@ -67,7 +67,7 @@ type DetailedDesignStore = {
     model: Record<string, unknown>,
   ) => Promise<boolean>;
   // 段階5は functionIds で下書きを作る処理を、段階6は logics で関数を、段階8は unitIds で単位を選べる。
-  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘
+  // findingIds は修正指示に入れる、AI 設計レビューの採用した指摘。crNumber は修正指示に入れる反映済みの CR
   generate: (
     projectId: string,
     stage: number,
@@ -75,6 +75,7 @@ type DetailedDesignStore = {
     logics?: LogicTarget[],
     unitIds?: string[],
     findingIds?: string[],
+    crNumber?: number,
   ) => Promise<void>;
   // 段階の印を確認済み(reviewed=false で未確認)にする。確認できたら true
   reviewMarks: (
@@ -83,8 +84,8 @@ type DetailedDesignStore = {
     keys: string[],
     reviewed: boolean,
   ) => Promise<boolean>;
-  // 再生成の候補(要素のキー)から、段階5・6・8 の部分再生成を呼ぶ
-  regenerate: (projectId: string, stage: number, keys: string[]) => Promise<void>;
+  // 再生成の候補(要素のキー)から、段階5・6・8 の部分再生成を呼ぶ。crNumber は修正指示に入れる反映済みの CR
+  regenerate: (projectId: string, stage: number, keys: string[], crNumber?: number) => Promise<void>;
   // 変更の影響の「表で見る」: その段階へ移り、表の行を強調する
   showInTable: (stage: number, key: string) => void;
   // 05↔06 のバッジ・「段階Nで直す」から、相手の段階のタブ・行へ移る(直す先の文字列から行を推定して強調する)
@@ -226,10 +227,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return saved;
     },
 
-    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds) => {
+    generate: async (projectId, stage, functionIds, logics, unitIds, findingIds, crNumber) => {
       set({ requestingGeneration: true, actionError: null });
       try {
-        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds);
+        await generateDesignStage(projectId, stage, functionIds, logics, unitIds, findingIds, crNumber);
       } catch (err) {
         // 生成の受け付けの 409 DESIGN_STAGE_INVALID(対象の数・選択)は、承認の文言でなくサーバーの理由を出す
         const invalid = err instanceof ApiError && err.code === "DESIGN_STAGE_INVALID";
@@ -261,10 +262,10 @@ export const useDetailedDesignStore = create<DetailedDesignStore>(
       return done;
     },
 
-    regenerate: async (projectId, stage, keys) => {
+    regenerate: async (projectId, stage, keys, crNumber) => {
       const plan = get().stages.find((s) => s.stage === 8)?.plan ?? null;
       const args = regenerationArgs(stage, keys, plan);
-      await get().generate(projectId, stage, args.functionIds, args.logics, args.unitIds);
+      await get().generate(projectId, stage, args.functionIds, args.logics, args.unitIds, [], crNumber);
     },
 
     showInTable: (stage, key) =>

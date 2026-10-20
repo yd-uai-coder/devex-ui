@@ -129,6 +129,14 @@ describe("designStagesApi", () => {
     expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ logics });
   });
 
+  it("反映する CR の番号を本文の cr_number で渡す(部分再生成の対象と一緒に)", async () => {
+    stub.queue({ status: 202, body: { ...STAGE1, stage: 5, generation_status: "generating" } });
+
+    await generateDesignStage("p1", 5, ["F-02"], undefined, undefined, [], 3);
+
+    expect(JSON.parse(stub.requests[0].init?.body as string)).toEqual({ function_ids: ["F-02"], cr_number: 3 });
+  });
+
   it("段階8は手順書を作る単位を本文の unit_ids で渡す", async () => {
     stub.queue({ status: 202, body: { ...STAGE1, stage: 8, generation_status: "generating" } });
 

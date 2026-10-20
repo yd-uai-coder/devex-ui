@@ -341,6 +341,15 @@ describe("useDetailedDesignStore", () => {
     expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ unit_ids: ["M-01-T02"] });
   });
 
+  it("regenerateは反映済みの CR の番号を cr_number で一緒に渡す", async () => {
+    stub.queue({ status: 202, body: {} });
+    stub.queue({ status: 200, body: makeStages() });
+
+    await useDetailedDesignStore.getState().regenerate("p1", 5, ["proc:F-01"], 2);
+
+    expect(JSON.parse(String(stub.requests[0].init?.body))).toEqual({ function_ids: ["F-01"], cr_number: 2 });
+  });
+
   it("showInTableは段階へ移って行を強調し、段階5・6 はタブの移動先も立てる", () => {
     useDetailedDesignStore.getState().showInTable(4, "module:app/x.py");
     expect(useDetailedDesignStore.getState()).toMatchObject({

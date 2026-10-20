@@ -27,6 +27,8 @@ export const INPUT: CSSProperties = {
   border: "1px solid var(--borderColor)",
   borderRadius: 4,
 };
+// 表の中の、ほかのページへ移るリンク(押せることが見て分かるよう、色と下線を付ける)
+export const LINK: CSSProperties = { color: "var(--blue10)", textDecoration: "underline" };
 export const OPTION: CSSProperties = { background: "var(--background)", color: "var(--color)" };
 export const MONO: CSSProperties = {
   fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace",

@@ -21,6 +21,14 @@ export const STAGE_TITLES: Record<number, string> = {
   8: "実装手順書",
 };
 
+// URL の `?stage=N`(変更要求の画面から段階を開くリンク)を段階の番号にする。段階で無ければ undefined
+export function stageParam(value: string | string[] | undefined): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
+  const stage = Number(raw);
+  return STAGE_TITLES[stage] !== undefined ? stage : undefined;
+}
+
 export const STATE_LABELS: Record<StageState, string> = {
   not_started: "未着手",
   draft: "下書き",

@@ -7,6 +7,7 @@ import {
   describeMissingInput,
   firstStageToApprove,
   hasErrors,
+  stageParam,
   visibleIssues,
 } from "../labels";
 import { makeFunctionList, makeStages } from "../test-utils/stageFixtures";
@@ -132,5 +133,16 @@ describe("図の未承認は承認時に出す", () => {
     expect(
       firstStageToApprove({ ...stages[0], is_open: false, missing_inputs: ["doc:external_design"] }, stages),
     ).toBeNull();
+  });
+});
+
+describe("stageParam", () => {
+  it("?stage=N の値を段階の番号にする(段階で無い値・数で無い値は undefined)", () => {
+    expect(stageParam("3")).toBe(3);
+    expect(stageParam(["8", "1"])).toBe(8);
+    expect(stageParam("9")).toBeUndefined();
+    expect(stageParam("0")).toBeUndefined();
+    expect(stageParam("2a")).toBeUndefined();
+    expect(stageParam(undefined)).toBeUndefined();
   });
 });
