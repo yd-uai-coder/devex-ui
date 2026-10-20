@@ -47,6 +47,7 @@ export function resetChangeRequestsStore(): void {
     checkDocuments: vi.fn().mockResolvedValue(undefined),
     reflectDocuments: vi.fn().mockResolvedValue(undefined),
     onReflectionFinished: vi.fn(),
+    resumeReflection: vi.fn().mockResolvedValue(undefined),
     summarize: vi.fn().mockResolvedValue(true),
     editSummary: vi.fn().mockResolvedValue(true),
     confirmSummary: vi.fn().mockResolvedValue(true),

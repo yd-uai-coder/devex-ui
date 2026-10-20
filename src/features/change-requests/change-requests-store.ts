@@ -3,7 +3,7 @@ import { ApiError, isNotFound } from "@/lib/api/client";
 import { isCacheFresh } from "@/lib/api/cache";
 import type { AsyncStatus } from "@/lib/api/types";
 import type { ProjectRead } from "@/features/dashboard/api/projects";
-import { triggerGeneration } from "@/features/hearing/api/hearingApi";
+import { getProject, triggerGeneration } from "@/features/hearing/api/hearingApi";
 import type { GenerationFailure } from "@/lib/generation-failure";
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
 import { listBaselineRequirements, listBaselines } from "@/features/baselines/api/baselinesApi";
@@ -129,8 +129,8 @@ type ChangeRequestsStore = {
   // CR を渡して要件定義書から文書を再生成する(完了は画面が useGenerationPolling で待つ)
   reflectDocuments: (projectId: string, number: number) => Promise<void>;
   onReflectionFinished: (projectId: string, number: number, project: ProjectRead) => void;
-  // 生成中のプロジェクトを開いたとき、完了を待ち直す
-  setReflecting: (reflecting: boolean) => void;
+  // 生成中のプロジェクトで詳細を開いたとき(生成中に別の画面へ移って戻ったときなど)、完了を待ち直す
+  resumeReflection: (projectId: string) => Promise<void>;
   // 要約の操作。応答の説明書で説明書のタブの内容を置き換える(CR の状態は変わらない)
   summarize: (projectId: string, number: number) => Promise<boolean>;
   editSummary: (projectId: string, number: number, text: string) => Promise<boolean>;
@@ -359,7 +359,14 @@ export const useChangeRequestsStore = create<ChangeRequestsStore>((set, get) => 
       void get().fetchDetail(projectId, number);
     },
 
-    setReflecting: (reflecting) => set({ reflecting }),
+    resumeReflection: async (projectId) => {
+      try {
+        const project = await getProject(projectId);
+        if (project.status === "generating" && get().projectId === projectId) set({ reflecting: true });
+      } catch {
+        // 読めなければ待たない(反映を押せば、生成中の 409 から待ち直せる)
+      }
+    },
 
     summarize: (projectId, number) =>
       summaryAct(projectId, number, "create", () => createExplanationSummary(projectId, number), "要約を作れませんでした"),

@@ -34,6 +34,8 @@ describe("ChangeRequestDetailContent", () => {
     renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
 
     expect(useChangeRequestsStore.getState().fetchDetail).toHaveBeenCalledWith("p1", 1);
+    // 生成中に別の画面へ移って戻ったときも、反映の完了を待ち直す
+    expect(useChangeRequestsStore.getState().resumeReflection).toHaveBeenCalledWith("p1");
     expect(screen.getByRole("heading", { name: "CR-1 参考資料を5件まで" })).toBeInTheDocument();
     expect(screen.getByLabelText("状態: 下書き")).toBeInTheDocument();
     expect(screen.getByText("内容のタブ")).toBeInTheDocument();
