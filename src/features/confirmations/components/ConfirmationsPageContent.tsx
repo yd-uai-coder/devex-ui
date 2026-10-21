@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, H2, Paragraph, Text, XStack, YStack } from "tamagui";
+import { H2, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import { listConfirmations, updateConfirmation } from "@/features/confirmations/api/confirmationsApi";
@@ -18,7 +18,6 @@ import {
   adoptionText,
   filterItems,
   needsAdoptConfirm,
-  splitByPresence,
   unconfirmedCountsText,
   type ConfirmationFilter,
   type KindFilter,
@@ -35,7 +34,8 @@ type Pending = { item: ConfirmationItemRead; body: ConfirmationUpdate };
 // 確認事項の一覧(docs/external_design.md 2.15節)。推測の要件・推測の利用者・根拠が未決の観点を、
 // 今の要件定義書と観点の表から devex-api が毎回組み立てる。行ごとに決める機会・状態・メモを決める。
 // 推測の要件・利用者を確認済みにすると採用にして合意を記録するので、そのときだけ確認のダイアログを
-// 挟む。状態を決めた後に一覧から消えた項目は、末尾の「決めた記録」に畳む。詳細設計モードだけ。
+// 挟む。状態を決めた後に一覧から消えた項目も同じ表に並べ(どれを見るかは状態の絞り込みで決める)、
+// 状態を変えられない理由を行に出す。詳細設計モードだけ。
 export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
   const [list, setList] = useState<ConfirmationListRead | null>(null);
   const [loadError, setLoadError] = useState<unknown>(null);
@@ -43,7 +43,6 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [filter, setFilter] = useState<ConfirmationFilter>(DEFAULT_FILTER);
   const [pending, setPending] = useState<Pending | null>(null);
-  const [showGone, setShowGone] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,8 +84,8 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
     void save(item, body);
   };
 
-  const { present, gone } = splitByPresence(list?.items ?? []);
-  const shown = filterItems(present, filter);
+  const items = list?.items ?? [];
+  const shown = filterItems(items, filter);
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -108,7 +107,7 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
         </XStack>
       </XStack>
       <Paragraph color="$color11">
-        AI が推測した要件・利用者と、要件の根拠でまだ決まっていない観点です。いつ決めるか(決める機会)を決め、クライアントに確かめたら状態を変えます。推測の要件・利用者を確認済みにすると採用にして合意を記録します。観点は、チャットと観点の表で答えると一覧から消えます。
+        AI が推測した要件・利用者と、要件の根拠でまだ決まっていない観点です。いつ決めるか(決める機会)を決め、クライアントに確かめたら状態を変えます。推測の要件・利用者を確認済みにすると採用にして合意を記録します(一覧に残りますが、状態は戻せません。変えるときは変更要求を出します)。観点は、チャットと観点の表で答えると一覧から消えます。
       </Paragraph>
 
       {loadError ? (
@@ -170,29 +169,19 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
             </Text>
           ) : null}
 
-          {present.length === 0 ? (
+          {items.length === 0 ? (
             <Text color="$color11">確認事項はありません(推測の要件・利用者も、未決の観点もありません)。</Text>
           ) : shown.length === 0 ? (
             <Text color="$color11">この絞り込みに当たる項目はありません。</Text>
           ) : (
-            <ConfirmationTable items={shown} label="確認事項" savingKey={savingKey} onUpdate={onUpdate} />
+            <ConfirmationTable
+              projectId={projectId}
+              items={shown}
+              label="確認事項"
+              savingKey={savingKey}
+              onUpdate={onUpdate}
+            />
           )}
-
-          {gone.length > 0 ? (
-            <YStack gap="$2" aria-label="決めた記録">
-              <Button size="$2" chromeless alignSelf="flex-start" onPress={() => setShowGone((v) => !v)}>
-                {`${showGone ? "▾" : "▸"} 一覧から消えた項目(決めた記録) ${gone.length}件`}
-              </Button>
-              {showGone ? (
-                <>
-                  <Paragraph size="$2" color="$color10">
-                    確認済み・却下にした後、採用や再生成で一覧から消えた項目です。推測の採用率はこれも数えます。
-                  </Paragraph>
-                  <ConfirmationTable items={gone} label="一覧から消えた項目" savingKey={savingKey} readOnly onUpdate={onUpdate} />
-                </>
-              ) : null}
-            </YStack>
-          ) : null}
         </>
       ) : null}
 

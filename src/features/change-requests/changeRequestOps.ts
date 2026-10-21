@@ -7,6 +7,7 @@ import type {
   ChangeRequestStatus,
   ChangeRequestTargetIn,
   ChangeRequestUpdate,
+  ChangeRequestVerificationRead,
   ComparedItemRead,
   ComparisonStatus,
   ExplanationSummaryRead,
@@ -273,6 +274,13 @@ export function comparisonGroups(
 // ---- 段階への行き来 ----
 
 // 詳細設計画面のその段階を開くリンク
+// 詳細設計の画面の CR の帯の文(未確認の印・文書の側・未承認の段階の数)。検証を開く前に、残りを見せる
+export function verifyBannerText(
+  verification: Pick<ChangeRequestVerificationRead, "open_marks" | "open_documents" | "pending_stages">,
+): string {
+  return `未確認の印 ${verification.open_marks} / 文書の側 ${verification.open_documents} / 未承認の段階 ${verification.pending_stages.length}`;
+}
+
 export function designStageHref(projectId: string, stage: number): string {
   return `/projects/${projectId}/detailed-design?stage=${stage}`;
 }

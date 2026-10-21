@@ -198,7 +198,7 @@ export function FunctionListPanel({
                       <ImpactBadge mark={impact.mark(elementKey.fn(row.id))} />
                       <ReviewFindingBadge projectId={review.projectId} items={review.findings(elementKey.fn(row.id))} />
                     </td>
-                    <td style={{ ...CELL, minWidth: 160 }}>
+                    <td style={{ ...CELL, minWidth: 130 }}>
                       <input
                         style={INPUT}
                         aria-label={`${row.id} の名称`}
@@ -208,7 +208,8 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
-                    <td style={CELL}>
+                    {/* 影響・レビューの印で処理ID の列が広がっても、選んだ種別(最長「API+バッチ」)が読める幅 */}
+                    <td style={{ ...CELL, minWidth: 120 }}>
                       <select
                         style={INPUT}
                         aria-label={`${row.id} の種別`}
@@ -226,7 +227,7 @@ export function FunctionListPanel({
                         ))}
                       </select>
                     </td>
-                    <td style={{ ...CELL, minWidth: 220 }}>
+                    <td style={{ ...CELL, minWidth: 170 }}>
                       <input
                         style={{ ...INPUT, ...MONO }}
                         aria-label={`${row.id} のトリガー`}
@@ -236,7 +237,7 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
-                    <td style={{ ...CELL, minWidth: 100 }}>
+                    <td style={{ ...CELL, minWidth: 80 }}>
                       <ListInput
                         label={`${row.id} の関連画面`}
                         items={row.screens}
@@ -258,7 +259,8 @@ export function FunctionListPanel({
                         }
                       />
                     </td>
-                    <td style={{ ...CELL, minWidth: 140 }}>
+                    {/* 機能グループの名前(「トップページ表示」など)が切れない幅。名称・トリガー・関連画面を詰めた分を回す */}
+                    <td style={{ ...CELL, minWidth: 200 }}>
                       <select
                         style={INPUT}
                         aria-label={`${row.id} の機能グループ`}

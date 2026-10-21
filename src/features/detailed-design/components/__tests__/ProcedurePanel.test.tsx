@@ -201,6 +201,18 @@ describe("ProcedurePanel", () => {
     expect(useDetailedDesignStore.getState().generate).toHaveBeenCalledWith("p1", 5, ["F-01"]);
   });
 
+  it("機能一覧に無い処理の手順があるときだけ、付け替えか消すの一覧を出し、消すと保存できる", async () => {
+    const stray = { ...makeProcedures().procedures[0], function_id: "F-04" };
+    const onDirtyChange = renderPanel(
+      setup({ state: "regenerated", version: 5, model: { procedures: [...makeProcedures().procedures, stray] } }),
+    );
+
+    expect(screen.getByText("機能一覧に無い処理の手順(1)")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "F-04 の手順を消す" }));
+    expect(screen.queryByText("機能一覧に無い処理の手順(1)")).not.toBeInTheDocument();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+
   it("生成中は手順の表を出さない", () => {
     renderPanel(
       setup({

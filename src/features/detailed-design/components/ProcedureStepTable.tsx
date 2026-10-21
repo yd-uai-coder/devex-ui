@@ -194,7 +194,8 @@ export function ProcedureStepTable({
                             </div>
                           ) : null}
                         </td>
-                        <td style={CELL}>
+                        {/* ほかの列が広がっても、選んだ種別が読める幅 */}
+                        <td style={{ ...CELL, minWidth: 90 }}>
                           <select
                             style={INPUT}
                             aria-label={`${id} の種別`}

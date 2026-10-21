@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { Button, H2, H3, Text, XStack, YStack } from "tamagui";
 import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
+import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
+import { ChangeRequestVerifyBanner } from "@/features/change-requests/components/ChangeRequestVerifyBanner";
+import { ChangeRequestVerifyDialog } from "@/features/change-requests/components/ChangeRequestVerifyDialog";
+import { useAppliedChangeRequests } from "@/features/change-requests/hooks/useAppliedChangeRequests";
 import { DeleteProjectButton } from "@/features/dashboard/components/DeleteProjectButton";
 import { ReviewPanel } from "@/features/design-review/components/ReviewPanel";
 import type { ReviewGate } from "@/features/design-review/api/reviewApi";
@@ -74,6 +78,10 @@ export function DetailedDesignPageContent({
   const fetchTestSpec = useTestSpecStore((s) => s.fetchTestSpec);
   const generateTestSpec = useTestSpecStore((s) => s.generate);
   const onTestSpecGenerated = useTestSpecStore((s) => s.onGenerated);
+  // 検証のモーダルで開いている CR の番号(閉じているときは null)と、閉じた回数(帯を読み直す)
+  const [verifyCr, setVerifyCr] = useState<number | null>(null);
+  const [verifyRound, setVerifyRound] = useState(0);
+  const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
 
   useEffect(() => {
     void fetchStages(projectId).then(() => {
@@ -112,6 +120,9 @@ export function DetailedDesignPageContent({
   };
   // 段階の承認・文書の版が変わったら、レビューの区切りを取り直す
   const stagesKey = stages.map((s) => `${s.stage}:${s.state}:${s.approved_version ?? ""}`).join(",");
+  // CR の帯は、段階の承認と印の確認でも読み直す
+  const verifyKey = `${stages.map((s) => `${s.stage}:${s.approved_version ?? ""}:${s.impact_open ?? 0}`).join(",")}#${verifyRound}`;
+  const appliedCrs = useAppliedChangeRequests(projectId, detailed);
   // テスト仕様書(詳細設計モードだけ)。段階の承認が変わると「古い」も変わりうるので取り直す
   useEffect(() => {
     if (detailed) void fetchTestSpec(projectId);
@@ -182,6 +193,11 @@ export function DetailedDesignPageContent({
           stages={stages}
           testSpecNote={detailed ? zipTestSpecNote(testSpec) : null}
         />
+      ) : null}
+
+      {/* 反映済みの CR の検証の帯(詳細設計モードで、反映済みの CR があるときだけ)。「検証する」でモーダル */}
+      {stages.length > 0 && detailed ? (
+        <ChangeRequestVerifyBanner projectId={projectId} refreshKey={verifyKey} onVerify={setVerifyCr} />
       ) : null}
 
       {/* 変更の影響(印も変わったものも無ければ出さない。簡易モードは文書の変更から段階8の単位に印) */}
@@ -282,6 +298,21 @@ export function DetailedDesignPageContent({
                   </Button>
                 </>
               ) : null}
+              {/* 反映済みの CR があれば、承認のその場で検証を開ける */}
+              {appliedCrs.map((cr) => (
+                <Button
+                  key={cr.number}
+                  size="$2"
+                  marginLeft="$2"
+                  aria-label={`承認の後に CR-${cr.number} を検証する`}
+                  onPress={() => {
+                    setApprovedStage(null);
+                    setVerifyCr(cr.number);
+                  }}
+                >
+                  {`CR-${cr.number} を検証する`}
+                </Button>
+              ))}
               {reviewGate !== null ? (
                 <>
                   {reviewGate === "stage6"
@@ -311,6 +342,17 @@ export function DetailedDesignPageContent({
           setApprovedStage(null);
         }}
         onCancel={() => setApprovedStage(null)}
+      />
+
+      <ChangeRequestVerifyDialog
+        projectId={projectId}
+        number={verifyCr}
+        onClose={() => {
+          setVerifyCr(null);
+          setVerifyRound((n) => n + 1);
+          void fetchChangeRequests(projectId, { force: true });
+        }}
+        onSelectStage={choose}
       />
     </YStack>
   );

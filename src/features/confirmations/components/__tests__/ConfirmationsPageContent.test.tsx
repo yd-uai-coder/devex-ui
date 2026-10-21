@@ -34,7 +34,7 @@ describe("ConfirmationsPageContent", () => {
     stub.restore();
   });
 
-  it("未確認の件数・採用率・未確認の項目を出し、消えた項目は畳む", async () => {
+  it("未確認の件数・採用率・未確認の項目を出し、消えた項目は同じ表で状態を変えられない", async () => {
     stub.queue({ body: makeList() });
     renderPage();
 
@@ -45,12 +45,22 @@ describe("ConfirmationsPageContent", () => {
     expect(within(table).getByText("FR-002, 1.2")).toBeInTheDocument();
     expect(screen.queryByText("FR-009 CSV で出力する")).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "▸ 一覧から消えた項目(決めた記録) 1件" }));
-    const gone = screen.getByRole("table", { name: "一覧から消えた項目" });
-    expect(within(gone).getByText("FR-009 CSV で出力する")).toBeInTheDocument();
-    expect(within(gone).getByText("定例で確認")).toBeInTheDocument();
-    // 決めた記録は読むだけ
-    expect(within(gone).queryByRole("button")).not.toBeInTheDocument();
+    // 確認済みで絞ると、採用して一覧から消えた項目も同じ表に出る。状態のボタンの代わりに理由と変更要求への
+    // リンク。メモは書ける
+    await userEvent.selectOptions(screen.getByLabelText("状態で絞る"), "confirmed");
+    const confirmed = screen.getByRole("table", { name: "確認事項" });
+    expect(within(confirmed).getByText("FR-009 CSV で出力する")).toBeInTheDocument();
+    expect(within(confirmed).getByText("確認済み(採用して合意)")).toBeInTheDocument();
+    expect(within(confirmed).getByRole("link", { name: "変えるときは変更要求(CR)で →" })).toHaveAttribute(
+      "href",
+      "/projects/p1/change-requests",
+    );
+    // 状態の文の下の段に出す(2段)
+    expect(within(confirmed).getByRole("link", { name: "変えるときは変更要求(CR)で →" })).toHaveStyle({ display: "block" });
+    expect(within(confirmed).queryByRole("button", { name: /を未確認に戻す$/ })).not.toBeInTheDocument();
+    expect(within(confirmed).queryByLabelText("FR-009 CSV で出力する の決める機会")).not.toBeInTheDocument();
+    expect(within(confirmed).getByText("定例で確認")).toBeInTheDocument();
+    expect(within(confirmed).getByRole("button", { name: "メモを直す" })).toBeInTheDocument();
   });
 
   it("種類で絞り込める", async () => {
@@ -139,6 +149,7 @@ describe("ConfirmationTable", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <ConfirmationTable
+          projectId="p1"
           items={[makeItem({ status: "rejected", status_label: "却下" })]}
           label="確認事項"
           savingKey="req:FR-004"

@@ -15,6 +15,7 @@ import { ProcedureSequenceView } from "@/features/detailed-design/components/Pro
 import { ProcedureStepTable } from "@/features/detailed-design/components/ProcedureStepTable";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayProcedureTable } from "@/features/detailed-design/components/StrayProcedureTable";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
@@ -170,6 +171,14 @@ export function ProcedurePanel({
           })}
         </XStack>
       </YStack>
+
+      {/* 段階1 の作り直しで処理 ID が変わって残った手順(選択には出ないので、付け替えるか消す) */}
+      <StrayProcedureTable
+        model={draft}
+        functionList={functionList}
+        disabled={generating || !stage.is_open}
+        onChange={setDraft}
+      />
 
       <YStack gap="$2">
         <XStack gap="$3" alignItems="center" flexWrap="wrap">

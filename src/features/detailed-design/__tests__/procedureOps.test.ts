@@ -10,8 +10,13 @@ import {
   mainStepCount,
   numberSteps,
   pendingFunctionIds,
+  reassignProcedure,
+  reassignTargets,
+  removeProcedureAt,
   removeStep,
+  removeStrayProcedures,
   stepId,
+  strayProcedures,
   toggleProcedure,
   toProcedures,
   updateProcedure,
@@ -40,6 +45,49 @@ function twoFunctions(): FunctionListModel {
     ],
   };
 }
+
+describe("機能一覧に無い処理の手順", () => {
+  // F-04 は段階1 の作り直しで消えた処理。F-02 は選んだだけ(手順が空)
+  const withStray = () => {
+    const base = makeProcedures();
+    return {
+      procedures: [
+        base.procedures[0],
+        { function_id: "F-02", reason: "", note: "", steps: [] },
+        { ...base.procedures[0], function_id: "F-04", reason: "古い処理" },
+      ],
+    };
+  };
+
+  it("機能一覧に無い手順を、並びの位置と手順数で出す", () => {
+    expect(strayProcedures(withStray(), twoFunctions())).toEqual([
+      { index: 2, functionId: "F-04", stepCount: 1 },
+    ]);
+    expect(strayProcedures(makeProcedures(), twoFunctions())).toEqual([]);
+  });
+
+  it("付け替え先は、機能一覧にあって手順の無い処理(選んだだけの処理を含む)", () => {
+    expect(reassignTargets(withStray(), twoFunctions()).map((fn) => fn.id)).toEqual(["F-02"]);
+  });
+
+  it("付け替えは中身を残して処理 ID だけを替え、選んだだけの空の行を置き換えて機能一覧の順に並べる", () => {
+    const moved = reassignProcedure(withStray(), twoFunctions(), 2, "F-02");
+
+    expect(moved.procedures.map((p) => [p.function_id, p.reason, p.steps.length])).toEqual([
+      ["F-01", makeProcedures().procedures[0].reason, 2],
+      ["F-02", "古い処理", 2],
+    ]);
+    expect(strayProcedures(moved, twoFunctions())).toEqual([]);
+  });
+
+  it("1件ずつ消す・まとめて消す", () => {
+    expect(removeProcedureAt(withStray(), 2).procedures.map((p) => p.function_id)).toEqual(["F-01", "F-02"]);
+    expect(removeStrayProcedures(withStray(), twoFunctions()).procedures.map((p) => p.function_id)).toEqual([
+      "F-01",
+      "F-02",
+    ]);
+  });
+});
 
 describe("procedureOps", () => {
   it("統合スモーク: 保存された model を整え、手順番号・関与表・索引を導く", () => {

@@ -11,6 +11,7 @@ import { useTestSpecStore } from "@/features/documents/test-spec-store";
 import { makeTestSpec } from "@/features/documents/test-utils/testSpecFixtures";
 import { finding, gate, run, user as reviewUser } from "@/features/design-review/test-utils/reviewFixtures";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
+import { makeChangeRequest, makeVerification } from "@/features/change-requests/test-utils/changeRequestFixtures";
 import {
   makeFunctionList,
   makeImpact,
@@ -171,6 +172,33 @@ describe("DetailedDesignPageContent", () => {
     expect(screen.getByLabelText("閉じる")).toBeInTheDocument();
     await user.click(screen.getByLabelText("次の段階へ進む"));
     expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(2);
+  });
+
+  it("反映済みの CR があれば検証の帯を出し、承認のダイアログからも検証のモーダルを開ける", async () => {
+    const user = userEvent.setup();
+    const stub = stubFetch();
+    stub.queue({ body: makeVerification({ number: 4, open_marks: 2, open_documents: 0, pending_stages: [] }) });
+    stub.queue({ body: makeVerification({ number: 4, open_marks: 2, open_documents: 0, pending_stages: [] }) });
+    const fetchDetail = vi.fn().mockResolvedValue(undefined);
+    useChangeRequestsStore.setState({
+      list: [makeChangeRequest({ number: 4, title: "TOP20 にする", status: "applied" })],
+      fetchDetail,
+    });
+    useDetailedDesignStore.setState({ approve: vi.fn().mockResolvedValue(true) });
+    try {
+      renderContent();
+
+      const banner = screen.getByLabelText("変更要求の検証");
+      expect(within(banner).getByText("CR-4 TOP20 にする(反映済み)")).toBeInTheDocument();
+      expect(await within(banner).findByText("未確認の印 2 / 文書の側 0 / 未承認の段階 0")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "承認する" }));
+      await user.click(await screen.findByLabelText("承認の後に CR-4 を検証する"));
+      expect(fetchDetail).toHaveBeenCalledWith("p1", 4);
+      expect(await screen.findByText("CR-4 の検証")).toBeInTheDocument();
+    } finally {
+      stub.restore();
+    }
   });
 
   it("承認できなかったときはダイアログを出さない", async () => {

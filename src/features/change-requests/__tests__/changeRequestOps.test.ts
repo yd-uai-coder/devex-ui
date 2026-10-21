@@ -32,6 +32,7 @@ import {
   summaryOutputNote,
   toCreateBody,
   toUpdateBody,
+  verifyBannerText,
 } from "../changeRequestOps";
 import {
   makeChangeRequest,
@@ -210,3 +211,10 @@ describe("モード", () => {
   });
 });
 
+describe("詳細設計の画面の CR の帯", () => {
+  it("未確認の印・文書の側・未承認の段階の数を1行にする", () => {
+    expect(verifyBannerText({ open_marks: 3, open_documents: 0, pending_stages: [1, 4] })).toBe(
+      "未確認の印 3 / 文書の側 0 / 未承認の段階 2",
+    );
+  });
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button, Text, XStack, YStack } from "tamagui";
 import type {
   ConfirmationItemRead,
@@ -8,7 +9,7 @@ import type {
   ConfirmationUpdate,
   Opportunity,
 } from "@/features/confirmations/api/types";
-import { KIND_LABEL, OPPORTUNITY_OPTIONS } from "@/features/confirmations/confirmationOps";
+import { KIND_LABEL, OPPORTUNITY_OPTIONS, rowLock } from "@/features/confirmations/confirmationOps";
 import { CELL, HEAD, INPUT, MONO, OPTION, TABLE } from "@/features/detailed-design/components/tableStyles";
 
 const STATUS_COLOR: Record<ConfirmationStatus, string> = {
@@ -24,20 +25,21 @@ const STATUS_ACTIONS: { status: ConfirmationStatus; label: string }[] = [
   { status: "unconfirmed", label: "未確認に戻す" },
 ];
 
-// 確認事項の表。行ごとに決める機会・状態・メモを変える(変えたらすぐ onUpdate)。readOnly は一覧から
-// 消えた項目(決めた記録)の表示で、操作を出さない。
+// 確認事項の表。行ごとに決める機会・状態・メモを変える(変えたらすぐ onUpdate)。今の一覧に無い行
+// (rowLock)は、状態と決める機会を変えられないので操作の代わりに理由を出す(採用して合意した要件・
+// 利用者は、変更要求へのリンク)。メモはどの行も書ける。
 export function ConfirmationTable({
+  projectId,
   items,
   label,
   savingKey,
-  readOnly = false,
   onUpdate,
 }: {
+  projectId: string;
   items: ConfirmationItemRead[];
   label: string;
   // 保存中の項目のキー(その間はすべての行の操作を止める)
   savingKey: string | null;
-  readOnly?: boolean;
   onUpdate: (item: ConfirmationItemRead, body: ConfirmationUpdate) => void;
 }) {
   const busy = savingKey !== null;
@@ -53,7 +55,9 @@ export function ConfirmationTable({
         </tr>
       </thead>
       <tbody>
-        {items.map((item) => (
+        {items.map((item) => {
+          const lock = rowLock(item);
+          return (
           <tr key={item.key}>
             <td style={{ ...CELL, whiteSpace: "nowrap" }}>{KIND_LABEL[item.kind]}</td>
             <td style={CELL}>
@@ -65,7 +69,7 @@ export function ConfirmationTable({
               ) : null}
             </td>
             <td style={CELL}>
-              {readOnly ? (
+              {lock.locked ? (
                 (item.opportunity_label ?? "未設定")
               ) : (
                 <select
@@ -90,9 +94,19 @@ export function ConfirmationTable({
             </td>
             <td style={CELL}>
               <Text color={STATUS_COLOR[item.status]} fontSize="$3">
-                {savingKey === item.key ? "保存中…" : item.status_label}
+                {savingKey === item.key ? "保存中…" : lock.locked ? lock.label : item.status_label}
               </Text>
-              {readOnly ? null : (
+              {lock.locked ? (
+                lock.viaChangeRequest ? (
+                  // 状態の文の下の段に出す(2段)
+                  <Link
+                    href={`/projects/${projectId}/change-requests`}
+                    style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--blue10)" }}
+                  >
+                    変えるときは変更要求(CR)で →
+                  </Link>
+                ) : null
+              ) : (
                 <XStack gap="$1" flexWrap="wrap" marginTop="$1">
                   {STATUS_ACTIONS.filter((a) => a.status !== item.status).map((a) => (
                     <Button
@@ -109,10 +123,11 @@ export function ConfirmationTable({
               )}
             </td>
             <td style={CELL}>
-              <MemoCell item={item} readOnly={readOnly} busy={busy} onSave={(memo) => onUpdate(item, { memo })} />
+              <MemoCell item={item} busy={busy} onSave={(memo) => onUpdate(item, { memo })} />
             </td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
     </table>
   );
@@ -121,25 +136,21 @@ export function ConfirmationTable({
 // メモ(打ち合わせで聞くことの要点)。「直す」で開き、保存で送る
 function MemoCell({
   item,
-  readOnly,
   busy,
   onSave,
 }: {
   item: ConfirmationItemRead;
-  readOnly: boolean;
   busy: boolean;
   onSave: (memo: string) => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  if (readOnly || draft === null) {
+  if (draft === null) {
     return (
       <YStack gap="$1">
         {item.memo ? <Text fontSize="$3">{item.memo}</Text> : null}
-        {readOnly ? null : (
-          <Button size="$2" chromeless alignSelf="flex-start" disabled={busy} onPress={() => setDraft(item.memo)}>
-            {item.memo ? "メモを直す" : "メモを書く"}
-          </Button>
-        )}
+        <Button size="$2" chromeless alignSelf="flex-start" disabled={busy} onPress={() => setDraft(item.memo)}>
+          {item.memo ? "メモを直す" : "メモを書く"}
+        </Button>
       </YStack>
     );
   }

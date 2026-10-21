@@ -64,6 +64,8 @@ describe("ProcedureStepTable", () => {
     const onChange = renderTable();
 
     expect(screen.getByLabelText("F-01#1 の種別")).toHaveValue("call");
+    // ほかの列が広がっても、選んだ種別が読める最小の幅
+    expect((screen.getByLabelText("F-01#1 の種別").closest("td") as HTMLElement).style.minWidth).toBe("90px");
     expect(screen.queryByLabelText("F-01#1a の種別")).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("F-01#1 の種別"), "戻り");
     const last = onChange.mock.lastCall?.[0] as ProcedureModel;

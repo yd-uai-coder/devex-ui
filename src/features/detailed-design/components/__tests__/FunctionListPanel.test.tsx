@@ -80,6 +80,15 @@ describe("FunctionListPanel", () => {
     expect(model).toMatchObject({ functions: [{ id: "F-01", name: "予約する" }] });
   });
 
+  it("種別と機能グループの列は、ほかの列が広がっても選んだ値が読める最小の幅を持つ", () => {
+    renderPanel(draftStage());
+    const cell = screen.getByLabelText("F-01 の種別").closest("td") as HTMLElement;
+    expect(cell.style.minWidth).toBe("120px");
+    // 機能グループの名前も切れない幅にする
+    const group = screen.getByLabelText("F-01 の機能グループ").closest("td") as HTMLElement;
+    expect(group.style.minWidth).toBe("200px");
+  });
+
   it("要件の欄は「,」区切りで編集し、要件ID の配列で保存する", async () => {
     const user = userEvent.setup();
     renderPanel(draftStage());
