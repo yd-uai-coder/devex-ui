@@ -47,6 +47,29 @@ describe("VerificationTab", () => {
     expect(screen.getByRole("button", { name: "検証済みにする" })).toHaveAttribute("aria-disabled", "true");
   });
 
+  it("作り直した後に未承認の段階を、段階へのリンクと一緒に出す", () => {
+    useChangeRequestsStore.setState({
+      views: { ...store().views, verification: makeVerification({ pending_stages: [2, 5] }), candidates: [] },
+    });
+
+    renderWithTheme(<VerificationTab projectId="p1" cr={makeChangeRequest({ status: "applied" })} />);
+
+    const section = screen.getByLabelText("未承認の段階");
+    expect(section).toHaveTextContent("すべて承認するまで検証済みにできません");
+    expect(screen.getAllByRole("link", { name: /を承認する →$/ }).map((a) => a.getAttribute("href"))).toEqual([
+      "/projects/p1/detailed-design?stage=2",
+      "/projects/p1/detailed-design?stage=5",
+    ]);
+  });
+
+  it("未承認の段階が無ければ、その節を出さない", () => {
+    useChangeRequestsStore.setState({ views: { ...store().views, verification: makeVerification(), candidates: [] } });
+
+    renderWithTheme(<VerificationTab projectId="p1" cr={makeChangeRequest({ status: "applied" })} />);
+
+    expect(screen.queryByLabelText("未承認の段階")).not.toBeInTheDocument();
+  });
+
   it("文書の側の項目を確認済みにする", async () => {
     useChangeRequestsStore.setState({ views: { ...store().views, verification: makeVerification(), candidates: [] } });
     renderWithTheme(<VerificationTab projectId="p1" cr={makeChangeRequest({ status: "applied" })} />);

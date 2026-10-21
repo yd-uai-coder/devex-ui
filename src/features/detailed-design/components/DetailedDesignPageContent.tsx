@@ -156,6 +156,11 @@ export function DetailedDesignPageContent({
               <Text color="$blue10">合意済みの版 →</Text>
             </Link>
           ) : null}
+          {detailed ? (
+            <Link href={`/projects/${projectId}/confirmations`}>
+              <Text color="$blue10">確認事項 →</Text>
+            </Link>
+          ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}
           <DeleteProjectButton projectId={projectId} onDeleted={() => router.push("/dashboard")} />
         </XStack>

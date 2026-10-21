@@ -82,9 +82,10 @@ describe("DetailedDesignPageContent", () => {
     await waitFor(() => expect(useDetailedDesignStore.getState().selectStage).toHaveBeenCalledWith(3));
   });
 
-  it("詳細設計モードは変更要求(CR)と合意済みの版へのリンクを出す", () => {
+  it("詳細設計モードは変更要求(CR)・合意済みの版・確認事項へのリンクを出す", () => {
     renderContent();
 
+    expect(screen.getByRole("link", { name: "確認事項 →" })).toHaveAttribute("href", "/projects/p1/confirmations");
     expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
     expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");
     expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();

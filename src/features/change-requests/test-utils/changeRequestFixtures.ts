@@ -24,6 +24,7 @@ export function makeChangeRequest(overrides: Partial<ChangeRequestRead> = {}): C
       { requirement_id: "FR-005", kind: "content", kind_label: "内容の変更", proposed_text: "5件まで添付できる" },
     ],
     adds_requirement: false,
+    origins: [],
     baseline_number: 1,
     baseline_label: "B-1",
     created_by: "u1",
@@ -59,6 +60,7 @@ export function makeImpact(overrides: Partial<ChangeRequestImpactRead> = {}): Ch
         path: ["FR-005", "SCR-004"],
         reason: "FR-005 を持つ画面",
         requirement_ids: ["FR-005"],
+        origin_keys: [],
       },
       {
         key: "F-02",
@@ -68,10 +70,12 @@ export function makeImpact(overrides: Partial<ChangeRequestImpactRead> = {}): Ch
         path: ["FR-005", "F-02"],
         reason: "FR-005 を実現する処理",
         requirement_ids: ["FR-005"],
+        origin_keys: [],
       },
     ],
     unpredicted_new_requirement: false,
     excluded: [],
+    origins: [],
     ...overrides,
   };
 }
@@ -157,6 +161,7 @@ export function makeVerification(
       },
     ],
     documents: [{ key: "SCR-004", label: "SCR-004 チャットヒアリング画面", reason: "FR-005 を持つ画面", reviewed: false }],
+    pending_stages: [],
     ...overrides,
   };
 }
@@ -183,6 +188,8 @@ export function makeTrace(overrides: Partial<ChangeRequestTraceRead> = {}): Chan
         stage: null,
         reviews: [],
         baseline_number: null,
+        edited_fields: [],
+        mark_count: null,
       },
       {
         position: 2,
@@ -201,6 +208,8 @@ export function makeTrace(overrides: Partial<ChangeRequestTraceRead> = {}): Chan
         stage: null,
         reviews: [],
         baseline_number: null,
+        edited_fields: [],
+        mark_count: null,
       },
       {
         position: 3,
@@ -218,6 +227,8 @@ export function makeTrace(overrides: Partial<ChangeRequestTraceRead> = {}): Chan
           { review_run_id: "r1", gate: "stage6", model: "claude-sonnet", status: "succeeded", findings: 4, adopted: 2 },
         ],
         baseline_number: null,
+        edited_fields: [],
+        mark_count: null,
       },
       {
         position: 4,
@@ -233,6 +244,8 @@ export function makeTrace(overrides: Partial<ChangeRequestTraceRead> = {}): Chan
         stage: null,
         reviews: [],
         baseline_number: 2,
+        edited_fields: [],
+        mark_count: null,
       },
     ],
     ...overrides,

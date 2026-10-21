@@ -68,6 +68,17 @@ describe("useChangeRequestsStore", () => {
     expect(stub.requests).toHaveLength(1);
   });
 
+  it("起点の候補は束ごとに1回だけ読む", async () => {
+    stub.queue({ body: [{ key: "req:FR-001", kind: "requirement", label: "FR-001 a" }] });
+
+    await state().fetchOrigins("p1", 1);
+    await state().fetchOrigins("p1", 1);
+
+    expect(state().origins[1]).toHaveLength(1);
+    expect(stub.requests).toHaveLength(1);
+    expect(stub.requests[0].url).toContain("/baselines/1/origins");
+  });
+
   it("詳細のタブを読み、比較の 409 はタブの失敗として残す", async () => {
     stub.queue({ body: makeChangeRequest({ status: "agreed" }) });
     stub.queue({ body: makeVerification() });

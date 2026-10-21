@@ -53,6 +53,7 @@ describe("changeRequestsApi", () => {
       background_memo: "",
       targets: [{ requirement_id: "FR-001", kind: "delete" as const, proposed_text: "" }],
       adds_requirement: false,
+      origins: [],
       baseline_number: 2,
     };
 
@@ -98,6 +99,7 @@ describe("changeRequestsApi", () => {
       background_memo: "m",
       targets: [],
       adds_requirement: true,
+      origins: ["screen:SCR-004"],
     };
 
     await updateChangeRequest("p1", 1, update);

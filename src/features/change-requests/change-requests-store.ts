@@ -6,8 +6,12 @@ import type { ProjectRead } from "@/features/dashboard/api/projects";
 import { getProject, triggerGeneration } from "@/features/hearing/api/hearingApi";
 import type { GenerationFailure } from "@/lib/generation-failure";
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
-import { listBaselineRequirements, listBaselines } from "@/features/baselines/api/baselinesApi";
-import type { BaselineRequirementRead, BaselineSummaryRead } from "@/features/baselines/api/types";
+import { listBaselineOrigins, listBaselineRequirements, listBaselines } from "@/features/baselines/api/baselinesApi";
+import type {
+  BaselineOriginRead,
+  BaselineRequirementRead,
+  BaselineSummaryRead,
+} from "@/features/baselines/api/types";
 import {
   checkChangeRequestDocuments,
   confirmExplanationSummary,
@@ -88,6 +92,8 @@ type ChangeRequestsStore = {
   baselines: BaselineSummaryRead[] | null;
   // 束の番号 → 要件定義書の写しの要件
   requirements: Record<number, BaselineRequirementRead[]>;
+  // 束の番号 → 新しい要件の予測の起点に選べる要素
+  origins: Record<number, BaselineOriginRead[]>;
 
   // 開いている CR の詳細
   detail: ChangeRequestRead | null;
@@ -112,6 +118,7 @@ type ChangeRequestsStore = {
   fetchList: (projectId: string, options?: { force?: boolean }) => Promise<void>;
   fetchBaselines: (projectId: string) => Promise<void>;
   fetchRequirements: (projectId: string, baselineNumber: number) => Promise<void>;
+  fetchOrigins: (projectId: string, baselineNumber: number) => Promise<void>;
   fetchDetail: (projectId: string, number: number) => Promise<void>;
   fetchView: (projectId: string, number: number, view: DetailView) => Promise<void>;
   clearActionError: () => void;
@@ -148,6 +155,7 @@ const PROJECT_INITIAL = {
   fetchedAt: null,
   baselines: null,
   requirements: {},
+  origins: {},
   detail: null,
   detailStatus: "idle" as AsyncStatus,
   detailError: null,
@@ -258,6 +266,18 @@ export const useChangeRequestsStore = create<ChangeRequestsStore>((set, get) => 
         set({ requirements: { ...get().requirements, [baselineNumber]: rows } });
       } catch (err) {
         set({ actionError: message(err, "合意済みの版の要件の取得に失敗しました"), unavailable: isDetailedModeOnly(err) });
+      }
+    },
+
+    fetchOrigins: async (projectId, baselineNumber) => {
+      switchProject(set, get, projectId);
+      if (get().origins[baselineNumber]) return;
+      try {
+        const rows = await listBaselineOrigins(projectId, baselineNumber);
+        if (get().projectId !== projectId) return;
+        set({ origins: { ...get().origins, [baselineNumber]: rows } });
+      } catch (err) {
+        set({ actionError: message(err, "予測の起点の候補の取得に失敗しました"), unavailable: isDetailedModeOnly(err) });
       }
     },
 

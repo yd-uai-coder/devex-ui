@@ -30,6 +30,7 @@ describe("ChangeRequestCreateContent", () => {
 
     expect(useChangeRequestsStore.getState().fetchBaselines).toHaveBeenCalledWith("p1");
     expect(useChangeRequestsStore.getState().fetchRequirements).toHaveBeenCalledWith("p1", 2);
+    expect(useChangeRequestsStore.getState().fetchOrigins).toHaveBeenCalledWith("p1", 2);
     expect(screen.getByText(/基準の合意済みの版: B-2/)).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "基準の合意済みの版" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "← B-2 合意済みの版" })).toHaveAttribute("href", "/projects/p1/baselines/2");

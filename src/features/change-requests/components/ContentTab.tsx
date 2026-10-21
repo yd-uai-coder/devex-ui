@@ -10,11 +10,13 @@ import { ChangeRequestForm } from "@/features/change-requests/components/ChangeR
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { baselineHref } from "@/features/baselines/baselineOps";
 
-// 詳細の「内容」タブ。内容・背景・対象(種類と変更後の案)・合意の記録・重なり・写しの元と先・
+// 詳細の「内容」タブ。内容・背景・対象(種類と変更後の案)・新しい要件の予測の起点・合意の記録・重なり・写しの元と先・
 // 入れた合意済みの版を出す。下書き・説明済みの間は直せる(説明済みで直すと下書きに戻る)。
 export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const requirements = useChangeRequestsStore((s) => s.requirements[cr.baseline_number] ?? null);
   const fetchRequirements = useChangeRequestsStore((s) => s.fetchRequirements);
+  const origins = useChangeRequestsStore((s) => s.origins[cr.baseline_number] ?? null);
+  const fetchOrigins = useChangeRequestsStore((s) => s.fetchOrigins);
   const acting = useChangeRequestsStore((s) => s.acting);
   const update = useChangeRequestsStore((s) => s.update);
   const [editing, setEditing] = useState(false);
@@ -25,12 +27,17 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
     void fetchRequirements(projectId, cr.baseline_number);
   }, [projectId, cr.baseline_number, fetchRequirements]);
   const textOf = (id: string) => requirements?.find((r) => r.id === id)?.text ?? "";
+  // 起点の候補は直すときだけ要る
+  useEffect(() => {
+    if (editing) void fetchOrigins(projectId, cr.baseline_number);
+  }, [editing, projectId, cr.baseline_number, fetchOrigins]);
 
   if (editing) {
     return (
       <ChangeRequestForm
         initial={formFromChangeRequest(cr)}
         requirements={requirements}
+        origins={origins}
         submitting={acting}
         submitLabel={cr.status === "explained" ? "直す(下書きに戻る)" : "直す"}
         onCancel={() => setEditing(false)}
@@ -87,7 +94,18 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
             </tbody>
           </table>
         ) : null}
-        {cr.adds_requirement ? <Text>新しい要件を足す(ID の無い要件。影響の予測には入りません)</Text> : null}
+        {cr.adds_requirement ? (
+          <YStack gap="$1" aria-label="予測の起点">
+            <Text>新しい要件を足す(ID の無い要件)</Text>
+            {cr.origins.length > 0 ? (
+              <Text fontSize="$3">{`予測の起点: ${cr.origins.map((o) => o.label).join("、")}`}</Text>
+            ) : (
+              <Text fontSize="$3" color="$color11">
+                予測の起点を選んでいないので、新しい要件の分は影響の予測に入りません。
+              </Text>
+            )}
+          </YStack>
+        ) : null}
       </YStack>
 
       {cr.decision ? (

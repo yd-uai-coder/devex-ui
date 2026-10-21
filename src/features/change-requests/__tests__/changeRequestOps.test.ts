@@ -3,6 +3,8 @@
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 import { describe, expect, it } from "vitest";
 import {
+  ORIGIN_KIND_LABEL,
+  addOrigin,
   addTarget,
   canReflectDocuments,
   canReflectStages,
@@ -20,6 +22,8 @@ import {
   localInputToIso,
   markSegments,
   nowLocalInput,
+  originLabel,
+  removeOrigin,
   removeTarget,
   setTargetKind,
   setTargetProposal,
@@ -114,6 +118,27 @@ describe("changeRequestOps", () => {
     ]);
   });
 
+  it("起点は同じ要素を2回入れず、新しい要件を足すときだけ送る", () => {
+    const origins = addOrigin(addOrigin(addOrigin([], "screen:SCR-004"), "req:FR-001"), "screen:SCR-004");
+    expect(origins).toEqual(["screen:SCR-004", "req:FR-001"]);
+    expect(removeOrigin(origins, "screen:SCR-004")).toEqual(["req:FR-001"]);
+    expect(addOrigin(origins, "")).toBe(origins);
+
+    const form = { ...emptyForm(), title: "t", content: "c", adds_requirement: true, origins };
+    expect(toUpdateBody(form).origins).toEqual(["screen:SCR-004", "req:FR-001"]);
+    // 「新しい要件を足す」を外したら、選んでいた起点は送らない(サーバーは起点だけ残ると断る)
+    expect(toUpdateBody({ ...form, adds_requirement: false }).origins).toEqual([]);
+    expect(ORIGIN_KIND_LABEL.screen).toBe("画面");
+  });
+
+  it("CR の起点はキーでフォームへ写し、表示名はキーから引く", () => {
+    const origins = [{ key: "screen:SCR-004", label: "SCR-004 チャットヒアリング画面" }];
+    const cr = makeChangeRequest({ adds_requirement: true, origins });
+    expect(formFromChangeRequest(cr).origins).toEqual(["screen:SCR-004"]);
+    expect(originLabel(origins, "screen:SCR-004")).toBe("SCR-004 チャットヒアリング画面");
+    expect(originLabel(origins, "api:GET /x")).toBe("api:GET /x");
+  });
+
   it("datetime-local の値と ISO 文字列", () => {
     expect(nowLocalInput(new Date(2026, 9, 19, 9, 5))).toBe("2026-10-19T09:05");
     expect(localInputToIso("2026-10-19T09:05")).toBe(new Date(2026, 9, 19, 9, 5).toISOString());
@@ -184,3 +209,4 @@ describe("モード", () => {
     expect(isDetailedModeOnly(new Error("x"))).toBe(false);
   });
 });
+

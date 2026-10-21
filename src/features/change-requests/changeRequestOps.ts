@@ -2,6 +2,7 @@ import type {
   BackgroundSource,
   ChangeRequestAction,
   ChangeRequestCreate,
+  ChangeRequestOriginRead,
   ChangeRequestRead,
   ChangeRequestStatus,
   ChangeRequestTargetIn,
@@ -13,6 +14,7 @@ import type {
   TargetKind,
 } from "@/features/change-requests/api/types";
 import { ApiError } from "@/lib/api/client";
+import type { OriginKind } from "@/features/baselines/api/types";
 import type { DesignImpactRead } from "@/features/detailed-design/api/types";
 import { STAGE_TITLES } from "@/features/detailed-design/labels";
 
@@ -98,6 +100,8 @@ export type ChangeRequestForm = {
   background_memo: string;
   targets: ChangeRequestTargetIn[];
   adds_requirement: boolean;
+  // 新しい要件の予測の起点の要素のキー(選んだ順。新しい要件を足すときだけ送る)
+  origins: string[];
   // 基準の束(作成のときだけ。null は最新の束)
   baseline_number: number | null;
 };
@@ -111,6 +115,7 @@ export function emptyForm(baselineNumber: number | null = null): ChangeRequestFo
     background_memo: "",
     targets: [],
     adds_requirement: false,
+    origins: [],
     baseline_number: baselineNumber,
   };
 }
@@ -128,6 +133,7 @@ export function formFromChangeRequest(cr: ChangeRequestRead): ChangeRequestForm 
       proposed_text: t.proposed_text,
     })),
     adds_requirement: cr.adds_requirement,
+    origins: cr.origins.map((o) => o.key),
     baseline_number: cr.baseline_number,
   };
 }
@@ -140,6 +146,29 @@ export function addTarget(targets: ChangeRequestTargetIn[], requirementId: strin
 
 export function removeTarget(targets: ChangeRequestTargetIn[], requirementId: string): ChangeRequestTargetIn[] {
   return targets.filter((t) => t.requirement_id !== requirementId);
+}
+
+// ---- 新しい要件の予測の起点 ----
+
+export const ORIGIN_KIND_LABEL: Record<OriginKind, string> = {
+  requirement: "要件",
+  screen: "画面",
+  api: "API",
+};
+
+// 起点を足す(同じ要素は2回入れない)
+export function addOrigin(origins: string[], key: string): string[] {
+  if (!key || origins.includes(key)) return origins;
+  return [...origins, key];
+}
+
+export function removeOrigin(origins: string[], key: string): string[] {
+  return origins.filter((o) => o !== key);
+}
+
+// 起点のキーの表示名(知らないキーはキーのまま)
+export function originLabel(origins: ChangeRequestOriginRead[], key: string): string {
+  return origins.find((o) => o.key === key)?.label ?? key;
 }
 
 // 種類を変える。削除には案を書けないので、削除にしたら案を消す
@@ -187,6 +216,8 @@ export function toUpdateBody(form: ChangeRequestForm): ChangeRequestUpdate {
       proposed_text: t.kind === "delete" ? "" : t.proposed_text.trim(),
     })),
     adds_requirement: form.adds_requirement,
+    // 起点は新しい要件を足す CR だけが持てる(外したら空にして送る。サーバーは起点だけ残ると断る)
+    origins: form.adds_requirement ? form.origins : [],
   };
 }
 

@@ -63,6 +63,9 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
           <Link href={`/projects/${projectId}/detailed-design`}>
             <Text color="$blue10">詳細設計</Text>
           </Link>
+          <Link href={`/projects/${projectId}/confirmations`}>
+            <Text color="$blue10">確認事項</Text>
+          </Link>
         </XStack>
       </XStack>
       <Paragraph color="$color11">

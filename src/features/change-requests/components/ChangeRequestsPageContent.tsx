@@ -41,6 +41,9 @@ export function ChangeRequestsPageContent({ projectId }: { projectId: string }) 
           <Link href={baselinesHref(projectId)}>
             <Text color="$blue10">合意済みの版</Text>
           </Link>
+          <Link href={`/projects/${projectId}/confirmations`}>
+            <Text color="$blue10">確認事項</Text>
+          </Link>
         </XStack>
       </XStack>
       <Paragraph color="$color11">

@@ -43,6 +43,15 @@ export type BaselineRequirementRead = {
   text: string;
 };
 
+// 束で、新しい要件の予測の起点に選べる要素1つ(CR の起点を選ぶ)
+export type OriginKind = "requirement" | "screen" | "api";
+
+export type BaselineOriginRead = {
+  key: string;
+  kind: OriginKind;
+  label: string;
+};
+
 // 束の作成(合意の記録と、入れる検証済みの CR の番号。相手は空でもよい。日時はタイムゾーン付き)
 export type BaselineCreate = {
   agreed_at: string;

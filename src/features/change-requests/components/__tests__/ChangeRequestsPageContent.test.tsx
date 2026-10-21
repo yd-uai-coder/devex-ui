@@ -52,6 +52,7 @@ describe("ChangeRequestsPageContent", () => {
     const links = screen.getAllByRole("link", { name: "合意済みの版" });
     expect(links).toHaveLength(2);
     expect(links[1]).toHaveAttribute("href", "/projects/p1/baselines");
+    expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
     expect(screen.getByText("変更要求はまだありません。")).toBeInTheDocument();
   });
 

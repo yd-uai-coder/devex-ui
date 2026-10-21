@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import type {
   GeneratedDocumentRead,
@@ -28,11 +29,13 @@ type RequirementsSummaryPanelProps = {
 
 // 要件定義書の上に、要件の出どころの件数・検証の指摘・推測の要件(「採用にする」)を出す。
 // 推測は AI が補った要件(利用者は言っていない)。確かめた要件だけを「採用」にし、違う内容に
-// したいときはチャットで答えて再生成する。
+// したいときはチャットで答えて再生成する。詳細設計モードは、推測の要件の件数つきで確認事項の一覧
+// (決める機会・状態・メモ)へのリンクも出す。
 export function RequirementsSummaryPanel({ projectId, document }: RequirementsSummaryPanelProps) {
   const adoptingId = useDocumentsStore((s) => s.adoptingId);
   const adoptError = useDocumentsStore((s) => s.adoptError);
   const adoptRequirement = useDocumentsStore((s) => s.adoptRequirement);
+  const projectMode = useDocumentsStore((s) => s.projectMode);
 
   if (document.doc_type !== "requirements") return null;
   const summary = document.requirements;
@@ -89,6 +92,11 @@ export function RequirementsSummaryPanel({ projectId, document }: RequirementsSu
               </Button>
             </XStack>
           ))}
+          {projectMode === "detailed" ? (
+            <Link href={`/projects/${projectId}/confirmations`}>
+              <Text color="$blue10">{`推測の要件 ${summary.assumed.length}件の決める機会・状態を、確認事項の一覧で決める →`}</Text>
+            </Link>
+          ) : null}
         </YStack>
       ) : null}
       {adoptError ? (

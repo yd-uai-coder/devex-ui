@@ -41,6 +41,7 @@ describe("BaselinesPageContent", () => {
     expect(screen.getByRole("link", { name: "CR-3" })).toHaveAttribute("href", "/projects/p1/change-requests/3");
     expect(screen.getAllByText("6 / 8 入った")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "← 変更要求(CR)" })).toHaveAttribute("href", "/projects/p1/change-requests");
+    expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
   });
 
   it("作成のフォームを開くと段階と CR を読み直し、入れられる CR だけを選ばせる", async () => {

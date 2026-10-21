@@ -32,6 +32,20 @@ describe("ImpactTab", () => {
     expect(screen.queryByRole("button", { name: /文書へ反映する/ })).not.toBeInTheDocument();
   });
 
+  it("起点を使った予測は、起点と要素ごとに届いた起点を出す", () => {
+    const origins = [{ key: "screen:SCR-004", label: "SCR-004 チャットヒアリング画面" }];
+    const impact = makeImpact({ origins });
+    impact.items = impact.items.map((item) => ({ ...item, origin_keys: item.stage === 1 ? ["screen:SCR-004"] : [] }));
+    useChangeRequestsStore.setState({ views: { ...store().views, impact } });
+
+    renderWithTheme(<ImpactTab projectId="p1" cr={makeChangeRequest({ adds_requirement: true, origins })} />);
+
+    expect(screen.getByText("新しい要件の予測の起点: SCR-004 チャットヒアリング画面")).toBeInTheDocument();
+    expect(screen.getAllByRole("columnheader", { name: "届いた起点" })).toHaveLength(2);
+    // 文書の側の要素の名前(SCR-004)と、段階1の要素に届いた起点の2つ
+    expect(screen.getAllByRole("cell", { name: "SCR-004 チャットヒアリング画面" })).toHaveLength(2);
+  });
+
   it("開いたときに予測を読む", () => {
     renderWithTheme(<ImpactTab projectId="p1" cr={makeChangeRequest()} />);
 

@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
   BaselineCreate,
+  BaselineOriginRead,
   BaselineRead,
   BaselineRequirementRead,
   BaselineSummaryRead,
@@ -26,4 +27,9 @@ export function createBaseline(projectId: string, body: BaselineCreate): Promise
 
 export function listBaselineRequirements(projectId: string, number: number): Promise<BaselineRequirementRead[]> {
   return apiFetch<BaselineRequirementRead[]>(`${base(projectId)}/${number}/requirements`);
+}
+
+// 新しい要件の予測の起点に選べる要素(束の要件・画面・API)
+export function listBaselineOrigins(projectId: string, number: number): Promise<BaselineOriginRead[]> {
+  return apiFetch<BaselineOriginRead[]>(`${base(projectId)}/${number}/origins`);
 }

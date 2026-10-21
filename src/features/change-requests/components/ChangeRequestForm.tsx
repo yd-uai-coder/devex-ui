@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { Button, Text, XStack, YStack } from "tamagui";
-import type { BaselineRequirementRead } from "@/features/baselines/api/types";
+import type { BaselineOriginRead, BaselineRequirementRead } from "@/features/baselines/api/types";
 import {
   BACKGROUND_SOURCE_OPTIONS,
+  ORIGIN_KIND_LABEL,
   TARGET_KIND_OPTIONS,
+  addOrigin,
   addTarget,
   formProblems,
+  removeOrigin,
   removeTarget,
   setTargetKind,
   setTargetProposal,
@@ -20,9 +23,11 @@ const LABEL = { display: "block", fontSize: 13, fontWeight: 600, marginBottom: 2
 // CR の作成・編集のフォーム。対象の要件は基準の合意済みの版(束)の要件から選び、要件ごとに変更の種類
 // (内容の変更 / 削除)と、任意の変更後の案を入れる(削除には案を書けないので欄を出さない)。
 // 基準の束はこのフォームでは選ばない(作成は合意済みの版の中身から移るので固定。編集では変えない)。
+// 「新しい要件を足す」にしたときだけ、新しい要件の予測の起点(基準の束の要件・画面・API)を選べる。
 export function ChangeRequestForm({
   initial,
   requirements,
+  origins,
   submitting,
   submitLabel,
   onSubmit,
@@ -31,6 +36,8 @@ export function ChangeRequestForm({
   initial: FormState;
   // 基準の束の要件(読み込み中は null)
   requirements: BaselineRequirementRead[] | null;
+  // 基準の束で起点に選べる要素(読み込み中は null)
+  origins: BaselineOriginRead[] | null;
   submitting: boolean;
   submitLabel: string;
   onSubmit: (form: FormState) => void;
@@ -38,10 +45,13 @@ export function ChangeRequestForm({
 }) {
   const [form, setForm] = useState<FormState>(initial);
   const [picked, setPicked] = useState("");
+  const [pickedOrigin, setPickedOrigin] = useState("");
   const [showProblems, setShowProblems] = useState(false);
   const problems = formProblems(form);
   const textOf = (id: string) => requirements?.find((r) => r.id === id)?.text ?? "";
   const choices = (requirements ?? []).filter((r) => !form.targets.some((t) => t.requirement_id === r.id));
+  const originOf = (key: string) => origins?.find((o) => o.key === key);
+  const originChoices = (origins ?? []).filter((o) => !form.origins.includes(o.key));
   const update = (patch: Partial<FormState>) => setForm((current) => ({ ...current, ...patch }));
 
   const submit = () => {
@@ -204,8 +214,63 @@ export function ChangeRequestForm({
             checked={form.adds_requirement}
             onChange={(e) => update({ adds_requirement: e.target.checked })}
           />{" "}
-          新しい要件を足す(ID の無い要件。影響の予測には入りません)
+          新しい要件を足す(ID の無い要件。起点を選ぶと、起点から影響を予測します)
         </label>
+        {form.adds_requirement ? (
+          <YStack gap="$2" paddingLeft="$4" aria-label="予測の起点">
+            <Text fontSize="$3" color="$color11">
+              新しい要件が関わりそうな既存の要件・画面・API を選んでください(任意)。選ばなければ、新しい要件の分は予測に入りません。
+            </Text>
+            {origins === null ? <Text color="$color11">起点の候補を読み込み中...</Text> : null}
+            {form.origins.map((key) => {
+              const origin = originOf(key);
+              return (
+                <XStack key={key} gap="$2" alignItems="center">
+                  <Text fontSize="$3">
+                    {origin ? `${ORIGIN_KIND_LABEL[origin.kind]}: ${origin.label}` : key}
+                  </Text>
+                  <Button
+                    size="$2"
+                    chromeless
+                    aria-label={`${origin?.label ?? key} を起点から外す`}
+                    onPress={() => update({ origins: removeOrigin(form.origins, key) })}
+                  >
+                    外す
+                  </Button>
+                </XStack>
+              );
+            })}
+            {originChoices.length > 0 ? (
+              <XStack gap="$2" alignItems="center">
+                <select
+                  style={{ ...INPUT, width: "auto", maxWidth: 480 }}
+                  aria-label="足す起点"
+                  value={pickedOrigin}
+                  onChange={(e) => setPickedOrigin(e.target.value)}
+                >
+                  <option value="" style={OPTION}>
+                    起点を選ぶ
+                  </option>
+                  {originChoices.map((o) => (
+                    <option key={o.key} value={o.key} style={OPTION}>
+                      {`${ORIGIN_KIND_LABEL[o.kind]}: ${o.label}`.slice(0, 80)}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  size="$2"
+                  disabled={!pickedOrigin}
+                  onPress={() => {
+                    update({ origins: addOrigin(form.origins, pickedOrigin) });
+                    setPickedOrigin("");
+                  }}
+                >
+                  起点に足す
+                </Button>
+              </XStack>
+            ) : null}
+          </YStack>
+        ) : null}
       </YStack>
 
       {showProblems && problems.length > 0 ? (
