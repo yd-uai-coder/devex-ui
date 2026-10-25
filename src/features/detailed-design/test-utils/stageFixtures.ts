@@ -36,6 +36,14 @@ export function makeFunctionList(): FunctionListModel {
   };
 }
 
+// makeFunctionList に、まだどの段階にも書かれていない処理 F-02 を足した機能一覧(機能一覧に無い処理の
+// 付け替え先。テスト専用)。
+export function makeFunctionListWithSpare(): FunctionListModel {
+  const list = makeFunctionList();
+  const spare = { ...list.functions[0], id: "F-02", name: "予約を取り消す", trigger: "DELETE /api/v1/reservations/{id}" };
+  return { ...list, functions: [...list.functions, spare], next_number: 3 };
+}
+
 // makeFunctionList の処理1件に対応する、段階2の処理概要表(DFD を描くグループは既定で無し。テスト専用)。
 export function makeDataFlow(dfdGroups: string[] = []): DataFlowModel {
   return {

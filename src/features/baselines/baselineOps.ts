@@ -49,16 +49,6 @@ export function includableChangeRequests(list: ChangeRequestSummaryRead[]): Chan
     .sort((a, b) => a.number - b.number);
 }
 
-// この束に入れた CR(番号の順)
-export function includedChangeRequests(
-  list: ChangeRequestSummaryRead[],
-  baselineNumber: number,
-): ChangeRequestSummaryRead[] {
-  return list
-    .filter((cr) => cr.included_baseline_number === baselineNumber)
-    .sort((a, b) => a.number - b.number);
-}
-
 // 作成のフォームの入力(日時は datetime-local の値)
 export type BaselineForm = {
   agreedAt: string;

@@ -7,7 +7,6 @@ import {
   baselineHref,
   createBlocker,
   includableChangeRequests,
-  includedChangeRequests,
   itemLabel,
   itemStateLabel,
   prefillAgreement,
@@ -72,7 +71,6 @@ describe("baselineOps", () => {
     const list = [VERIFIED_3, APPLIED, INCLUDED, VERIFIED_1];
 
     expect(includableChangeRequests(list).map((c) => c.number)).toEqual([1, 3]);
-    expect(includedChangeRequests(list, 2).map((c) => c.number)).toEqual([2]);
   });
 
   it("合意の記録の初期値は、選んだ CR の記録から作る", () => {

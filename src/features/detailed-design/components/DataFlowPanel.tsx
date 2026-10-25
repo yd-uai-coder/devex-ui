@@ -15,11 +15,18 @@ import { ReviewFindingBadge } from "@/features/design-review/components/ReviewFi
 import { ImpactBadge } from "@/features/detailed-design/components/ImpactBadge";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayFunctionTable } from "@/features/detailed-design/components/StrayFunctionTable";
 import { CELL, HEAD, INPUT, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import {
   countGroupFunctions,
   hasDraft,
+  reassignSummary,
+  removeStraySummaries,
+  removeSummaryAt,
+  strayDfdGroups,
+  straySummaries,
   summaryOf,
+  summaryTargets,
   toDataFlow,
   toggleDfdGroup,
   updateSummary,
@@ -71,6 +78,8 @@ export function DataFlowPanel({
   const generating = stage.generation_status === "generating";
   const { timedOut } = useStageGenerationPolling(projectId, generating);
   const regenerating = hasDraft(saved);
+  const strayGroups = strayDfdGroups(draft, functionList);
+  const targets = summaryTargets(draft, functionList);
 
   const startGeneration = () => {
     setConfirming(false);
@@ -113,6 +122,23 @@ export function DataFlowPanel({
             );
           })}
         </XStack>
+        {/* 段階1 の作り直しで消えたグループ(上の選択には出ないので、ここから外す) */}
+        {strayGroups.map((group) => (
+          <XStack key={group} gap="$2" alignItems="center" flexWrap="wrap">
+            <Text color="$orange10" fontSize="$2">
+              {`機能一覧に無いグループ「${group}」が選ばれています。このままでは承認できません。`}
+            </Text>
+            <StyledButton
+              size="$2"
+              theme="red"
+              disabled={generating || !stage.is_open}
+              aria-label={`グループ「${group}」を外す`}
+              onPress={() => setDraft((m) => toggleDfdGroup(m, group, false))}
+            >
+              外す
+            </StyledButton>
+          </XStack>
+        ))}
       </YStack>
 
       <YStack gap="$2">
@@ -242,6 +268,27 @@ export function DataFlowPanel({
           </div>
         </YStack>
       ) : null}
+
+      {/* 段階1 の作り直しで処理 ID が変わって残った処理概要(表には出ないので、付け替えるか消す) */}
+      <StrayFunctionTable
+        title="機能一覧に無い処理の処理概要"
+        description="段階1 の処理 ID が変わったため、どの処理とも合わない処理概要です。このままでは承認できません。活かす行は今の処理へ付け替え(中身はそのまま)、要らない行は消してください。変更は保存して反映されます。"
+        detailHead="処理内容"
+        rows={straySummaries(draft, functionList).map((stray) => ({
+          key: String(stray.index),
+          functionId: stray.functionId,
+          detail: stray.process || "(空)",
+          targets,
+        }))}
+        removeLabel="消す"
+        removeAllLabel="機能一覧に無い処理概要をすべて消す"
+        disabled={generating || !stage.is_open}
+        onReassign={(key, functionId) =>
+          setDraft((m) => reassignSummary(m, functionList, Number(key), functionId))
+        }
+        onRemove={(key) => setDraft((m) => removeSummaryAt(m, Number(key)))}
+        onRemoveAll={() => setDraft((m) => removeStraySummaries(m, functionList))}
+      />
 
       <StageSaveBar
         dirty={dirty}

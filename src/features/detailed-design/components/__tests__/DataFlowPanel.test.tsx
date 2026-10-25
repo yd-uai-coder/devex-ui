@@ -200,4 +200,26 @@ describe("DataFlowPanel と DFD のタブ", () => {
     expect(screen.getByLabelText("F-01 の入力").closest("tr")).toHaveAttribute("aria-current", "true");
     useDetailedDesignStore.setState({ impact: null, highlight: null });
   });
+
+  it("機能一覧に無い処理概要とグループがあるときだけ一覧を出し、消す・外すと保存できる", async () => {
+    const user = userEvent.setup();
+    const stray = { function_id: "F-09", input: "旧", process: "旧の処理", output: "旧" };
+    const onDirtyChange = renderPanel(
+      setup({
+        state: "regenerated",
+        version: 3,
+        model: { dfd_groups: ["reservations", "消えたグループ"], summaries: [...makeDataFlow().summaries, stray] },
+      }),
+    );
+
+    expect(screen.getByText("機能一覧に無い処理の処理概要(1)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "F-09(旧の処理) を消す" }));
+    expect(screen.queryByText("機能一覧に無い処理の処理概要(1)")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "グループ「消えたグループ」を外す" }));
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+
+    await user.click(screen.getAllByRole("button", { name: "保存する" })[0]);
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect(model).toEqual({ dfd_groups: ["reservations"], summaries: makeDataFlow().summaries });
+  });
 });

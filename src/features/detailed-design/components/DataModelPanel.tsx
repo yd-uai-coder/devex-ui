@@ -9,8 +9,18 @@ import { CrudMatrix } from "@/features/detailed-design/components/CrudMatrix";
 import { ErEditorSection } from "@/features/detailed-design/components/ErEditorSection";
 import { StageIssueList } from "@/features/detailed-design/components/StageIssueList";
 import { StageSaveBar } from "@/features/detailed-design/components/StageSaveBar";
+import { StrayFunctionTable } from "@/features/detailed-design/components/StrayFunctionTable";
 import { TableDefinitionTable } from "@/features/detailed-design/components/TableDefinitionTable";
-import { crudTables, hasCrudDraft, toCrud } from "@/features/detailed-design/crudOps";
+import {
+  crudTables,
+  crudTargets,
+  hasCrudDraft,
+  reassignCrudFunction,
+  removeCrudFunction,
+  removeStrayCrud,
+  strayCrudFunctions,
+  toCrud,
+} from "@/features/detailed-design/crudOps";
 import { useDetailedDesignStore } from "@/features/detailed-design/detailed-design-store";
 import { toFunctionList } from "@/features/detailed-design/functionListOps";
 import { useStageGenerationPolling } from "@/features/detailed-design/hooks/useStageGenerationPolling";
@@ -137,6 +147,27 @@ export function DataModelPanel({
           accesses={stage.dfd_accesses}
           disabled={!stage.is_open}
           onChange={setDraft}
+        />
+      )}
+
+      {/* 段階1 の作り直しで処理 ID が変わって残ったセル(CRUD 図には出ないので、付け替えるか消す) */}
+      {generating ? null : (
+        <StrayFunctionTable
+          title="機能一覧に無い処理のセル"
+          description="段階1 の処理 ID が変わったため、どの処理とも合わない CRUD 図のセルです。このままでは承認できません。活かすセルは、まだセルの無い今の処理へ付け替え(操作はそのまま)、要らないセルは消してください。変更は保存して反映されます。"
+          detailHead="テーブル"
+          rows={strayCrudFunctions(draft, functionList).map((stray) => ({
+            key: stray.functionId,
+            functionId: stray.functionId,
+            detail: stray.tables.join("、"),
+            targets: crudTargets(draft, functionList),
+          }))}
+          removeLabel="消す"
+          removeAllLabel="機能一覧に無い処理のセルをすべて消す"
+          disabled={!stage.is_open}
+          onReassign={(key, functionId) => setDraft((m) => reassignCrudFunction(m, key, functionId))}
+          onRemove={(key) => setDraft((m) => removeCrudFunction(m, key))}
+          onRemoveAll={() => setDraft((m) => removeStrayCrud(m, functionList))}
         />
       )}
 

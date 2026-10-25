@@ -9,7 +9,8 @@ import type {
   ConfirmationUpdate,
   Opportunity,
 } from "@/features/confirmations/api/types";
-import { KIND_LABEL, OPPORTUNITY_OPTIONS, rowLock } from "@/features/confirmations/confirmationOps";
+import { changeRequestHref } from "@/features/change-requests/changeRequestOps";
+import { changedByLabel, KIND_LABEL, OPPORTUNITY_OPTIONS, rowLock } from "@/features/confirmations/confirmationOps";
 import { CELL, HEAD, INPUT, MONO, OPTION, TABLE } from "@/features/detailed-design/components/tableStyles";
 
 const STATUS_COLOR: Record<ConfirmationStatus, string> = {
@@ -27,7 +28,8 @@ const STATUS_ACTIONS: { status: ConfirmationStatus; label: string }[] = [
 
 // 確認事項の表。行ごとに決める機会・状態・メモを変える(変えたらすぐ onUpdate)。今の一覧に無い行
 // (rowLock)は、状態と決める機会を変えられないので操作の代わりに理由を出す(採用して合意した要件・
-// 利用者は、変更要求へのリンク)。メモはどの行も書ける。
+// 利用者は、変更要求へのリンク)。CR の反映で文が変わって未確認に戻った行は、その CR へのリンクを
+// 状態の文の下の段に出す。メモはどの行も書ける。
 export function ConfirmationTable({
   projectId,
   items,
@@ -57,6 +59,7 @@ export function ConfirmationTable({
       <tbody>
         {items.map((item) => {
           const lock = rowLock(item);
+          const changedBy = changedByLabel(item);
           return (
           <tr key={item.key}>
             <td style={{ ...CELL, whiteSpace: "nowrap" }}>{KIND_LABEL[item.kind]}</td>
@@ -96,6 +99,15 @@ export function ConfirmationTable({
               <Text color={STATUS_COLOR[item.status]} fontSize="$3">
                 {savingKey === item.key ? "保存中…" : lock.locked ? lock.label : item.status_label}
               </Text>
+              {changedBy !== null && item.changed_by_change_request_number !== null ? (
+                // 状態の文の下の段に出す(2段。下の「変更要求(CR)で →」と同じ形)
+                <Link
+                  href={changeRequestHref(projectId, item.changed_by_change_request_number)}
+                  style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--blue10)" }}
+                >
+                  {`${changedBy} →`}
+                </Link>
+              ) : null}
               {lock.locked ? (
                 lock.viaChangeRequest ? (
                   // 状態の文の下の段に出す(2段)

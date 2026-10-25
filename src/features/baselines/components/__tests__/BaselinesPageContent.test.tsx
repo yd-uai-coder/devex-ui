@@ -21,7 +21,12 @@ describe("BaselinesPageContent", () => {
     push.mockReset();
     resetBaselinesStore();
     resetChangeRequestsStore();
-    useBaselinesStore.setState({ list: [makeBaselineSummary({ number: 2, label: "B-2" }), makeBaselineSummary()] });
+    useBaselinesStore.setState({
+      list: [
+        makeBaselineSummary({ number: 2, label: "B-2", included_change_requests: [{ number: 3, title: "入れた CR" }] }),
+        makeBaselineSummary(),
+      ],
+    });
     useChangeRequestsStore.setState({
       list: [
         makeChangeRequest({ number: 3, label: "CR-3", status: "verified", included_baseline_number: 2 }),
@@ -30,7 +35,7 @@ describe("BaselinesPageContent", () => {
     });
   });
 
-  it("束と CR の一覧を読み、束ごとに入れた CR と入った段階の数を出す", () => {
+  it("束と CR の一覧を読み、束ごとに入れた CR(束の応答)と入った段階の数を出す", () => {
     renderWithTheme(<BaselinesPageContent projectId="p1" />);
 
     expect(useBaselinesStore.getState().fetchList).toHaveBeenCalledWith("p1");

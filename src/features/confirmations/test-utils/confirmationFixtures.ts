@@ -14,6 +14,7 @@ export function makeItem(overrides: Partial<ConfirmationItemRead> = {}): Confirm
     opportunity: null,
     opportunity_label: null,
     memo: "",
+    changed_by_change_request_number: null,
     updated_at: null,
     ...overrides,
   };

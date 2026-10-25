@@ -144,4 +144,18 @@ describe("DataModelPanel", () => {
     // ER が読めなくても、セルのあるテーブルは CRUD 図の列に出す
     expect(screen.getByLabelText("F-01 × reservations")).toHaveValue("C");
   });
+
+  it("機能一覧に無い処理のセルがあるときだけ一覧を出し、消すと保存できる", async () => {
+    const user = userEvent.setup();
+    const stray = { function_id: "F-09", table: "users", ops: "R", draft: false };
+    renderPanel(setup({ state: "regenerated", version: 2, model: { cells: [...makeCrud().cells, stray] } }));
+
+    expect(screen.getByText("機能一覧に無い処理のセル(1)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "F-09(users) を消す" }));
+    expect(screen.queryByText("機能一覧に無い処理のセル(1)")).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole("button", { name: "CRUD 図を保存する" })[0]);
+    const [, , model] = vi.mocked(useDetailedDesignStore.getState().save).mock.calls[0];
+    expect(model).toEqual(makeCrud());
+  });
 });

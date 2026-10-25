@@ -5,17 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, H2, H3, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ProjectNotFoundNotice } from "@/components/errors/ProjectNotFoundNotice";
-import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { changeRequestHref } from "@/features/change-requests/changeRequestOps";
+import { changeRequestHref, changeRequestLabel } from "@/features/change-requests/changeRequestOps";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
-import { StatusBadge } from "@/features/change-requests/components/StatusBadge";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import type { BaselineItemRead } from "@/features/baselines/api/types";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
 import {
   baselinesHref,
-  includedChangeRequests,
   itemLabel,
   newChangeRequestHref,
   itemStateLabel,
@@ -33,13 +30,10 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   const detailNotFound = useBaselinesStore((s) => s.detailNotFound && s.projectId === projectId);
   const unavailable = useBaselinesStore((s) => s.unavailable && s.projectId === projectId);
   const fetchDetail = useBaselinesStore((s) => s.fetchDetail);
-  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
-  const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
 
   useEffect(() => {
     void fetchDetail(projectId, number);
-    void fetchChangeRequests(projectId);
-  }, [projectId, number, fetchDetail, fetchChangeRequests]);
+  }, [projectId, number, fetchDetail]);
 
   if (detailNotFound) return <ProjectNotFoundNotice />;
   if (unavailable) return <DetailedModeOnlyNotice projectId={projectId} title="合意済みの版" />;
@@ -69,7 +63,7 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
 
   const documents = detail.items.filter((i) => stageOfKey(i.key) === null);
   const stages = detail.items.filter((i) => stageOfKey(i.key) !== null);
-  const included = includedChangeRequests(changeRequests, detail.number);
+  const included = detail.included_change_requests;
 
   return (
     <YStack paddingVertical="$4" gap="$4">
@@ -98,10 +92,9 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
           included.map((cr) => (
             <XStack key={cr.number} gap="$2" alignItems="center">
               <Link href={changeRequestHref(projectId, cr.number)}>
-                <Text color="$blue10">{cr.label}</Text>
+                <Text color="$blue10">{changeRequestLabel(cr.number)}</Text>
               </Link>
               <Text>{cr.title}</Text>
-              <StatusBadge status={cr.status} label={cr.status_label} />
             </XStack>
           ))
         )}

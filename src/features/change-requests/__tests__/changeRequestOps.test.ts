@@ -17,6 +17,7 @@ import {
   crNumbersInImpact,
   decidedOptionLabel,
   defaultReflectionCr,
+  changeRequestLabel,
   designStageHref,
   emptyForm,
   formFromChangeRequest,
@@ -153,6 +154,7 @@ describe("changeRequestOps", () => {
     // 「新しい要件を足す」を外したら、選んでいた起点は送らない(サーバーは起点だけ残ると断る)
     expect(toUpdateBody({ ...form, adds_requirement: false }).origins).toEqual([]);
     expect(ORIGIN_KIND_LABEL.screen).toBe("画面");
+    expect(ORIGIN_KIND_LABEL.function).toBe("処理");
   });
 
   it("CR の起点はキーでフォームへ写し、表示名はキーから引く", () => {
@@ -199,6 +201,7 @@ describe("changeRequestOps", () => {
     expect(stagesMarkedBy(impact, 2)).toEqual([1]);
     expect(stagesMarkedBy(impact, 5)).toEqual([]);
     expect(designStageHref("p1", 3)).toBe("/projects/p1/detailed-design?stage=3");
+    expect(changeRequestLabel(4)).toBe("CR-4");
     // 段階の生成に渡す CR の初期値は、反映済みの CR のうち印の出どころにある最初のもの
     expect(defaultReflectionCr([2, 7], impact)).toBe(2);
     expect(defaultReflectionCr([7], impact)).toBeNull();

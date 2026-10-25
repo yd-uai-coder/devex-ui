@@ -165,4 +165,23 @@ describe("ConfirmationTable", () => {
       "true",
     );
   });
+
+  it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR へのリンクを出す", () => {
+    render(
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <ConfirmationTable
+          projectId="p1"
+          items={[makeItem({ changed_by_change_request_number: 3 }), makeItem({ key: "req:FR-005", label: "FR-005 変わっていない" })]}
+          label="確認事項"
+          savingKey={null}
+          onUpdate={vi.fn()}
+        />
+      </TamaguiProvider>,
+    );
+
+    const link = screen.getByRole("link", { name: "CR-3 の反映で文が変わりました →" });
+    expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3");
+    expect(link).toHaveStyle({ display: "block" });
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+  });
 });

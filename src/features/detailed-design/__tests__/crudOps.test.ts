@@ -4,14 +4,22 @@ import {
   cellOf,
   countDrafts,
   crudTables,
+  crudTargets,
   hasCrudDraft,
   normalizeOps,
+  reassignCrudFunction,
+  removeCrudFunction,
+  removeStrayCrud,
   setCellOps,
+  strayCrudFunctions,
   tableKey,
   toCrud,
 } from "../crudOps";
 import type { DfdAccess } from "@/features/detailed-design/api/types";
-import { makeCrud } from "@/features/detailed-design/test-utils/stageFixtures";
+import {
+  makeCrud,
+  makeFunctionListWithSpare,
+} from "@/features/detailed-design/test-utils/stageFixtures";
 
 // SUT: crudOps の各関数 / ドライバ: 各テスト / スタブ不要 ── 純粋関数で、外部依存を呼ばないため。
 
@@ -79,5 +87,37 @@ describe("crudOps", () => {
       "new_table",
       "users",
     ]);
+  });
+});
+
+describe("crudOps(機能一覧に無い処理)", () => {
+  // F-09 は段階1 の作り直しで消えた処理(機能一覧は F-01・F-02)
+  const withStray = () => ({
+    cells: [
+      ...makeCrud().cells,
+      { function_id: "F-09", table: "reservations", ops: "RU", draft: true, inferred: true },
+      { function_id: "F-09", table: "users", ops: "R", draft: false },
+    ],
+  });
+
+  it("機能一覧に無い処理のセルを処理ごとにまとめ、付け替え先はセルの無い処理", () => {
+    const list = makeFunctionListWithSpare();
+    expect(strayCrudFunctions(withStray(), list)).toEqual([
+      { functionId: "F-09", tables: ["reservations", "users"] },
+    ]);
+    expect(crudTargets(withStray(), list).map((fn) => fn.id)).toEqual(["F-02"]);
+    expect(strayCrudFunctions(makeCrud(), list)).toEqual([]);
+  });
+
+  it("付け替えると操作はそのままで、下書き・推定の印を外す", () => {
+    expect(reassignCrudFunction(withStray(), "F-09", "F-02").cells.slice(1)).toEqual([
+      { function_id: "F-02", table: "reservations", ops: "RU", draft: false },
+      { function_id: "F-02", table: "users", ops: "R", draft: false },
+    ]);
+  });
+
+  it("1つずつ消す・すべて消す", () => {
+    expect(removeCrudFunction(withStray(), "F-09")).toEqual(makeCrud());
+    expect(removeStrayCrud(withStray(), makeFunctionListWithSpare())).toEqual(makeCrud());
   });
 });

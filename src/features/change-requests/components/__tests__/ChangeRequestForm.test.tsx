@@ -18,6 +18,7 @@ const REQUIREMENTS: BaselineRequirementRead[] = [
 const ORIGINS: BaselineOriginRead[] = [
   { key: "req:FR-001", kind: "requirement", label: "FR-001 ログインできる" },
   { key: "screen:SCR-004", kind: "screen", label: "SCR-004 チャットヒアリング画面" },
+  { key: "fn:F-07", kind: "function", label: "F-07 毎朝の集計" },
 ];
 
 function renderForm(props: Partial<Parameters<typeof ChangeRequestForm>[0]> = {}) {
@@ -94,6 +95,15 @@ describe("ChangeRequestForm", () => {
     expect(screen.queryByRole("option", { name: "画面: SCR-004 チャットヒアリング画面" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "下書きで作る" }));
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ adds_requirement: true, origins: ["screen:SCR-004"] });
+  });
+
+  it("画面にも API にも出ない処理も起点に選べる", async () => {
+    renderForm({ initial: { ...emptyForm(2), title: "t", content: "c", adds_requirement: true } });
+
+    await userEvent.selectOptions(screen.getByLabelText("足す起点"), "fn:F-07");
+    await userEvent.click(screen.getByRole("button", { name: "起点に足す" }));
+
+    expect(screen.getByText("処理: F-07 毎朝の集計")).toBeInTheDocument();
   });
 
   it("起点を外せる", async () => {

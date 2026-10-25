@@ -5,6 +5,7 @@ import type {
   ConfirmationStatus,
   Opportunity,
 } from "@/features/confirmations/api/types";
+import { changeRequestLabel } from "@/features/change-requests/changeRequestOps";
 
 // 確認事項の一覧の画面の純粋な変換(絞り込み・分け方・採用率の文・確認のダイアログの要否)。
 
@@ -50,6 +51,12 @@ export function rowLock(item: ConfirmationItemRead): RowLock {
     return { locked: true, label: "確認済み(採用して合意)", viaChangeRequest: true };
   }
   return { locked: true, label: `${STATUS_LABEL[item.status]}(今の一覧に無い)`, viaChangeRequest: false };
+}
+
+// CR の反映で文が変わり、未確認に戻った旨(戻していなければ null)
+export function changedByLabel(item: ConfirmationItemRead): string | null {
+  const number = item.changed_by_change_request_number;
+  return number === null ? null : `${changeRequestLabel(number)} の反映で文が変わりました`;
 }
 
 export function filterItems(items: ConfirmationItemRead[], filter: ConfirmationFilter): ConfirmationItemRead[] {

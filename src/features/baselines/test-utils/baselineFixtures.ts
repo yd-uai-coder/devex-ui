@@ -26,6 +26,7 @@ export function makeBaseline(overrides: Partial<BaselineRead> = {}): BaselineRea
     reason: "初版の合意",
     recorded_by: "u1",
     created_at: "2026-10-19T01:05:00Z",
+    included_change_requests: [],
     items: [
       {
         key: "requirements",

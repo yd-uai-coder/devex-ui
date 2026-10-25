@@ -164,6 +164,7 @@ export const ORIGIN_KIND_LABEL: Record<OriginKind, string> = {
   requirement: "要件",
   screen: "画面",
   api: "API",
+  function: "処理",
 };
 
 // 起点を足す(同じ要素は2回入れない)
@@ -404,6 +405,11 @@ export function designStageHref(projectId: string, stage: number): string {
 
 export function changeRequestHref(projectId: string, number: number): string {
   return `/projects/${projectId}/change-requests/${number}`;
+}
+
+// CR の表示名(devex-api の label と同じ形。番号だけを持つ応答から名前を出す)
+export function changeRequestLabel(number: number): string {
+  return `CR-${number}`;
 }
 
 // 印の出どころ(`cr:<番号>`)から CR の番号を読む

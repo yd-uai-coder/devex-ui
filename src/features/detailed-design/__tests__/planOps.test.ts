@@ -15,6 +15,11 @@ import {
   milestoneFunctions,
   milestoneId,
   missingTopics,
+  reassignTaskFunction,
+  removeStrayTaskFunctions,
+  removeTaskFunction,
+  strayTaskFunctions,
+  taskFunctionTargets,
   moveMilestone,
   moveTask,
   relinkDependencies,
@@ -29,7 +34,7 @@ import {
   updateRisk,
   updateTask,
 } from "@/features/detailed-design/planOps";
-import { makePlan } from "@/features/detailed-design/test-utils/stageFixtures";
+import { makeFunctionListWithSpare, makePlan } from "@/features/detailed-design/test-utils/stageFixtures";
 
 // SUT: planOps(段階7の編集操作)と、型の定数(api/types の UNIT_KINDS・MAX_UNIT_FUNCTIONS・
 // CROSSCUTTING_TOPICS)、種別の表示(labels の UNIT_KIND_LABELS)
@@ -202,5 +207,37 @@ describe("planOps", () => {
   it("relinkDependencies は並びの変わらない model をそのままの依存で返す", () => {
     const plan = chain();
     expect(relinkDependencies(plan, plan)).toEqual(plan);
+  });
+});
+
+describe("planOps(機能一覧に無い処理)", () => {
+  // M-01-T02 の処理に、段階1 の作り直しで消えた F-09 が残っている(機能一覧は F-01・F-02)
+  const withStray = (): PlanModel => {
+    const plan = makePlan();
+    return updateTask(plan, 0, 1, { function_ids: ["F-01", "F-09"] });
+  };
+
+  it("タスクごとに機能一覧に無い処理を拾い、付け替え先はそのタスクに無い処理", () => {
+    const list = makeFunctionListWithSpare();
+    expect(strayTaskFunctions(withStray(), list)).toEqual([
+      { milestone: 0, task: 1, functionId: "F-09", taskLabel: "M-01-T02 予約を登録する" },
+    ]);
+    expect(taskFunctionTargets(withStray(), list, 0, 1).map((fn) => fn.id)).toEqual(["F-02"]);
+    expect(strayTaskFunctions(makePlan(), list)).toEqual([]);
+  });
+
+  it("付け替えは同じ位置で置き換え、外すとタスクは残る", () => {
+    expect(reassignTaskFunction(withStray(), 0, 1, "F-09", "F-02").milestones[0].tasks[1].function_ids).toEqual([
+      "F-01",
+      "F-02",
+    ]);
+    const removed = removeTaskFunction(withStray(), 0, 1, "F-09");
+    expect(removed.milestones[0].tasks.map((t) => t.function_ids)).toEqual([[], ["F-01"]]);
+  });
+
+  it("すべて外しても、書きかけの空の欄は残す", () => {
+    const plan = updateTask(withStray(), 0, 0, { function_ids: [""] });
+    const cleared = removeStrayTaskFunctions(plan, makeFunctionListWithSpare());
+    expect(cleared.milestones[0].tasks.map((t) => t.function_ids)).toEqual([[""], ["F-01"]]);
   });
 });

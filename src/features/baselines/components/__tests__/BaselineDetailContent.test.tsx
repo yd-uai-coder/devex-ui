@@ -1,6 +1,6 @@
 // SUT: BaselineDetailContent(束の中身の画面)と、写した文書の md を描く MarkdownBody
 // ドライバ: Testing Library(描画・クリック)
-// スタブ: 束と CR のストアの取得の関数(vi.fn)と next/navigation の router ── 画面の配線(読み込み・合意の記録・
+// スタブ: 束のストアの取得の関数(vi.fn)と next/navigation の router ── 画面の配線(読み込み・合意の記録・
 // 入れた CR・文書・段階・CR の作成へ移る・簡易モード)だけを見るため
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
@@ -10,7 +10,6 @@ import { useBaselinesStore } from "../../baselines-store";
 import { makeBaseline } from "../../test-utils/baselineFixtures";
 import { resetBaselinesStore } from "../../test-utils/resetBaselinesStore";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { makeChangeRequest } from "@/features/change-requests/test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "@/features/change-requests/test-utils/renderWithStore";
 
 const push = vi.fn();
@@ -23,24 +22,24 @@ describe("BaselineDetailContent", () => {
     resetChangeRequestsStore();
   });
 
-  it("中身と CR の一覧を読み、読み込み中を出す", () => {
+  it("中身を読み(入れた CR は束の応答が持つので、CR の一覧は読まない)、読み込み中を出す", () => {
     renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
 
     expect(useBaselinesStore.getState().fetchDetail).toHaveBeenCalledWith("p1", 1);
-    expect(useChangeRequestsStore.getState().fetchList).toHaveBeenCalledWith("p1");
+    expect(useChangeRequestsStore.getState().fetchList).not.toHaveBeenCalled();
     expect(screen.getByText("読み込み中...")).toBeInTheDocument();
   });
 
   it("合意の記録・入れた CR・段階の表を出し、文書の md は開いたときに描く", async () => {
-    useBaselinesStore.setState({ detail: makeBaseline() });
-    useChangeRequestsStore.setState({
-      list: [makeChangeRequest({ number: 2, label: "CR-2", status: "verified", status_label: "検証済み", included_baseline_number: 1 })],
+    useBaselinesStore.setState({
+      detail: makeBaseline({ included_change_requests: [{ number: 2, title: "画面を足す" }] }),
     });
     const user = userEvent.setup();
     renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
 
     expect(screen.getByText("相手: 山田(発注者)")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "CR-2" })).toHaveAttribute("href", "/projects/p1/change-requests/2");
+    expect(screen.getByText("画面を足す")).toBeInTheDocument();
     expect(screen.getByText("テスト仕様書: 無い(作った時点で無かった)")).toBeInTheDocument();
     const stages = screen.getByRole("table", { name: "束の段階" });
     expect(stages).toHaveTextContent("段階6 処理ロジックの詳細(任意)入った古いv2");

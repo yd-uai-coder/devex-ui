@@ -11,6 +11,11 @@ import { useBaselinesStore } from "@/features/baselines/baselines-store";
 import { baselineHref, includableChangeRequests } from "@/features/baselines/baselineOps";
 import { BaselineCreateForm } from "@/features/baselines/components/BaselineCreateForm";
 import { BaselineList } from "@/features/baselines/components/BaselineList";
+import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
+
+// 別のプロジェクトの CR の一覧を持っているときに返す空の一覧(選択のたびに新しい配列を返すと、
+// React が「getSnapshot の結果をキャッシュしていない」と警告する)
+const NO_CHANGE_REQUESTS: ChangeRequestSummaryRead[] = [];
 
 // 合意済みの版(束)の一覧と作成(SCR-010。docs/external_design.md 2.14節)。詳細設計モードのプロジェクト
 // だけ(簡易モードではサーバーが409を返し、本体の代わりに知らせを出す)。作成のフォームを開くと、段階の一覧を読む(止まった生成が
@@ -30,7 +35,7 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
   const fetchStages = useBaselinesStore((s) => s.fetchStages);
   const create = useBaselinesStore((s) => s.create);
   const clearCreateError = useBaselinesStore((s) => s.clearCreateError);
-  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : []));
+  const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : NO_CHANGE_REQUESTS));
   const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
   const [creating, setCreating] = useState(false);
 
@@ -114,7 +119,7 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
         </XStack>
       )}
 
-      <BaselineList projectId={projectId} items={list} changeRequests={changeRequests} />
+      <BaselineList projectId={projectId} items={list} />
     </YStack>
   );
 }

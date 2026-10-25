@@ -2,21 +2,18 @@
 
 import Link from "next/link";
 import { Text } from "tamagui";
-import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
-import { changeRequestHref } from "@/features/change-requests/changeRequestOps";
+import { changeRequestHref, changeRequestLabel } from "@/features/change-requests/changeRequestOps";
 import { CELL, HEAD, LINK, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import type { BaselineSummaryRead } from "@/features/baselines/api/types";
-import { baselineHref, includedChangeRequests, stageOfKey } from "@/features/baselines/baselineOps";
+import { baselineHref, stageOfKey } from "@/features/baselines/baselineOps";
 
-// 合意済みの版(束)の一覧(新しい順。サーバーの並びのまま)。番号と行の末尾の「中身を見る →」から中身へ移る。入れた CR は CR の一覧から引く
+// 合意済みの版(束)の一覧(新しい順。サーバーの並びのまま)。番号と行の末尾の「中身を見る →」から中身へ移る。入れた CR は束の応答が持つ
 export function BaselineList({
   projectId,
   items,
-  changeRequests,
 }: {
   projectId: string;
   items: BaselineSummaryRead[];
-  changeRequests: ChangeRequestSummaryRead[];
 }) {
   if (items.length === 0) {
     return <Text color="$color11">合意済みの版はまだありません。</Text>;
@@ -37,7 +34,7 @@ export function BaselineList({
       <tbody>
         {items.map((baseline) => {
           const stages = baseline.items.filter((i) => stageOfKey(i.key) !== null);
-          const included = includedChangeRequests(changeRequests, baseline.number);
+          const included = baseline.included_change_requests;
           return (
             <tr key={baseline.number}>
               <td style={{ ...CELL, ...MONO }}>
@@ -55,7 +52,7 @@ export function BaselineList({
                       <span key={cr.number}>
                         {index > 0 ? "、" : ""}
                         <Link href={changeRequestHref(projectId, cr.number)} style={LINK}>
-                          {cr.label}
+                          {changeRequestLabel(cr.number)}
                         </Link>
                       </span>
                     ))}

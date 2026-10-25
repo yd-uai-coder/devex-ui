@@ -1,10 +1,12 @@
-// SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否)
+// SUT: confirmationOps(確認事項の一覧の絞り込み・行の状態を変えられるか・採用率の文・確認のダイアログの要否・
+//      CR で変わった旨の文)
 // ドライバ: vitest のテスト関数
 // スタブ不要 ── 対象が純粋(副作用なし)で外部依存を呼ばないため
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FILTER,
   adoptionText,
+  changedByLabel,
   filterItems,
   needsAdoptConfirm,
   rowLock,
@@ -13,6 +15,11 @@ import {
 import { makeItem, makeList } from "../test-utils/confirmationFixtures";
 
 describe("confirmationOps", () => {
+  it("CR の反映で未確認に戻った行だけ、どの CR で変わったかの文を作る", () => {
+    expect(changedByLabel(makeItem())).toBeNull();
+    expect(changedByLabel(makeItem({ changed_by_change_request_number: 3 }))).toBe("CR-3 の反映で文が変わりました");
+  });
+
   it("今の一覧に無い行は状態を変えられず、採用して合意した要件・利用者は変更要求へ案内する", () => {
     expect(rowLock(makeItem())).toEqual({ locked: false });
     expect(rowLock(makeItem({ present: false, status: "confirmed" }))).toEqual({
