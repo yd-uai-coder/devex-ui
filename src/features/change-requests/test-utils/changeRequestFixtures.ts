@@ -1,11 +1,17 @@
 import type {
+  ChangeRequestCommentRead,
   ChangeRequestComparisonRead,
   ChangeRequestExplanationRead,
   ChangeRequestImpactRead,
+  ChangeRequestOptionsRead,
   ChangeRequestRead,
   ChangeRequestTraceRead,
   ChangeRequestVerificationRead,
   ExplanationSummaryRead,
+  OptionDraftRead,
+  ScaleCountRead,
+  ShareLinkCreatedRead,
+  ShareLinkRead,
 } from "@/features/change-requests/api/types";
 
 // 変更要求(CR)の画面のテストで使う応答(devex-api の形。必要な項目だけ上書きする)。
@@ -32,6 +38,7 @@ export function makeChangeRequest(overrides: Partial<ChangeRequestRead> = {}): C
     updated_at: "2026-10-19T01:00:00Z",
     content: "参考資料の上限を3件から5件にする",
     background_memo: "定例で依頼",
+    options: null,
     decision: null,
     reviews: [],
     included_baseline_number: null,
@@ -128,6 +135,7 @@ export function makeComparison(overrides: Partial<ChangeRequestComparisonRead> =
         reviewed: false,
       },
     ],
+    scale: [],
     ...overrides,
   };
 }
@@ -267,6 +275,7 @@ export function makeSummary(overrides: Partial<ExplanationSummaryRead> = {}): Ex
     confirmed_at: null,
     unknown_requirement_ids: [],
     unknown_numbers: ["7"],
+    needs_reconfirm: false,
     ...overrides,
   };
 }
@@ -285,8 +294,115 @@ export function makeExplanation(
     units: ["M-01-T02"],
     integration_tests: ["IT-01"],
     system_tests: [],
+    scale: makeScale(),
+    option_scales: [],
     has_test_spec: true,
     summary: null,
+    ...overrides,
+  };
+}
+
+// 説明書の規模(作業単位1件・ファイル2件・テスト1件・画面1件、API は数えられない)
+export function makeScale(overrides: Partial<Record<ScaleCountRead["kind"], Partial<ScaleCountRead>>> = {}): ScaleCountRead[] {
+  const base: ScaleCountRead[] = [
+    { kind: "unit", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
+    { kind: "file", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
+    { kind: "test", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
+    { kind: "screen", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
+    {
+      kind: "api",
+      label: "API",
+      count: null,
+      names: [],
+      uncountable: [{ code: "no_document", label: "要る文書が束に無い", detail: "外部設計書" }],
+      notes: [],
+    },
+  ];
+  return base.map((count) => ({ ...count, ...overrides[count.kind] }));
+}
+
+// 案2つの選択肢(案1 がおすすめ。どちらも FR-005 を変える)
+export function makeOptions(overrides: Partial<ChangeRequestOptionsRead> = {}): ChangeRequestOptionsRead {
+  return {
+    items: [
+      {
+        number: 1,
+        label: "案1",
+        name: "5件まで",
+        targets: [{ requirement_id: "FR-005", kind: "content", kind_label: "内容の変更", proposed_text: "5件まで添付できる" }],
+        outcome: "上限の値だけを変える",
+        recommended: true,
+      },
+      {
+        number: 2,
+        label: "案2",
+        name: "上限なし",
+        targets: [{ requirement_id: "FR-005", kind: "content", kind_label: "内容の変更", proposed_text: "何件でも添付できる" }],
+        outcome: "保存の容量の見直しが要る",
+        recommended: false,
+      },
+    ],
+    recommended: 1,
+    reason: "手間が小さい",
+    ...overrides,
+  };
+}
+
+// 取り込める未確認の下書き(案は makeOptions と同じ)
+export function makeOptionDraft(overrides: Partial<OptionDraftRead> = {}): OptionDraftRead {
+  return {
+    options: makeOptions(),
+    status: "unconfirmed",
+    status_label: "未確認",
+    stale: false,
+    generated_model: "gemini-3.5-flash-lite",
+    generated_by: "u1",
+    generated_at: "2026-10-22T01:00:00Z",
+    adopted_by: null,
+    adopted_at: null,
+    problems: [],
+    unknown_requirement_ids: [],
+    unknown_numbers: [],
+    adoptable: true,
+    ...overrides,
+  };
+}
+
+export function makeShareLink(overrides: Partial<ShareLinkRead> = {}): ShareLinkRead {
+  return {
+    id: "l1",
+    state: "open",
+    state_label: "開いている",
+    created_at: "2026-10-24T01:00:00Z",
+    expires_at: "2026-11-07T01:00:00Z",
+    revoked_at: null,
+    last_viewed_at: null,
+    ...overrides,
+  };
+}
+
+export function makeCreatedShareLink(overrides: Partial<ShareLinkCreatedRead> = {}): ShareLinkCreatedRead {
+  return {
+    ...makeShareLink(),
+    token: "tok123",
+    path: "/share/tok123",
+    summary_needs_reconfirm: false,
+    ...overrides,
+  };
+}
+
+// クライアントのコメント1つ(返信なし・返信できる)
+export function makeComment(overrides: Partial<ChangeRequestCommentRead> = {}): ChangeRequestCommentRead {
+  return {
+    id: "c1",
+    from_developer: false,
+    author_name: "佐藤",
+    author_id: null,
+    body: "矢印は3種類で足りますか",
+    fingerprint: "f1",
+    created_at: "2026-10-24T06:02:00Z",
+    can_reply: true,
+    replies: [],
     ...overrides,
   };
 }

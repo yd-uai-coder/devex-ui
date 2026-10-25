@@ -25,6 +25,10 @@ const decision = (counterpart: string | null, reason: string, memo = "") => ({
   memo,
   reason,
   recorded_by: "u1",
+  option: null,
+  source: null,
+  source_label: null,
+  fingerprint: null,
 });
 
 const VERIFIED_1 = makeChangeRequest({

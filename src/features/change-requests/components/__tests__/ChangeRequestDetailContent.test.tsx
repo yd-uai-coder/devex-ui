@@ -20,6 +20,7 @@ vi.mock("../ContentTab", () => ({ ContentTab: () => <div>内容のタブ</div> }
 vi.mock("../ImpactTab", () => ({ ImpactTab: () => <div>影響のタブ</div> }));
 vi.mock("../VerificationTab", () => ({ VerificationTab: () => <div>検証のタブ</div> }));
 vi.mock("../ExplanationTab", () => ({ ExplanationTab: () => <div>説明書のタブ</div> }));
+vi.mock("../ShareTab", () => ({ ShareTab: () => <div>共有のタブ</div> }));
 vi.mock("../TraceTab", () => ({ TraceTab: () => <div>記録のタブ</div> }));
 
 describe("ChangeRequestDetailContent", () => {
@@ -51,9 +52,11 @@ describe("ChangeRequestDetailContent", () => {
     expect(screen.getByText("検証は、文書へ反映した後にできます。")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "説明書" }));
     expect(screen.getByText("説明書のタブ")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "共有" }));
+    expect(screen.getByText("共有のタブ")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "たどる記録" }));
     expect(screen.getByText("記録のタブ")).toBeInTheDocument();
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["内容", "影響", "検証", "説明書", "たどる記録"]);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["内容", "影響", "検証", "説明書", "共有", "たどる記録"]);
 
     useChangeRequestsStore.setState({ detail: makeChangeRequest({ status: "applied" }) });
     await userEvent.click(screen.getByRole("tab", { name: "検証" }));

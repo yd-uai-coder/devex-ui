@@ -113,6 +113,13 @@ describe("ExplanationTab", () => {
     expect(screen.getByText(/確かめ直すまで、出力に要約は載りません/)).toBeInTheDocument();
   });
 
+  it("確認済みのまま古くなった要約は、共有の前に確かめ直すよう知らせる", () => {
+    setExplanation(makeExplanation({ summary: makeSummary({ state: "stale", needs_reconfirm: true }) }));
+    renderWithTheme(<ExplanationTab projectId="p1" cr={CR} />);
+
+    expect(screen.getByText(/共有する前に確かめ直してください/)).toBeInTheDocument();
+  });
+
   it("要約の失敗と、説明書の読み込みの失敗を出す", () => {
     setExplanation(makeExplanation());
     useChangeRequestsStore.setState({ summaryError: "要約を作れませんでした" });

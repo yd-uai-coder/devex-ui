@@ -9,8 +9,8 @@ export function listConfirmations(projectId: string): Promise<ConfirmationListRe
   return apiFetch<ConfirmationListRead>(base(projectId));
 }
 
-// 1件の決める機会・状態・メモを変え、作り直した一覧を受け取る。キーは "user:<名前>" のように空白・
-// 記号を含みうるので符号化する
+// 1件の決める機会・状態・メモを変え、作り直した一覧を受け取る。キーは "user:U-001" のように記号を
+// 含み、利用者に ID を振る前の記録は "user:<名前>"(空白を含みうる)なので符号化する
 export function updateConfirmation(
   projectId: string,
   key: string,

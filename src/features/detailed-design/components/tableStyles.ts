@@ -7,6 +7,7 @@ export const CELL: CSSProperties = {
   borderBottom: "1px solid var(--borderColor)",
   textAlign: "left",
   verticalAlign: "top",
+  minWidth:"80px"
 };
 export const HEAD: CSSProperties = { ...CELL, background: "var(--color3)", whiteSpace: "nowrap" };
 export const TABLE: CSSProperties = {

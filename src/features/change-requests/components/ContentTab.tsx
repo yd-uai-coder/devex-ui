@@ -5,18 +5,28 @@ import Link from "next/link";
 import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import type { ChangeRequestRead } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { changeRequestHref, formFromChangeRequest, toUpdateBody } from "@/features/change-requests/changeRequestOps";
+import {
+  changeRequestHref,
+  decidedOptionLabel,
+  formFromChangeRequest,
+  toUpdateBody,
+} from "@/features/change-requests/changeRequestOps";
 import { ChangeRequestForm } from "@/features/change-requests/components/ChangeRequestForm";
+import { OptionsSection } from "@/features/change-requests/components/OptionsSection";
+import { ScaleTable } from "@/features/change-requests/components/ScaleTable";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { baselineHref } from "@/features/baselines/baselineOps";
 
-// 詳細の「内容」タブ。内容・背景・対象(種類と変更後の案)・新しい要件の予測の起点・合意の記録・重なり・写しの元と先・
-// 入れた合意済みの版を出す。下書き・説明済みの間は直せる(説明済みで直すと下書きに戻る)。
+// 詳細の「内容」タブ。内容・背景・対象(種類と変更後の案)・新しい要件の予測の起点・選択肢(案)・変更の規模・
+// 合意の記録・重なり・写しの元と先・入れた合意済みの版を出す。規模は説明書と同じ数なので、説明書のビューを読む。下書き・説明済みの間は直せる(説明済みで直すと下書きに戻る)。
 export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const requirements = useChangeRequestsStore((s) => s.requirements[cr.baseline_number] ?? null);
   const fetchRequirements = useChangeRequestsStore((s) => s.fetchRequirements);
   const origins = useChangeRequestsStore((s) => s.origins[cr.baseline_number] ?? null);
   const fetchOrigins = useChangeRequestsStore((s) => s.fetchOrigins);
+  const explanation = useChangeRequestsStore((s) => s.views.explanation);
+  const explanationError = useChangeRequestsStore((s) => s.viewErrors.explanation);
+  const fetchView = useChangeRequestsStore((s) => s.fetchView);
   const acting = useChangeRequestsStore((s) => s.acting);
   const update = useChangeRequestsStore((s) => s.update);
   const [editing, setEditing] = useState(false);
@@ -27,6 +37,9 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
     void fetchRequirements(projectId, cr.baseline_number);
   }, [projectId, cr.baseline_number, fetchRequirements]);
   const textOf = (id: string) => requirements?.find((r) => r.id === id)?.text ?? "";
+  useEffect(() => {
+    if (explanation === null) void fetchView(projectId, cr.number, "explanation");
+  }, [explanation, projectId, cr.number, fetchView]);
   // 起点の候補は直すときだけ要る
   useEffect(() => {
     if (editing) void fetchOrigins(projectId, cr.baseline_number);
@@ -108,10 +121,29 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
         ) : null}
       </YStack>
 
+      <OptionsSection projectId={projectId} cr={cr} />
+
+      <YStack gap="$1" aria-label="変更の規模">
+        <Text fontWeight="600">変更の規模</Text>
+        {explanationError ? (
+          <Text role="alert" color="$red10">
+            {explanationError}
+          </Text>
+        ) : explanation === null ? (
+          <Text color="$color11">読み込み中...</Text>
+        ) : (
+          <ScaleTable explanation={explanation} />
+        )}
+      </YStack>
+
       {cr.decision ? (
         <YStack gap="$1" aria-label="合意の記録">
           <Text fontWeight="600">{`${cr.status === "rejected" ? "却下" : "合意"}の記録`}</Text>
           <Text>{`相手: ${cr.decision.counterpart ?? "(記録なし)"}`}</Text>
+          {cr.decision.option !== null ? (
+            <Text>{`選んだ案: ${decidedOptionLabel(cr)}`}</Text>
+          ) : null}
+          {cr.decision.source_label ? <Text>{`出どころ: ${cr.decision.source_label}`}</Text> : null}
           <Text>{`日時: ${new Date(cr.decision.decided_at).toLocaleString("ja-JP")}`}</Text>
           <Text>{`理由: ${cr.decision.reason}`}</Text>
           {cr.decision.memo ? <Paragraph whiteSpace="pre-wrap">{`メモ: ${cr.decision.memo}`}</Paragraph> : null}

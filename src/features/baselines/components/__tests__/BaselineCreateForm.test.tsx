@@ -15,14 +15,14 @@ const CANDIDATES = [
     label: "CR-1",
     title: "参考資料を5件まで",
     status: "verified",
-    decision: { counterpart: "山田(発注者)", decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "上限を上げる", recorded_by: "u1" },
+    decision: { counterpart: "山田(発注者)", decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "上限を上げる", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
   }),
   makeChangeRequest({
     number: 3,
     label: "CR-3",
     title: "画面を足す",
     status: "verified",
-    decision: { counterpart: null, decided_at: "2026-10-19T02:00:00Z", memo: "", reason: "画面を足す", recorded_by: "u1" },
+    decision: { counterpart: null, decided_at: "2026-10-19T02:00:00Z", memo: "", reason: "画面を足す", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
   }),
 ];
 const stage = (n: number, overrides: Partial<DesignStageRead> = {}) =>

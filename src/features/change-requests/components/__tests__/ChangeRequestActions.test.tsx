@@ -7,7 +7,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChangeRequestActions } from "../ChangeRequestActions";
 import { useChangeRequestsStore } from "../../change-requests-store";
-import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
+import { makeChangeRequest, makeOptions } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
 
 const push = vi.fn();
@@ -52,6 +52,39 @@ describe("ChangeRequestActions", () => {
     await userEvent.click(await screen.findByLabelText("記録する"));
 
     expect(store().explain).toHaveBeenCalledWith("p1", 1);
+  });
+
+  it("案のある CR の合意は、案を選ばないと記録せず、選んだ案の番号を送る。却下では案を聞かない", async () => {
+    const cr = makeChangeRequest({
+      status: "explained",
+      allowed_actions: ["edit", "agree", "reject", "withdraw"],
+      options: makeOptions(),
+    });
+    renderWithTheme(<ChangeRequestActions projectId="p1" cr={cr} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "合意を記録する" }));
+    await userEvent.type(await screen.findByLabelText("理由"), "定例で合意");
+    await userEvent.click(screen.getByLabelText("記録する"));
+    expect(await screen.findByText("合意した案を選んでください")).toBeInTheDocument();
+    expect(store().decide).not.toHaveBeenCalled();
+
+    expect(screen.getByLabelText("案1 5件まで(おすすめ)")).not.toBeChecked();
+    await userEvent.click(screen.getByLabelText("案2 上限なし"));
+    await userEvent.click(screen.getByLabelText("記録する"));
+    expect(store().decide).toHaveBeenCalledWith("p1", 1, expect.objectContaining({ decision: "agreed", option: 2 }));
+  });
+
+  it("案のある CR でも、却下では案を聞かずに送る", async () => {
+    const cr = makeChangeRequest({ status: "explained", allowed_actions: ["agree", "reject"], options: makeOptions() });
+    renderWithTheme(<ChangeRequestActions projectId="p1" cr={cr} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "却下を記録する" }));
+    expect(screen.queryByText("合意した案")).toBeNull();
+    await userEvent.type(await screen.findByLabelText("理由"), "見送り");
+    await userEvent.click(screen.getByLabelText("記録する"));
+    const body = vi.mocked(store().decide).mock.calls[0][2];
+    expect(body.decision).toBe("rejected");
+    expect(body).not.toHaveProperty("option");
   });
 
   it("合意は理由が無ければ記録せず、入れると相手の空を null にして送る", async () => {

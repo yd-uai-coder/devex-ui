@@ -6,7 +6,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ContentTab } from "../ContentTab";
 import { useChangeRequestsStore } from "../../change-requests-store";
-import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
+import { makeChangeRequest, makeExplanation, makeOptions } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
 
 const store = () => useChangeRequestsStore.getState();
@@ -26,6 +26,39 @@ describe("ContentTab", () => {
     expect(screen.getByText("対象の要件(基準: B-1)")).toBeInTheDocument();
     expect(screen.getByText("3件まで添付できる")).toBeInTheDocument();
     expect(screen.getByText("5件まで添付できる")).toBeInTheDocument();
+  });
+
+  it("説明書のビューを読み、変更の規模を出す", () => {
+    const { unmount } = renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest()} />);
+
+    expect(store().fetchView).toHaveBeenCalledWith("p1", 1, "explanation");
+    expect(screen.getByRole("table", { name: "対象の要件" })).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "変更の規模" })).toBeNull();
+    unmount();
+    useChangeRequestsStore.setState({ views: { ...store().views, explanation: makeExplanation() } });
+    renderWithTheme(<ContentTab projectId="p1" cr={makeChangeRequest()} />);
+    expect(screen.getByRole("table", { name: "変更の規模" })).toBeInTheDocument();
+  });
+
+  it("合意の記録に、選んだ案と出どころを出し、選択肢の節も出す", () => {
+    const decision = {
+      counterpart: "佐藤",
+      decided_at: "2026-10-19T01:00:00Z",
+      memo: "",
+      reason: "共有リンクで合意",
+      recorded_by: null,
+      option: 1,
+      source: "share_link",
+      source_label: "共有リンク",
+      fingerprint: "f1",
+    };
+    renderWithTheme(
+      <ContentTab projectId="p1" cr={makeChangeRequest({ status: "agreed", options: makeOptions(), decision })} />,
+    );
+
+    expect(screen.getByText("選んだ案: 案1 5件まで")).toBeInTheDocument();
+    expect(screen.getByText("出どころ: 共有リンク")).toBeInTheDocument();
+    expect(screen.getByText("選択肢(案)")).toBeInTheDocument();
   });
 
   it("新しい要件を足す CR は予測の起点を出し、直すときだけ起点の候補を読む", async () => {
@@ -48,7 +81,7 @@ describe("ContentTab", () => {
     const cr = makeChangeRequest({
       status: "verified",
       allowed_actions: [],
-      decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1" },
+      decision: { counterpart: null, decided_at: "2026-10-19T01:00:00Z", memo: "定例", reason: "合意した", recorded_by: "u1", option: null, source: null, source_label: null, fingerprint: null },
       overlapping: [{ number: 2, label: "CR-2", requirement_ids: ["FR-005"] }],
       derived_from_number: 3,
       derived_numbers: [6],

@@ -10,23 +10,25 @@ import { ContentTab } from "@/features/change-requests/components/ContentTab";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { ExplanationTab } from "@/features/change-requests/components/ExplanationTab";
 import { ImpactTab } from "@/features/change-requests/components/ImpactTab";
+import { ShareTab } from "@/features/change-requests/components/ShareTab";
 import { StatusBadge } from "@/features/change-requests/components/StatusBadge";
 import { TraceTab } from "@/features/change-requests/components/TraceTab";
 import { VerificationTab } from "@/features/change-requests/components/VerificationTab";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
 
-export type DetailTab = "content" | "impact" | "verification" | "explanation" | "trace";
+export type DetailTab = "content" | "impact" | "verification" | "explanation" | "share" | "trace";
 
 const TABS: { value: DetailTab; label: string }[] = [
   { value: "content", label: "内容" },
   { value: "impact", label: "影響" },
   { value: "verification", label: "検証" },
   { value: "explanation", label: "説明書" },
+  { value: "share", label: "共有" },
   { value: "trace", label: "たどる記録" },
 ];
 
-// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は5つのタブ(内容・影響・検証・説明書・
-// たどる記録)。タブの中身(予測・比較・検証・説明書・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
+// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// たどる記録)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // フォームの状態を、親の再描画で失わないよう、部品を作り直さない)。文書への反映の完了待ちは、
 // タブを移っても続くようにここで持ち、開いたときにプロジェクトが生成中なら待ち直す。
 export function ChangeRequestDetailContent({ projectId, number }: { projectId: string; number: number }) {
@@ -127,6 +129,7 @@ export function ChangeRequestDetailContent({ projectId, number }: { projectId: s
               )
             ) : null}
             {tab === "explanation" ? <ExplanationTab projectId={projectId} cr={detail} /> : null}
+            {tab === "share" ? <ShareTab projectId={projectId} cr={detail} /> : null}
             {tab === "trace" ? <TraceTab projectId={projectId} number={number} /> : null}
           </YStack>
         </>

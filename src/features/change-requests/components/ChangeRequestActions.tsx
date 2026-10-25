@@ -64,6 +64,7 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
         <DecisionDialog
           open
           decision={dialog === "agree" ? "agreed" : "rejected"}
+          options={cr.options}
           onCancel={close}
           onConfirm={(body) => {
             close();
