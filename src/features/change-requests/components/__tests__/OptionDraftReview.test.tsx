@@ -62,4 +62,11 @@ describe("OptionDraftReview", () => {
     expect(screen.getByText(/取り込み済み/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "下書きを取り込む" })).toBeNull();
   });
+
+  it("取り込み済みの下書きは、取り込みで説明書が変わっても古いと知らせない", () => {
+    withDraft(makeOptionDraft({ status: "adopted", status_label: "取り込み済み", stale: true }));
+    renderWithTheme(<OptionDraftReview projectId="p1" cr={makeChangeRequest()} />);
+
+    expect(screen.queryByText(/作った後に説明書が変わりました/)).toBeNull();
+  });
 });

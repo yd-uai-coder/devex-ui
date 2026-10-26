@@ -5,6 +5,7 @@ import { Button, Paragraph, Text, XStack, YStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import type { ChangeRequestRead } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
+import { draftStaleNotice } from "@/features/change-requests/changeRequestOps";
 import { OptionCards } from "@/features/change-requests/components/OptionCards";
 
 // 選択肢の LLM の下書き(任意)。説明書の md から LLM が2〜3の案とおすすめを作り、未確認のまま出す
@@ -56,7 +57,7 @@ export function OptionDraftReview({ projectId, cr }: { projectId: string; cr: Ch
             {`${draft.status_label} ・${new Date(draft.generated_at).toLocaleString("ja-JP")} に作成`}
             {draft.generated_model ? ` ・${draft.generated_model}` : ""}
           </Text>
-          {draft.stale ? (
+          {draftStaleNotice(draft) ? (
             <Text color="$orange10">作った後に説明書が変わりました。作り直すと、今の説明書から案を作ります。</Text>
           ) : null}
           {draft.problems.length > 0 ? (

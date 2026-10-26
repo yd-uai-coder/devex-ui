@@ -19,6 +19,7 @@ import {
   defaultReflectionCr,
   changeRequestLabel,
   designStageHref,
+  draftStaleNotice,
   emptyForm,
   formFromChangeRequest,
   formProblems,
@@ -245,6 +246,12 @@ describe("変更の規模", () => {
       ["案1 一緒に", true],
       ["案2 先に", false],
     ]);
+  });
+
+  it("下書きが古い知らせは、取り込んでいない下書きだけに出す", () => {
+    expect(draftStaleNotice({ stale: true, status: "unconfirmed" })).toBe(true);
+    expect(draftStaleNotice({ stale: true, status: "adopted" })).toBe(false);
+    expect(draftStaleNotice({ stale: false, status: "unconfirmed" })).toBe(false);
   });
 
   it("数えられない数を0件と書かない", () => {

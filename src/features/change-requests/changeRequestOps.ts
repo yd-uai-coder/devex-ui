@@ -16,6 +16,7 @@ import type {
   ComparedItemRead,
   ComparisonStatus,
   ExplanationSummaryRead,
+  OptionDraftRead,
   ScaleComparisonRead,
   ScaleCountRead,
   ShareLinkRead,
@@ -499,6 +500,13 @@ export function markSegments(text: string, unknownIds: string[], unknownNumbers:
   }
   push(text.slice(last), null);
   return segments;
+}
+
+// 下書きの「作った後に説明書が変わりました」を出すか。取り込んだ下書きは、取り込みで CR の案が
+// 変わり説明書も変わるので、古くなっていても知らせない(取り込んだ直後に出ると、取り込みが
+// 失敗したように見えるため)
+export function draftStaleNotice(draft: Pick<OptionDraftRead, "stale" | "status">): boolean {
+  return draft.stale && draft.status !== "adopted";
 }
 
 // ---- 変更の規模 ----

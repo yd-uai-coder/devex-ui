@@ -67,7 +67,8 @@ test("合意済みの版から CR を作り、説明・合意・反映・検証�
   await openTab(page, "説明書");
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "説明書をダウンロード(.md)" }).click(),
+    // 見出しの操作にも同じボタンがあるので、タブの中のものを押す
+    page.getByRole("tabpanel").getByRole("button", { name: "説明書をダウンロード(.md)" }).click(),
   ]);
   expect(download.suggestedFilename()).toBe("cr-1-explanation.md");
   const markdown = await readFile((await download.path()) as string, "utf-8");

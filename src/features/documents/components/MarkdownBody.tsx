@@ -10,15 +10,17 @@ import type { Components } from "react-markdown";
 // 詰まって見える。TamaguiのYStack/Textはネイティブのul/ol/li/table/th/td相当のtag上書きに
 // 対応していないため、リスト・テーブルは素のHTML要素+インラインstyleで組む(既存の`filter`
 // prop対応と同じ「Tamagui未対応箇所は素のstyle propで補う」パターン、`var(--borderColor)`で
-// テーマ追従)。
+// テーマ追従)。表は横に送れる入れ物に入れ、長い語(ファイルのパスなど)はセルの中で折り返す
+// (スマートフォンの幅で、表が枠からはみ出して切れないように)。
 const markdownComponents: Components = {
+  // 文書の題と節の見出し。狭い画面では1段ずつ小さくする(長い題が何行にもなって本文が下へ押し出されないように)
   h1: ({ children }) => (
-    <H1 marginTop="$2" marginBottom="$4">
+    <H1 size="$9" $md={{ size: "$10" }} marginTop="$2" marginBottom="$4">
       {children}
     </H1>
   ),
   h2: ({ children }) => (
-    <H2 marginTop="$5" marginBottom="$3">
+    <H2 size="$8" $md={{ size: "$9" }} marginTop="$5" marginBottom="$3">
       {children}
     </H2>
   ),
@@ -37,7 +39,9 @@ const markdownComponents: Components = {
   ol: ({ children }) => <ol style={{ marginBottom: "1em", paddingLeft: "1.5em" }}>{children}</ol>,
   li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
   table: ({ children }) => (
-    <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1em" }}>{children}</table>
+    <div style={{ overflowX: "auto", maxWidth: "100%", marginBottom: "1em" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%" }}>{children}</table>
+    </div>
   ),
   th: ({ children }) => (
     <th style={{ border: "1px solid var(--borderColor)", padding: "6px 10px", textAlign: "left" }}>
@@ -45,7 +49,7 @@ const markdownComponents: Components = {
     </th>
   ),
   td: ({ children }) => (
-    <td style={{ border: "1px solid var(--borderColor)", padding: "6px 10px" }}>{children}</td>
+    <td style={{ border: "1px solid var(--borderColor)", padding: "6px 10px", overflowWrap: "anywhere" }}>{children}</td>
   ),
 };
 
@@ -57,6 +61,7 @@ export function MarkdownBody({ content, label }: { content: string; label?: stri
       borderColor="$borderColor"
       borderRadius="$4"
       padding="$4"
+      minWidth={0}
       role={label ? "region" : undefined}
       aria-label={label}
     >
