@@ -70,6 +70,11 @@ export function explainChangeRequest(projectId: string, number: number): Promise
   return apiFetch<ChangeRequestRead>(`${one(projectId, number)}/explain`, post());
 }
 
+// 重なる CR の競合を、今の文と見比べて確かめた、にする(競合が無ければ409)
+export function checkChangeRequestConflicts(projectId: string, number: number): Promise<ChangeRequestRead> {
+  return apiFetch<ChangeRequestRead>(`${one(projectId, number)}/conflict-checks`, post());
+}
+
 // 合意・却下(判断の時点の予測を CR に保存する)
 export function decideChangeRequest(
   projectId: string,

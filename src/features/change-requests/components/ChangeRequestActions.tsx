@@ -6,14 +6,22 @@ import { Button, XStack } from "tamagui";
 import { ConfirmDialog } from "@/components/ui/layout-blocks/ConfirmDialog";
 import type { ChangeRequestAction, ChangeRequestRead } from "@/features/change-requests/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
-import { ACTION_BUTTON_LABEL, changeRequestHref, headerActions } from "@/features/change-requests/changeRequestOps";
+import {
+  ACTION_BUTTON_LABEL,
+  changeRequestHref,
+  conflictNoticeLine,
+  headerActions,
+} from "@/features/change-requests/changeRequestOps";
 import { DecisionDialog } from "@/features/change-requests/components/DecisionDialog";
 import { ExplanationDownloadButton } from "@/features/change-requests/components/ExplanationDownloadButton";
 import { INPUT } from "@/features/detailed-design/components/tableStyles";
 
+const NOTICE = { display: "block", marginTop: 8, color: "var(--orange11)" } as const;
+
 // CR の見出しの操作のボタン(許された操作だけ。docs/external_design.md 2.14節の状態)と、
 // 変更の説明書のダウンロード(どの状態でも。プレビューと要約の確認は説明書のタブ)。
 // 合意・却下は記録のダイアログ、取り下げは理由を入れて確かめる。写すと写しの先の詳細へ移る。
+// 重なる CR の競合が未確認なら、説明済み・合意の確かめの画面に知らせの1行を足す(止めはしない)。
 export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
   const router = useRouter();
   const acting = useChangeRequestsStore((s) => s.acting);
@@ -24,6 +32,8 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
   const [dialog, setDialog] = useState<ChangeRequestAction | null>(null);
   const [withdrawReason, setWithdrawReason] = useState("");
   const close = () => setDialog(null);
+  // 重なる CR の競合(未確認)は、説明済み・合意を止めずに確かめの画面で知らせる
+  const conflictLine = conflictNoticeLine(cr);
 
   const press = async (action: ChangeRequestAction) => {
     if (action === "copy") {
@@ -52,7 +62,12 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
       <ConfirmDialog
         open={dialog === "explain"}
         title="説明済みにする"
-        description="クライアントに変更の内容と影響を説明したことを記録します。説明の後に直すと、下書きに戻ります。"
+        description={
+          <>
+            クライアントに変更の内容と影響を説明したことを記録します。説明の後に直すと、下書きに戻ります。
+            {conflictLine ? <span style={NOTICE}>{conflictLine}</span> : null}
+          </>
+        }
         confirmLabel="記録する"
         onCancel={close}
         onConfirm={() => {
@@ -65,6 +80,7 @@ export function ChangeRequestActions({ projectId, cr }: { projectId: string; cr:
           open
           decision={dialog === "agree" ? "agreed" : "rejected"}
           options={cr.options}
+          notice={dialog === "agree" ? conflictLine : null}
           onCancel={close}
           onConfirm={(body) => {
             close();

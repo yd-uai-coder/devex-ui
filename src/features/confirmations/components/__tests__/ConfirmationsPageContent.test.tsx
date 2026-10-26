@@ -166,7 +166,7 @@ describe("ConfirmationTable", () => {
     );
   });
 
-  it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR へのリンクを出す", () => {
+  it("CR の反映で文が変わって未確認に戻った行は、状態の文の下の段にその CR の反映で変わった所へのリンクを出す", () => {
     render(
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <ConfirmationTable
@@ -180,7 +180,7 @@ describe("ConfirmationTable", () => {
     );
 
     const link = screen.getByRole("link", { name: "CR-3 の反映で文が変わりました →" });
-    expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3");
+    expect(link).toHaveAttribute("href", "/projects/p1/change-requests/3?tab=impact&focus=req%3AFR-004");
     expect(link).toHaveStyle({ display: "block" });
     expect(screen.getAllByRole("link")).toHaveLength(1);
   });

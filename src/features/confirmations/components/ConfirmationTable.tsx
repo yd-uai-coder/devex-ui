@@ -29,7 +29,7 @@ const STATUS_ACTIONS: { status: ConfirmationStatus; label: string }[] = [
 // 確認事項の表。行ごとに決める機会・状態・メモを変える(変えたらすぐ onUpdate)。今の一覧に無い行
 // (rowLock)は、状態と決める機会を変えられないので操作の代わりに理由を出す(採用して合意した要件・
 // 利用者は、変更要求へのリンク)。CR の反映で文が変わって未確認に戻った行は、その CR へのリンクを
-// 状態の文の下の段に出す。メモはどの行も書ける。
+// 状態の文の下の段に出す(CR の影響のタブの、反映で変わった所のその行へ)。メモはどの行も書ける。
 export function ConfirmationTable({
   projectId,
   items,
@@ -102,7 +102,10 @@ export function ConfirmationTable({
               {changedBy !== null && item.changed_by_change_request_number !== null ? (
                 // 状態の文の下の段に出す(2段。下の「変更要求(CR)で →」と同じ形)
                 <Link
-                  href={changeRequestHref(projectId, item.changed_by_change_request_number)}
+                  href={changeRequestHref(projectId, item.changed_by_change_request_number, {
+                    tab: "impact",
+                    focus: item.key,
+                  })}
                   style={{ display: "block", marginTop: 2, fontSize: 12, color: "var(--blue10)" }}
                 >
                   {`${changedBy} →`}

@@ -15,12 +15,15 @@ export function DecisionDialog({
   open,
   decision,
   options = null,
+  notice = null,
   onConfirm,
   onCancel,
 }: {
   open: boolean;
   decision: ChangeRequestDecision["decision"];
   options?: ChangeRequestOptionsRead | null;
+  // 説明の下に出す知らせ(重なる CR の競合など)
+  notice?: string | null;
   onConfirm: (body: ChangeRequestDecision) => void;
   onCancel: () => void;
 }) {
@@ -58,6 +61,7 @@ export function DecisionDialog({
           {agreed
             ? "合意すると、今の影響の予測を CR に保存します(反映の後の比較の基準になります)。"
             : "却下した CR はそのまま残ります。出し直すときは、写して新しい番号の下書きを作ります。"}
+          {notice ? <span style={{ ...FIELD, color: "var(--orange11)" }}>{notice}</span> : null}
           {choices.length > 0 ? (
             // 説明は <p> に入るので、<fieldset> でなく <span> の radiogroup にする
             <span role="radiogroup" aria-label="合意した案" style={{ display: "block", marginTop: 8 }}>

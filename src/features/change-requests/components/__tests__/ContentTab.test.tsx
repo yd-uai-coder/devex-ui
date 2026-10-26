@@ -93,6 +93,8 @@ describe("ContentTab", () => {
     expect(screen.getByText("相手: (記録なし)")).toBeInTheDocument();
     expect(screen.getByText("理由: 合意した")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "CR-2(FR-005)" })).toHaveAttribute("href", "/projects/p1/change-requests/2");
+    // 先に反映された CR との競合は、見出しの下の知らせで確かめる(案内の1行)
+    expect(screen.getByText(/見出しの下に知らせが出ます/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "写しの元: CR-3" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "写しの先: CR-6" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "合意済みの版 B-2 に入れました。" })).toHaveAttribute(

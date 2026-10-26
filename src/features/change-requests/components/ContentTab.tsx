@@ -158,6 +158,9 @@ export function ContentTab({ projectId, cr }: { projectId: string; cr: ChangeReq
               <Text color="$blue10">{`${o.label}(${o.requirement_ids.join("、")})`}</Text>
             </Link>
           ))}
+          <Text color="$color11" fontSize="$2">
+            このうち先に反映された CR があると、見出しの下に知らせが出ます。反映の前に、今の文と見比べて確かめます。
+          </Text>
         </YStack>
       ) : null}
       {cr.derived_from_number !== null ? (

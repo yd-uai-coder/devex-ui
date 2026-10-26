@@ -1,10 +1,11 @@
-// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・文書への反映と完了の待ち直し・説明書の要約)
+// SUT: useChangeRequestsStore(一覧・詳細・タブの読み込み・状態の操作・競合の確かめ・文書への反映と完了の待ち直し・説明書の要約)
 // ドライバ: vitest のテスト関数(ストアの関数を直接呼ぶ)
 // スタブ: fetch(stubFetch)── ストアが API を呼ぶ順と本文、応答・失敗の後の状態を確かめるため
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useChangeRequestsStore } from "../change-requests-store";
 import {
   makeChangeRequest,
+  makeConflict,
   makeExplanation,
   makeOptionDraft,
   makeOptions,
@@ -119,6 +120,19 @@ describe("useChangeRequestsStore", () => {
     expect(state().views.verification).toBeNull();
     expect(state().fetchedAt).toBeNull();
     expect(state().acting).toBe(false);
+  });
+
+  it("競合の確かめは conflict-checks を POST し、詳細を置き換える", async () => {
+    stub.queue({ body: makeChangeRequest({ conflicts: [makeConflict()] }) });
+    stub.queue({ body: makeChangeRequest({ conflicts: [makeConflict({ checked: true })] }) });
+
+    await state().fetchDetail("p1", 1);
+    const ok = await state().checkConflicts("p1", 1);
+
+    expect(ok).toBe(true);
+    expect(stub.requests[1].url).toMatch(/\/projects\/p1\/change-requests\/1\/conflict-checks$/);
+    expect(stub.requests[1].init?.method).toBe("POST");
+    expect(state().detail?.conflicts[0].checked).toBe(true);
   });
 
   it("案の保存は案だけを PATCH で送り、詳細を置き換える", async () => {

@@ -21,15 +21,27 @@ import {
   scaleCell,
   scaleComparisonBasis,
   stageLabel,
+  uncheckedConflicts,
 } from "@/features/change-requests/changeRequestOps";
+import { ReflectionChanges } from "@/features/change-requests/components/ReflectionChanges";
 import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/tableStyles";
 import { failureHeading } from "@/lib/generation-failure";
 
 // 詳細の「影響」タブ。合意の前は基準の版から求めた予測、判断の後は保存した予測を段階ごとに出す。
-// 合意・反映済みの CR は、文書(要件定義書から)への反映のボタンを出す(段階への反映は詳細設計画面の
-// 「変更の影響」で CR を選ぶ)。反映の後は、規模の予測と実際の数と、予測と実際の印の比較を3つに分けて出す。新しい要件を足す
-// CR は、予測に使った起点と、要素ごとに届いた起点も出す。
-export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequestRead }) {
+// 合意・反映済みの CR は、文書(要件定義書から)への反映のボタンを出す(重なる CR の競合が未確認なら押せない。
+// 段階への反映は詳細設計画面の「変更の影響」で CR を選ぶ)。反映の後は、反映で変わった所(文書の要素の前 → 後)と、
+// 規模の予測と実際の数と、予測と実際の印の比較を3つに分けて出す。新しい要件を足す CR は、予測に使った起点と、
+// 要素ごとに届いた起点も出す。
+export function ImpactTab({
+  projectId,
+  cr,
+  focusKey = null,
+}: {
+  projectId: string;
+  cr: ChangeRequestRead;
+  // 反映で変わった所で目立たせる要素のキー(確認事項からのリンク)
+  focusKey?: string | null;
+}) {
   const impact = useChangeRequestsStore((s) => s.views.impact);
   const comparison = useChangeRequestsStore((s) => s.views.comparison);
   const viewErrors = useChangeRequestsStore((s) => s.viewErrors);
@@ -40,6 +52,8 @@ export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequ
   const reflectDocuments = useChangeRequestsStore((s) => s.reflectDocuments);
   const [confirming, setConfirming] = useState(false);
   const applied = isApplied(cr.status);
+  // 重なる CR の競合を確かめるまでは反映できない(サーバーも409)
+  const conflicted = uncheckedConflicts(cr).length > 0;
 
   useEffect(() => {
     if (impact === null) void fetchView(projectId, cr.number, "impact");
@@ -58,9 +72,20 @@ export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequ
               ? "合意した内容を指示に入れて、要件定義書から文書を作り直します。作り直しが終わると反映済みになります。"
               : "反映済みです。作り直しはやり直せます(そのたびに記録に1行残ります)。段階は、詳細設計画面の「変更の影響」でこの CR を選んで作り直します。"}
           </Paragraph>
-          <Button size="$3" theme="green" alignSelf="flex-start" disabled={reflecting} onPress={() => setConfirming(true)}>
+          <Button
+            size="$3"
+            theme="green"
+            alignSelf="flex-start"
+            disabled={reflecting || conflicted}
+            onPress={() => setConfirming(true)}
+          >
             {reflecting ? "反映中(文書を作り直しています)..." : "文書へ反映する(要件定義書から再生成)"}
           </Button>
+          {conflicted ? (
+            <Text color="$orange11">
+              先にほかの CR が変えた対象の要件があります。見出しの下の知らせで、今の文と見比べて確かめてから反映してください。
+            </Text>
+          ) : null}
           {reflectError ? (
             <Text role="alert" color="$red10">
               {reflectError}
@@ -78,6 +103,8 @@ export function ImpactTab({ projectId, cr }: { projectId: string; cr: ChangeRequ
           ) : null}
         </YStack>
       ) : null}
+
+      {comparison ? <ReflectionChanges reflections={comparison.reflections} focusKey={focusKey} /> : null}
 
       {applied ? (
         <YStack gap="$2" aria-label="予測と実際の比較">

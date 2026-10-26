@@ -59,6 +59,7 @@ export function resetChangeRequestsStore(): void {
     update: vi.fn().mockResolvedValue(true),
     updateOptions: vi.fn().mockResolvedValue(true),
     explain: vi.fn().mockResolvedValue(true),
+    checkConflicts: vi.fn().mockResolvedValue(true),
     decide: vi.fn().mockResolvedValue(true),
     withdraw: vi.fn().mockResolvedValue(true),
     copy: vi.fn().mockResolvedValue(null),

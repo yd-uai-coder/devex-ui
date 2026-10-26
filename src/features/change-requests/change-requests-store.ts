@@ -14,6 +14,7 @@ import type {
 } from "@/features/baselines/api/types";
 import {
   adoptOptionDraft,
+  checkChangeRequestConflicts,
   checkChangeRequestDocuments,
   confirmExplanationSummary,
   copyChangeRequest,
@@ -176,6 +177,8 @@ type ChangeRequestsStore = {
   // 選択肢(案)だけを直す(説明済みは下書きに戻る)
   updateOptions: (projectId: string, number: number, options: ChangeRequestOptionsIn) => Promise<boolean>;
   explain: (projectId: string, number: number) => Promise<boolean>;
+  // 重なる CR の競合を、今の文と見比べて確かめた、にする
+  checkConflicts: (projectId: string, number: number) => Promise<boolean>;
   decide: (projectId: string, number: number, body: ChangeRequestDecision) => Promise<boolean>;
   withdraw: (projectId: string, number: number, reason: string) => Promise<boolean>;
   // 写しの先を返す(画面はその番号へ移る)
@@ -424,6 +427,10 @@ export const useChangeRequestsStore = create<ChangeRequestsStore>((set, get) => 
 
     explain: async (projectId, number) =>
       (await act(projectId, () => explainChangeRequest(projectId, number), "説明済みにできませんでした")) !== null,
+
+    checkConflicts: async (projectId, number) =>
+      (await act(projectId, () => checkChangeRequestConflicts(projectId, number), "確かめた印を付けられませんでした")) !==
+      null,
 
     decide: async (projectId, number, body) =>
       (await act(projectId, () => decideChangeRequest(projectId, number, body), "判断を記録できませんでした")) !==
