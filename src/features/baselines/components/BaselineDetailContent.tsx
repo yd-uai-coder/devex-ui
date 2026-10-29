@@ -11,6 +11,7 @@ import { CELL, HEAD, MONO, TABLE } from "@/features/detailed-design/components/t
 import { MarkdownBody } from "@/features/documents/components/MarkdownBody";
 import type { BaselineItemRead } from "@/features/baselines/api/types";
 import { useBaselinesStore } from "@/features/baselines/baselines-store";
+import { BaselineFreshnessNotice } from "@/features/baselines/components/BaselineFreshnessNotice";
 import {
   baselinesHref,
   itemLabel,
@@ -20,7 +21,7 @@ import {
 } from "@/features/baselines/baselineOps";
 
 // 合意済みの版(束)の中身(SCR-010)。合意の記録・入れた変更要求・写した文書(md)・段階の表を出し、
-// この版を基準に変更要求を作るページへ移れる。
+// この版を基準に変更要求を作るページへ移れる。束が古ければ、作る前に知らせる。
 // 段階の写し(model)の中身は出さない(重いため。詳細設計画面で今の段階を見る)
 export function BaselineDetailContent({ projectId, number }: { projectId: string; number: number }) {
   const router = useRouter();
@@ -30,6 +31,9 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   const detailNotFound = useBaselinesStore((s) => s.detailNotFound && s.projectId === projectId);
   const unavailable = useBaselinesStore((s) => s.unavailable && s.projectId === projectId);
   const fetchDetail = useBaselinesStore((s) => s.fetchDetail);
+  const freshness = useBaselinesStore((s) =>
+    s.projectId === projectId && s.freshness?.baseline_number === number ? s.freshness : null,
+  );
 
   useEffect(() => {
     void fetchDetail(projectId, number);
@@ -68,6 +72,16 @@ export function BaselineDetailContent({ projectId, number }: { projectId: string
   return (
     <YStack paddingVertical="$4" gap="$4">
       {header}
+      <BaselineFreshnessNotice
+        projectId={projectId}
+        freshness={freshness}
+        lead={`この版を基準に変更要求を作ると、対象の要件の文・説明・規模は ${detail.label} の設計から求めます。`}
+      />
+      {freshness && !freshness.tracked ? (
+        <Text color="$color11">
+          この版は合意の記録を始める前に作ったので、後に反映した変更要求があるかは判定できません。
+        </Text>
+      ) : null}
       {/* 変更要求は、合意済みの版の中身から作る(基準の版はこの版に固定する) */}
       <XStack>
         <Button size="$3" theme="green" onPress={() => router.push(newChangeRequestHref(projectId, detail.number))}>

@@ -44,6 +44,7 @@ describe("ConfirmationsPageContent", () => {
     expect(within(table).getByText("FR-004 期限の前に通知する")).toBeInTheDocument();
     expect(within(table).getByText("FR-002, 1.2")).toBeInTheDocument();
     expect(screen.queryByText("FR-009 CSV で出力する")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "資料" })).toHaveAttribute("href", "/projects/p1/materials");
 
     // 確認済みで絞ると、採用して一覧から消えた項目も同じ表に出る。状態のボタンの代わりに理由と変更要求への
     // リンク。メモは書ける

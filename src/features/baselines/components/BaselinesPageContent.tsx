@@ -12,6 +12,7 @@ import { baselineHref, includableChangeRequests } from "@/features/baselines/bas
 import { BaselineCreateForm } from "@/features/baselines/components/BaselineCreateForm";
 import { BaselineList } from "@/features/baselines/components/BaselineList";
 import type { ChangeRequestSummaryRead } from "@/features/change-requests/api/types";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // 別のプロジェクトの CR の一覧を持っているときに返す空の一覧(選択のたびに新しい配列を返すと、
 // React が「getSnapshot の結果をキャッシュしていない」と警告する)
@@ -19,8 +20,15 @@ const NO_CHANGE_REQUESTS: ChangeRequestSummaryRead[] = [];
 
 // 合意済みの版(束)の一覧と作成(SCR-010。docs/external_design.md 2.14節)。詳細設計モードのプロジェクト
 // だけ(簡易モードではサーバーが409を返し、本体の代わりに知らせを出す)。作成のフォームを開くと、段階の一覧を読む(止まった生成が
-// 回収され、入る段階・入らない段階を見せられる)。作ったら中身へ移る。
-export function BaselinesPageContent({ projectId }: { projectId: string }) {
+// 回収され、入る段階・入らない段階を見せられる)。作ったら中身へ移る。initialCreate なら作成のフォームを開いて
+// 始める(束が古いときの知らせからの案内)。
+export function BaselinesPageContent({
+  projectId,
+  initialCreate = false,
+}: {
+  projectId: string;
+  initialCreate?: boolean;
+}) {
   const router = useRouter();
   const list = useBaselinesStore((s) => s.list);
   const status = useBaselinesStore((s) => s.status);
@@ -37,12 +45,20 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
   const clearCreateError = useBaselinesStore((s) => s.clearCreateError);
   const changeRequests = useChangeRequestsStore((s) => (s.projectId === projectId ? s.list : NO_CHANGE_REQUESTS));
   const fetchChangeRequests = useChangeRequestsStore((s) => s.fetchList);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(initialCreate);
 
   useEffect(() => {
     void fetchList(projectId);
     void fetchChangeRequests(projectId);
   }, [projectId, fetchList, fetchChangeRequests]);
+
+  // 作成のフォームを開いて始めるときも、段階と CR を読み直す(フォームを開くボタンと同じ)
+  useEffect(() => {
+    if (!initialCreate) return;
+    clearCreateError();
+    void fetchStages(projectId);
+    void fetchChangeRequests(projectId, { force: true });
+  }, [initialCreate, projectId, clearCreateError, fetchStages, fetchChangeRequests]);
 
   if (notFound) return <ProjectNotFoundNotice />;
   if (unavailable) return <DetailedModeOnlyNotice projectId={projectId} title="合意済みの版" />;
@@ -70,6 +86,9 @@ export function BaselinesPageContent({ projectId }: { projectId: string }) {
           </Link>
           <Link href={`/projects/${projectId}/confirmations`}>
             <Text color="$blue10">確認事項</Text>
+          </Link>
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

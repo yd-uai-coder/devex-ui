@@ -265,6 +265,8 @@ describe("変更の規模", () => {
   it("数えられない数を0件と書かない", () => {
     expect(scaleCell(0)).toBe("0件");
     expect(scaleCell(null)).toBe("数えられない");
+    expect(scaleCell(3, "stale")).toBe("3件(古い)");
+    expect(scaleCell(3, "counted")).toBe("3件");
   });
 
   it("同じ列の同じ理由は種類をまとめ、列が複数なら列の名前を頭に付ける", () => {

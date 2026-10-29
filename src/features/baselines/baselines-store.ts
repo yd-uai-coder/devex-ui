@@ -6,8 +6,13 @@ import { listDesignStages } from "@/features/detailed-design/api/designStagesApi
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
-import { createBaseline, getBaseline, listBaselines } from "@/features/baselines/api/baselinesApi";
-import type { BaselineCreate, BaselineRead, BaselineSummaryRead } from "@/features/baselines/api/types";
+import { createBaseline, getBaseline, getBaselineFreshness, listBaselines } from "@/features/baselines/api/baselinesApi";
+import type {
+  BaselineCreate,
+  BaselineFreshnessRead,
+  BaselineRead,
+  BaselineSummaryRead,
+} from "@/features/baselines/api/types";
 
 type BaselinesStore = {
   // 今の内容がどのプロジェクトのものか(別のプロジェクトを開いたら捨てる)
@@ -26,6 +31,8 @@ type BaselinesStore = {
   detailStatus: AsyncStatus;
   detailError: string | null;
   detailNotFound: boolean;
+  // 開いている束の鮮度(古ければ知らせる。読めなければ null)
+  freshness: BaselineFreshnessRead | null;
 
   // 作成のフォームが見せる今の段階(読むと、止まった生成も回収される)。読むまでは null
   stages: DesignStageRead[] | null;
@@ -53,6 +60,7 @@ const PROJECT_INITIAL = {
   detailStatus: "idle" as AsyncStatus,
   detailError: null,
   detailNotFound: false,
+  freshness: null,
   stages: null,
   stagesError: null,
   creating: false,
@@ -92,12 +100,18 @@ export const useBaselinesStore = create<BaselinesStore>((set, get) => {
 
     fetchDetail: async (projectId, number) => {
       switchProject(projectId);
-      if (get().detail?.number !== number) set({ detail: null });
+      if (get().detail?.number !== number) set({ detail: null, freshness: null });
       set({ detailStatus: "loading", detailError: null, detailNotFound: false });
       try {
         const detail = await getBaseline(projectId, number);
         if (get().projectId !== projectId) return;
         set({ detail, detailStatus: "success" });
+        // 鮮度は知らせのためだけなので、読めなくても中身は出す
+        void getBaselineFreshness(projectId, number)
+          .then((freshness) => {
+            if (get().projectId === projectId && get().detail?.number === number) set({ freshness });
+          })
+          .catch(() => undefined);
       } catch (err) {
         set({
           detailStatus: "error",

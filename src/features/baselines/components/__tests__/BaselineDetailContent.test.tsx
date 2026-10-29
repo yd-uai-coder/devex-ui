@@ -9,6 +9,7 @@ import { BaselineDetailContent } from "../BaselineDetailContent";
 import { useBaselinesStore } from "../../baselines-store";
 import { makeBaseline } from "../../test-utils/baselineFixtures";
 import { resetBaselinesStore } from "../../test-utils/resetBaselinesStore";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { renderWithTheme, resetChangeRequestsStore } from "@/features/change-requests/test-utils/renderWithStore";
 
@@ -74,5 +75,20 @@ describe("BaselineDetailContent", () => {
     renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
+  });
+
+  it("束が古ければ知らせ、判定できない束はそう出す", () => {
+    useBaselinesStore.setState({
+      detail: makeBaseline(),
+      freshness: makeFreshness({ baseline_number: 1, fresh: false, applied_after: [{ number: 2, keys: ["req:FR-001"] }] }),
+    });
+    const { unmount } = renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
+    expect(screen.getByLabelText("B-1 が古いことの知らせ")).toBeInTheDocument();
+    unmount();
+
+    useBaselinesStore.setState({ freshness: makeFreshness({ baseline_number: 1, tracked: false }) });
+    renderWithTheme(<BaselineDetailContent projectId="p1" number={1} />);
+    expect(screen.queryByLabelText("B-1 が古いことの知らせ")).toBeNull();
+    expect(screen.getByText(/後に反映した変更要求があるかは判定できません/)).toBeInTheDocument();
   });
 });

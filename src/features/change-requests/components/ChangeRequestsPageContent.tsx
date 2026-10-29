@@ -8,6 +8,7 @@ import { useChangeRequestsStore } from "@/features/change-requests/change-reques
 import { ChangeRequestList } from "@/features/change-requests/components/ChangeRequestList";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
 import { baselinesHref } from "@/features/baselines/baselineOps";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // 変更要求(CR)の一覧(SCR-010。docs/external_design.md 2.14節)。詳細設計モードのプロジェクトだけ
 // (簡易モードではサーバーが409を返し、本体の代わりに知らせを出す)。CR は合意済みの版を基準にするので、
@@ -43,6 +44,9 @@ export function ChangeRequestsPageContent({ projectId }: { projectId: string }) 
           </Link>
           <Link href={`/projects/${projectId}/confirmations`}>
             <Text color="$blue10">確認事項</Text>
+          </Link>
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

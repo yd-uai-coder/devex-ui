@@ -4,6 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useBaselinesStore } from "../baselines-store";
 import { makeBaseline, makeBaselineSummary } from "../test-utils/baselineFixtures";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { stubFetch } from "@/lib/api/test-utils/fetch-stub";
 
@@ -42,15 +43,19 @@ describe("useBaselinesStore", () => {
     expect(state().list).toEqual([]);
   });
 
-  it("中身と段階の状態を読む", async () => {
+  it("中身と鮮度と段階の状態を読む", async () => {
     stub.queue({ body: makeBaseline({ number: 2 }) });
+    stub.queue({ body: makeFreshness({ baseline_number: 2, fresh: false, outdated_stages: [5] }) });
     stub.queue({ body: [{ stage: 1, state: "approved", approved_version: 1, generation_status: null }] });
 
     await state().fetchDetail("p1", 2);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await state().fetchStages("p1");
 
     expect(state().detail?.number).toBe(2);
-    expect(stub.requests[1].url).toContain("/api/v1/projects/p1/design-stages");
+    expect(stub.requests[1].url).toContain("/api/v1/projects/p1/baselines/2/freshness");
+    expect(state().freshness?.outdated_stages).toEqual([5]);
+    expect(stub.requests[2].url).toContain("/api/v1/projects/p1/design-stages");
     expect(state().stages).toHaveLength(1);
   });
 

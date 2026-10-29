@@ -22,6 +22,7 @@ import type {
   ReflectionScope,
   ScaleComparisonRead,
   ScaleCountRead,
+  ScaleState,
   ShareLinkRead,
   ShareState,
   SummaryState,
@@ -588,9 +589,11 @@ export function scaleColumns(explanation: ChangeRequestExplanationRead): ScaleCo
   return [{ key: "cr", title: "この変更", recommended: false, scale: explanation.scale }];
 }
 
-// 数は「n件」、数えられなければ「数えられない」(0件と書かない)
-export function scaleCell(count: number | null): string {
-  return count === null ? "数えられない" : `${count}件`;
+// 数は「n件」、数えられなければ「数えられない」(0件と書かない)。古い段階・束の後の CR の注記つきで数えた数
+// (stale)は「(古い)」を添え、数えられないと分ける
+export function scaleCell(count: number | null, state?: ScaleState): string {
+  if (count === null) return "数えられない";
+  return state === "stale" ? `${count}件(古い)` : `${count}件`;
 }
 
 // 表の下に出す理由・注記の1行。同じ列で同じ理由・注記の種類は1行にまとめる(説明書の3節と同じ)。

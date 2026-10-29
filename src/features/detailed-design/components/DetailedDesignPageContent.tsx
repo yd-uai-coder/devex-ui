@@ -34,6 +34,7 @@ import {
   zipTestSpecNote,
 } from "@/features/documents/testSpecOps";
 import { useGenerationPolling } from "@/hooks/useGenerationPolling";
+import { materialsHref } from "@/features/materials/materialOps";
 
 // 詳細設計画面(SCR-008)。左に段階1〜8のステッパー、右に選んだ段階の作業領域を置く
 // (docs/external_design.md 2.7節「段階の進め方」)。簡易ドキュメントモードのプロジェクトは段階8
@@ -170,6 +171,12 @@ export function DetailedDesignPageContent({
           {detailed ? (
             <Link href={`/projects/${projectId}/confirmations`}>
               <Text color="$blue10">確認事項 →</Text>
+            </Link>
+          ) : null}
+          {/* 資料(SCR-013)も詳細設計モードだけ */}
+          {detailed ? (
+            <Link href={materialsHref(projectId)}>
+              <Text color="$blue10">資料 →</Text>
             </Link>
           ) : null}
           {/* 生成中でも削除できる。削除したらダッシュボードへ戻る */}

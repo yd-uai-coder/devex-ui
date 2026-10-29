@@ -9,6 +9,7 @@ import { ChangeRequestDetailContent } from "../ChangeRequestDetailContent";
 import { useChangeRequestsStore } from "../../change-requests-store";
 import { makeChangeRequest } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 const polling = vi.fn();
@@ -104,5 +105,34 @@ describe("ChangeRequestDetailContent", () => {
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
+  it("合意の前は、基準の束が古ければ知らせる。合意の後は出さない", () => {
+    const stale = makeFreshness({ baseline_number: 1, fresh: false, applied_after: [{ number: 2, keys: ["req:FR-005"] }] });
+    useChangeRequestsStore.setState({ detail: makeChangeRequest({ baseline_freshness: stale }) });
+    const { unmount } = renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
+
+    expect(screen.getByLabelText("B-1 が古いことの知らせ")).toHaveTextContent("基準の版 B-1 の設計から求めています");
+    unmount();
+
+    useChangeRequestsStore.setState({
+      detail: makeChangeRequest({
+        status: "agreed",
+        baseline_freshness: stale,
+        decision: {
+          decided_at: "2026-10-20T01:00:00Z",
+          counterpart: null,
+          memo: "",
+          reason: "",
+          recorded_by: "u1",
+          option: null,
+          source: null,
+          source_label: null,
+          fingerprint: null,
+        },
+      }),
+    });
+    renderWithTheme(<ChangeRequestDetailContent projectId="p1" number={1} />);
+    expect(screen.queryByLabelText("B-1 が古いことの知らせ")).toBeNull();
   });
 });

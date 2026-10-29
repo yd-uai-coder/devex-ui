@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, H2, Text, XStack, YStack } from "tamagui";
+import { BaselineFreshnessNotice } from "@/features/baselines/components/BaselineFreshnessNotice";
 import { useChangeRequestsStore } from "@/features/change-requests/change-requests-store";
 import { type DetailTab, isApplied } from "@/features/change-requests/changeRequestOps";
 import { ChangeRequestActions } from "@/features/change-requests/components/ChangeRequestActions";
@@ -26,7 +27,7 @@ const TABS: { value: DetailTab; label: string }[] = [
   { value: "trace", label: "たどる記録" },
 ];
 
-// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合があれば、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
+// 変更要求(CR)の詳細(SCR-010)。見出しに状態と操作(重なる CR の競合と、合意の前に基準の束が古ければ、その知らせ)、本文は6つのタブ(内容・影響・検証・説明書・共有・
 // たどる記録)。開くタブは URL の ?tab= で選べる(?focus= は影響のタブで目立たせる要素)。タブの中身(予測・比較・検証・説明書・共有リンク・記録)は開いたときに読む。タブは選んだものだけを描く(入力中の
 // フォームの状態を、親の再描画で失わないよう、部品を作り直さない)。文書への反映の完了待ちは、
 // タブを移っても続くようにここで持ち、開いたときにプロジェクトが生成中なら待ち直す。
@@ -105,6 +106,14 @@ export function ChangeRequestDetailContent({
         <>
           <ChangeRequestActions projectId={projectId} cr={detail} />
           <ConflictNotice projectId={projectId} cr={detail} />
+          {/* 合意の後は判断の時点の予測で組むので、束の鮮度は合意の前だけ知らせる */}
+          {detail.decision === null ? (
+            <BaselineFreshnessNotice
+              projectId={projectId}
+              freshness={detail.baseline_freshness}
+              lead={`この CR の対象の文・説明書・規模は、基準の版 ${detail.baseline_label} の設計から求めています。`}
+            />
+          ) : null}
           {actionError ? (
             <Text role="alert" color="$red10">
               {actionError}

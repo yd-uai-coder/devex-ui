@@ -16,6 +16,7 @@ export function resetBaselinesStore(): void {
     detailStatus: "success",
     detailError: null,
     detailNotFound: false,
+    freshness: null,
     stages: null,
     stagesError: null,
     creating: false,

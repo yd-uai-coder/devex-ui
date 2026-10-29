@@ -26,6 +26,7 @@ import {
 import { ConfirmationTable } from "@/features/confirmations/components/ConfirmationTable";
 import { isDetailedModeOnly } from "@/features/change-requests/changeRequestOps";
 import { DetailedModeOnlyNotice } from "@/features/change-requests/components/DetailedModeOnlyNotice";
+import { materialsHref } from "@/features/materials/materialOps";
 import { INPUT, OPTION } from "@/features/detailed-design/components/tableStyles";
 import { isNotFound } from "@/lib/api/client";
 
@@ -103,6 +104,9 @@ export function ConfirmationsPageContent({ projectId }: { projectId: string }) {
           </Link>
           <Link href={`/projects/${projectId}/baselines`}>
             <Text color="$blue10">合意済みの版</Text>
+          </Link>
+          <Link href={materialsHref(projectId)}>
+            <Text color="$blue10">資料</Text>
           </Link>
         </XStack>
       </XStack>

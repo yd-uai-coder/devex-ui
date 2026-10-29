@@ -87,6 +87,7 @@ describe("DetailedDesignPageContent", () => {
     renderContent();
 
     expect(screen.getByRole("link", { name: "確認事項 →" })).toHaveAttribute("href", "/projects/p1/confirmations");
+    expect(screen.getByRole("link", { name: "資料 →" })).toHaveAttribute("href", "/projects/p1/materials");
     expect(screen.getByRole("link", { name: "変更要求(CR) →" })).toHaveAttribute("href", "/projects/p1/change-requests");
     expect(screen.getByRole("link", { name: "合意済みの版 →" })).toHaveAttribute("href", "/projects/p1/baselines");
     expect(useDetailedDesignStore.getState().selectStage).not.toHaveBeenCalled();

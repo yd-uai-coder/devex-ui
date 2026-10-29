@@ -1,3 +1,5 @@
+import type { BaselineFreshnessRead } from "@/features/baselines/api/types";
+
 // 変更要求(CR)の API の型。devex-api app/schemas/change_request.py の同名のクラスに対応する
 // (画面で使う項目だけ)。合意済みの版(束)の型は features/baselines/api/types.ts。
 
@@ -183,6 +185,8 @@ export type ChangeRequestRead = ChangeRequestSummaryRead & {
   allowed_actions: ChangeRequestAction[];
   // 基準の束の後に、ほかの CR の反映で変わった対象の要件(未確認があると文書へ反映できない)
   conflicts: ChangeRequestConflictRead[];
+  // 基準の束の鮮度(束の後にほかの CR を反映した・古い段階から数えた、なら古い。この CR 自身の反映は除く)
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // 合意・却下の記録(相手は空でもよい。日時はタイムゾーン付き)。案のある CR の合意では、選んだ案の番号が要る
@@ -404,6 +408,8 @@ export type ExplanationSummaryRead = {
 // 変更の規模(説明書の規模の節)。種類ごとの数(数えられなければ null で、uncountable に理由)・
 // 数えたものの表示名・数えたうえでの注記。detail は対象の段階・文書・要件 ID・単位
 export type ScaleKind = "unit" | "file" | "test" | "screen" | "api";
+// counted(数えた) / stale(古い段階・束の後の CR の注記つきで数えた。少ない・違うことがある) / uncountable(数えられない)
+export type ScaleState = "counted" | "stale" | "uncountable";
 
 export type ScaleRemarkRead = {
   code: string;
@@ -415,6 +421,7 @@ export type ScaleCountRead = {
   kind: ScaleKind;
   label: string;
   count: number | null;
+  state: ScaleState;
   names: string[];
   uncountable: ScaleRemarkRead[];
   notes: ScaleRemarkRead[];
@@ -445,6 +452,8 @@ export type ChangeRequestExplanationRead = {
   system_tests: string[];
   has_test_spec: boolean;
   summary: ExplanationSummaryRead | null;
+  // 規模を数えた基準の束の鮮度
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // 選択肢の LLM の下書き(GET .../options/draft)。options は LLM が作った案(規則に合わないこともある)、
@@ -486,6 +495,8 @@ export type ShareLinkCreatedRead = ShareLinkRead & {
   token: string;
   path: string;
   summary_needs_reconfirm: boolean;
+  // 説明書の規模を数えた基準の束の鮮度(古ければ知らせる)
+  baseline_freshness: BaselineFreshnessRead | null;
 };
 
 // CR のコメント欄(GET .../comments)。クライアントのコメントごとに開発者の返信をまとめる(1段)。

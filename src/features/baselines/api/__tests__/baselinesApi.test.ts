@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createBaseline,
   getBaseline,
+  getBaselineFreshness,
   listBaselineOrigins,
   listBaselineRequirements,
   listBaselines,
@@ -48,6 +49,26 @@ describe("baselinesApi", () => {
 
     expect(stub.requests[0].url).toContain(`${BASE}/2/origins`);
     expect(origins[0].kind).toBe("screen");
+  });
+
+  it("束の鮮度を読む", async () => {
+    stub.queue({
+      body: {
+        baseline_number: 2,
+        label: "B-2",
+        fresh: false,
+        is_latest: true,
+        tracked: true,
+        newer_numbers: [],
+        applied_after: [{ number: 6, keys: ["req:FR-001"] }],
+        outdated_stages: [],
+      },
+    });
+
+    const freshness = await getBaselineFreshness("p1", 2);
+
+    expect(stub.requests[0].url).toContain(`${BASE}/2/freshness`);
+    expect(freshness.applied_after[0].number).toBe(6);
   });
 
   it("作成は合意の記録と入れる CR の番号を送る", async () => {

@@ -28,6 +28,7 @@ import {
 import { POLL_INTERVAL_MS, useGenerationPolling } from "@/hooks/useGenerationPolling";
 import { useInterval } from "@/hooks/useInterval";
 import { failureFor } from "@/lib/generation-failure";
+import { materialsHref } from "@/features/materials/materialOps";
 
 export function DocumentsPageContent({ projectId }: { projectId: string }) {
   const documents = useDocumentsStore((s) => s.documents);
@@ -142,6 +143,12 @@ export function DocumentsPageContent({ projectId }: { projectId: string }) {
           {projectMode === "detailed" ? (
             <Link href={`/projects/${projectId}/confirmations`}>
               <Text color="$blue10">確認事項</Text>
+            </Link>
+          ) : null}
+          {/* 資料(SCR-013)も詳細設計モードだけ */}
+          {projectMode === "detailed" ? (
+            <Link href={materialsHref(projectId)}>
+              <Text color="$blue10">資料</Text>
             </Link>
           ) : null}
           {/* 簡易モードは、同じ画面(SCR-008)を段階8(実装手順書)だけで開く(入力は4文書) */}

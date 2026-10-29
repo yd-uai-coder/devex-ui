@@ -15,6 +15,7 @@ import {
   makeSummary,
 } from "../../test-utils/changeRequestFixtures";
 import { renderWithTheme, resetChangeRequestsStore } from "../../test-utils/renderWithStore";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 
 const store = () => useChangeRequestsStore.getState();
 const setViews = (views: Partial<ReturnType<typeof store>["views"]>) =>
@@ -112,5 +113,19 @@ describe("ShareLinkPanel", () => {
     await userEvent.click(within(rows[1]).getByRole("button", { name: "取り消す" }));
     await userEvent.click(await screen.findByLabelText("取り消す"));
     expect(store().revokeShare).toHaveBeenCalledWith("p1", 1, "l1");
+  });
+
+  it("作ったリンクの説明書の規模の束が古ければ、作った知らせの中で知らせる", () => {
+    setViews({ shareLinks: [makeShareLink()], explanation: makeExplanation() });
+    useChangeRequestsStore.setState({
+      createdLink: {
+        number: 1,
+        link: makeCreatedShareLink({ baseline_freshness: makeFreshness({ baseline_number: 1, fresh: false, outdated_stages: [5] }) }),
+      },
+    });
+    renderWithTheme(<ShareTab projectId="p1" cr={makeChangeRequest({ status: "explained" })} />);
+
+    const box = screen.getByLabelText("作ったリンク");
+    expect(within(box).getByLabelText("B-1 が古いことの知らせ")).toHaveTextContent("クライアントに見せる説明書の規模");
   });
 });

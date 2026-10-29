@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
   BaselineCreate,
+  BaselineFreshnessRead,
   BaselineOriginRead,
   BaselineRead,
   BaselineRequirementRead,
@@ -32,4 +33,9 @@ export function listBaselineRequirements(projectId: string, number: number): Pro
 // 新しい要件の予測の起点に選べる要素(束の要件・画面・API)
 export function listBaselineOrigins(projectId: string, number: number): Promise<BaselineOriginRead[]> {
   return apiFetch<BaselineOriginRead[]>(`${base(projectId)}/${number}/origins`);
+}
+
+// 束の鮮度(後の束・束の後に反映した CR・束を作った時点で古かった段階)
+export function getBaselineFreshness(projectId: string, number: number): Promise<BaselineFreshnessRead> {
+  return apiFetch<BaselineFreshnessRead>(`${base(projectId)}/${number}/freshness`);
 }

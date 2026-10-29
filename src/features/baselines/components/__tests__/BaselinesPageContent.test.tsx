@@ -47,6 +47,7 @@ describe("BaselinesPageContent", () => {
     expect(screen.getAllByText("6 / 8 入った")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "← 変更要求(CR)" })).toHaveAttribute("href", "/projects/p1/change-requests");
     expect(screen.getByRole("link", { name: "確認事項" })).toHaveAttribute("href", "/projects/p1/confirmations");
+    expect(screen.getByRole("link", { name: "資料" })).toHaveAttribute("href", "/projects/p1/materials");
   });
 
   it("作成のフォームを開くと段階と CR を読み直し、入れられる CR だけを選ばせる", async () => {
@@ -81,5 +82,24 @@ describe("BaselinesPageContent", () => {
 
     expect(screen.getByText(/詳細設計モードのプロジェクトだけで使えます/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "合意済みの版を作る" })).not.toBeInTheDocument();
+  });
+
+  it("一覧に鮮度を出す", () => {
+    useBaselinesStore.setState({
+      list: [makeBaselineSummary({ number: 2, label: "B-2", fresh: true }), makeBaselineSummary({ fresh: false })],
+    });
+    renderWithTheme(<BaselinesPageContent projectId="p1" />);
+
+    expect(screen.getByRole("columnheader", { name: "鮮度" })).toBeInTheDocument();
+    expect(screen.getByText("新しい")).toBeInTheDocument();
+    expect(screen.getByText("古い")).toBeInTheDocument();
+  });
+
+  it("知らせからの案内(initialCreate)では、作成のフォームを開いて段階と CR を読む", () => {
+    renderWithTheme(<BaselinesPageContent projectId="p1" initialCreate />);
+
+    expect(screen.getByRole("heading", { name: "合意済みの版を作る" })).toBeInTheDocument();
+    expect(useBaselinesStore.getState().fetchStages).toHaveBeenCalledWith("p1");
+    expect(useChangeRequestsStore.getState().fetchList).toHaveBeenCalledWith("p1", { force: true });
   });
 });

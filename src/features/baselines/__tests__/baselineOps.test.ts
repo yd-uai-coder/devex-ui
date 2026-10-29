@@ -14,7 +14,11 @@ import {
   stagePreview,
   toCreateBody,
   type BaselineForm,
+  baselineCreateHref,
+  freshnessLabel,
+  needsRebuild,
 } from "../baselineOps";
+import { makeFreshness } from "@/features/materials/test-utils/materialFixtures";
 import { makeChangeRequest } from "@/features/change-requests/test-utils/changeRequestFixtures";
 import type { DesignStageRead } from "@/features/detailed-design/api/types";
 
@@ -115,5 +119,15 @@ describe("baselineOps", () => {
       { stage: 1, title: "機能一覧", included: true, state: "承認済み" },
       { stage: 2, title: "データフロー", included: false, state: "下書き" },
     ]);
+  });
+
+  it("鮮度の印・作り直しが要るか・作成のフォームを開くリンク", () => {
+    expect(freshnessLabel(true)).toBe("新しい");
+    expect(freshnessLabel(false)).toBe("古い");
+    expect(freshnessLabel(undefined)).toBe("─");
+    expect(needsRebuild(makeFreshness({ fresh: false, applied_after: [{ number: 2, keys: [] }] }))).toBe(true);
+    expect(needsRebuild(makeFreshness({ fresh: false, outdated_stages: [5] }))).toBe(true);
+    expect(needsRebuild(makeFreshness({ fresh: false, is_latest: false, newer_numbers: [3] }))).toBe(false);
+    expect(baselineCreateHref("p1")).toBe("/projects/p1/baselines?create=1");
   });
 });

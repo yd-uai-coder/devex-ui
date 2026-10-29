@@ -49,6 +49,7 @@ export function makeChangeRequest(overrides: Partial<ChangeRequestRead> = {}): C
     derived_numbers: [],
     allowed_actions: ["edit", "explain", "withdraw"],
     conflicts: [],
+    baseline_freshness: null,
     ...overrides,
   };
 }
@@ -360,6 +361,7 @@ export function makeExplanation(
     option_scales: [],
     has_test_spec: true,
     summary: null,
+    baseline_freshness: null,
     ...overrides,
   };
 }
@@ -367,14 +369,15 @@ export function makeExplanation(
 // 説明書の規模(作業単位1件・ファイル2件・テスト1件・画面1件、API は数えられない)
 export function makeScale(overrides: Partial<Record<ScaleCountRead["kind"], Partial<ScaleCountRead>>> = {}): ScaleCountRead[] {
   const base: ScaleCountRead[] = [
-    { kind: "unit", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
-    { kind: "file", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
-    { kind: "test", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
-    { kind: "screen", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
+    { kind: "unit", state: "counted", label: "作業単位", count: 1, names: ["M-01-T02"], uncountable: [], notes: [] },
+    { kind: "file", state: "counted", label: "ファイル", count: 2, names: ["app/a.py", "app/b.py"], uncountable: [], notes: [] },
+    { kind: "test", state: "counted", label: "テスト", count: 1, names: ["IT-01"], uncountable: [], notes: [] },
+    { kind: "screen", state: "counted", label: "画面", count: 1, names: ["チャットヒアリング画面(SCR-004)"], uncountable: [], notes: [] },
     {
       kind: "api",
       label: "API",
       count: null,
+      state: "uncountable",
       names: [],
       uncountable: [{ code: "no_document", label: "要る文書が束に無い", detail: "外部設計書" }],
       notes: [],
@@ -449,6 +452,7 @@ export function makeCreatedShareLink(overrides: Partial<ShareLinkCreatedRead> = 
     token: "tok123",
     path: "/share/tok123",
     summary_needs_reconfirm: false,
+    baseline_freshness: null,
     ...overrides,
   };
 }
