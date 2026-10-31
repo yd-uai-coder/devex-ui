@@ -70,7 +70,7 @@ describe("Menu", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Guide" }));
-    expect(screen.getByRole("link", { name: "作成予定" })).toHaveAttribute("href", "/guide");
+    expect(screen.getByRole("link", { name: "使い方ガイド(目次)" })).toHaveAttribute("href", "/guide");
   });
 
   it("未ログインなら Authentication にログイン・ユーザー登録を出す", async () => {

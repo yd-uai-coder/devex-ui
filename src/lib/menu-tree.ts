@@ -34,8 +34,14 @@ export const MENU_TREE: MenuGroup[] = [
   },
   {
     label: "Guide",
-    // 仮のリンク(ページはまだ無く、開くと 404)
-    children: [{ kind: "link", label: "作成予定", href: "/guide" }],
+    // 使い方ガイドの目次と、よく開くページ(ページの定義は features/guide/guide-flow.ts)
+    children: [
+      { kind: "link", label: "使い方ガイド(目次)", href: "/guide" },
+      { kind: "link", label: "はじめに", href: "/guide/getting-started" },
+      { kind: "link", label: "ヒアリング", href: "/guide/hearing" },
+      { kind: "link", label: "合意と変更管理", href: "/guide/agreement" },
+      { kind: "link", label: "クライアントの方へ", href: "/guide/for-clients" },
+    ],
   },
 ];
 

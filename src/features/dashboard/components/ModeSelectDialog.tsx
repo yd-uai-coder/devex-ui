@@ -21,6 +21,9 @@ export const MODE_OPTIONS: { mode: ProjectMode; title: string; description: stri
   },
 ];
 
+// 使い方ガイドの「2つのモードと作る文書」(features/guide/guide-flow.ts の modes)
+export const MODES_GUIDE_HREF = "/guide/modes";
+
 // SCR-002 の「新規プロジェクトを作成」で開くモード選択ダイアログ。選んだモードを
 // クエリ(?mode=)で作成画面(/projects/new)へ渡す。作成画面を mode なしで開いたときにも出す。
 // onCancel はキャンセル・外側の押下で呼ぶ(省略すると onClose)。モードを選んだときは onClose。
@@ -58,6 +61,12 @@ export function ModeSelectDialog({
         >
           <Dialog.Title>モードを選んでください</Dialog.Title>
           <Dialog.Description>モードはプロジェクトの作成後に変更できません。</Dialog.Description>
+          {/* 迷ったときに、作る文書の違いを別のタブで読めるようにする(ダイアログは閉じない) */}
+          <Text fontSize="$3">
+            <a href={MODES_GUIDE_HREF} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue10)" }}>
+              作る文書の違いを見る(使い方ガイド・新しいタブ)
+            </a>
+          </Text>
           <YStack gap="$3">
             {MODE_OPTIONS.map((option) => (
               <YStack

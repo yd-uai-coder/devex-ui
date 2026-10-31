@@ -18,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Devex",
-  description: "AIによるシステム開発を支援するAIツール",
+  description:
+    "クライアントとの合意を、設計から実装・テストまでつなぐ。AI のヒアリングから設計書・実装手順・テストを作り、仕様変更の合意と反映までを管理します。",
 };
 
 export default function RootLayout({
@@ -28,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
