@@ -2,7 +2,7 @@ import { Anchor, XStack } from "tamagui";
 import { FOOTER_HEIGHT } from "./layout-constants";
 
 const GITHUB_REPO_URL =
-  "https://github.com/yd-uai-coder/next-tamagui-templates";
+  "https://github.com/yd-uai-coder";
 
 export function Footer() {
   return (
@@ -24,7 +24,7 @@ export function Footer() {
         href={GITHUB_REPO_URL}
         target="_blank"
         rel="noopener noreferrer"
-        color="$color11"
+        color="white"
         textDecorationLine="underline"
       >
         github

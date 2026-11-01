@@ -34,6 +34,7 @@ export function Header({ plain = false }: { plain?: boolean }) {
         minWidth={0}
         fontSize="$7"
         $md={{ fontSize: "$9" }}
+        color="white"
       >
         {/* タイトルはトップページへのリンク(plain のときはリンクにしない) */}
         {plain ? (
