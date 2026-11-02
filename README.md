@@ -1,21 +1,27 @@
 # devex-ui
 
-[Devex](https://github.com/yd-uai-coder/devex-project#readme)(AIとの対話で要件を引き出し、要件定義から設計・実装手順・テストまでを、IDでつながった設計情報として組み立てるシステム)のフロントエンドです。Next.js(App Router)+ Tamagui で構築しています。バックエンドは [devex-api](https://github.com/yd-uai-coder/devex-api#readme) です。
+[Devex](https://github.com/yd-uai-coder/devex-project#readme)(AIとの対話で要件を引き出し、要件定義から設計・実装手順・テストまでを、IDでつながった設計情報として組み立て、クライアントとの合意を基準に仕様の変更をたどれるようにするシステム)のフロントエンドです。Next.js(App Router)+ Tamagui で構築しています。バックエンドは [devex-api](https://github.com/yd-uai-coder/devex-api#readme) です。
 
 本番: <https://devex.uandi-tech.com/>(Vercel)
 
 ## 主な機能
 
-ログインが必要な画面は `src/app/(pages)/(protected)/` の下にあります。
+ログインが必要な画面は `src/app/(pages)/(protected)/` の下にあります。TOP・使い方ガイド・共有リンクはログインが要りません。
 
 | 機能 | 画面 | 実装 |
 |---|---|---|
+| TOP・使い方ガイド | `/`・`/guide`・`/guide/<ページ>` | `src/features/top/`・`src/features/guide/` ── 入口(できること・2つのモードの比較・はじめ方)と、機能ごとの使い方のページ(画面の撮影・ページの目次) |
 | 認証 | `/login`・`/register` | `src/features/auth/` ── メールとパスワード、または Google アカウントでのログインと登録 |
 | ダッシュボード | `/dashboard`・`/projects/new` | `src/features/dashboard/` ── プロジェクトの一覧(検索・絞り込み・ページ送り)・作成(参考資料の添付)・削除 |
 | ヒアリング | `/projects/[id]/chat` | `src/features/hearing/` ── AI とのチャット(SSE)、選択肢カードでの回答、観点ごとの状態の表、完了の判定 |
 | 文書 | `/projects/[id]/documents` | `src/features/documents/` ── 4文書の生成と進み具合、タブでの表示・版の履歴と復元・ダウンロード、テスト仕様書 |
 | 詳細設計モード | `/projects/[id]/detailed-design` | `src/features/detailed-design/`・`src/features/uml/` ── 段階ごとの生成・編集・承認、UML 設計図の編集(React Flow)と draw.io / SVG の出力、実装手順書、陳腐化の印と変更の影響 |
 | AI 設計レビュー | (文書・詳細設計の画面の中) | `src/features/design-review/` ── 指摘の一覧と採否、レビュー結果からの再ヒアリング |
+| 合意済みの版 | `/projects/[id]/baselines`・`/projects/[id]/baselines/[number]` | `src/features/baselines/` ── 束の一覧・作成(合意の記録)・中身と鮮度 |
+| 変更要求(CR) | `/projects/[id]/change-requests`・`/projects/[id]/change-requests/[number]`・`/projects/[id]/baselines/[number]/change-requests/new` | `src/features/change-requests/` ── 一覧・作成、詳細のタブ(内容・影響・説明書・検証・たどる記録)、規模と選択肢、文書への反映、共有リンクの発行とコメント |
+| 合意の状態・確認事項 | `/projects/[id]/confirmations`(と文書の画面の中) | `src/features/agreements/`・`src/features/confirmations/` ── 行ごとの合意の状態と履歴、推測の要件・未決の観点の確認 |
+| 資料 | `/projects/[id]/materials`・`/projects/[id]/materials/[mid]` | `src/features/materials/` ── 資料の追加(貼り付け・ファイル)・一覧、違いの取り出しと一覧、選んだ違いから CR の下書きへ |
+| 共有リンク | `/share/[token]` | `src/features/share/` ── クライアント向けのページ。説明書・選択肢・規模を読み、コメント・案の選択・合意 / 却下 |
 | マイページ | `/mypage` | `src/features/mypage/` ── アカウントの変更、Google の連携と解除、用途ごとのモデルと API キーの登録 |
 
 `src/features/*/demo/` と `/design-review-demo` は、画面を作る前に仮データで見せ方を確かめた試作です。
@@ -58,8 +64,8 @@ Tamagui・Next.js 16 で実際に詰まった点(Server Component からの impo
 
 | 種類 | 道具 | 中身 |
 |---|---|---|
-| 単体・コンポーネント | Vitest + React Testing Library + user-event | 約160ファイル・約1,000ケース。テスト対象と同じディレクトリの `__tests__/` に置く。純粋なロジックは素で、API は `src/lib/api/test-utils/` のフェイクで差し替える |
-| E2E | Playwright | 4ファイル・9テスト(`e2e/`)。devex-api を偽の LLM(`E2E_FAKE_LLM=true`)で、画面を偽の Google のボタン(`NEXT_PUBLIC_E2E_FAKE_GOOGLE=true`)で起動し、ログイン → ヒアリング → 生成・再生成、設計レビュー、詳細設計の段階1〜7、一覧の検索と削除、Google での登録・連携を通す |
+| 単体・コンポーネント | Vitest + React Testing Library + user-event | 235ファイル・約1,480ケース。テスト対象と同じディレクトリの `__tests__/` に置く。純粋なロジックは素で、API は `src/lib/api/test-utils/` のフェイクで差し替える |
+| E2E | Playwright | 10ファイル・16テスト(`e2e/`)。devex-api を偽の LLM(`E2E_FAKE_LLM=true`)で、画面を偽の Google のボタン(`NEXT_PUBLIC_E2E_FAKE_GOOGLE=true`)で起動し、ログイン → ヒアリング → 生成・再生成、設計レビュー、詳細設計の段階1〜7、一覧の検索と削除、Google での登録・連携、CR の受付から検証まで、合意の保護、名称を言い換える生成、共有リンクでの合意、資料から CR の下書き、TOP・使い方ガイドを通す |
 
 ```bash
 npm run test                     # 単体・コンポーネント(手元で時間切れが出るときは npx vitest run --maxWorkers=4)
@@ -84,7 +90,7 @@ npm run test:e2e                 # E2E(devex-api を ../devex-api に置いて�
 ```text
 src/
 ├── app/
-│   ├── (pages)/                  # ページ(TOP・ログイン・登録・試作のデモ)
+│   ├── (pages)/                  # ページ(TOP・使い方ガイド・ログイン・登録・共有リンク・試作のデモ)
 │   │   └── (protected)/          # ログインが必要なページ(ダッシュボード・プロジェクト・マイページ)
 │   ├── layout.tsx / providers.tsx
 │   └── not-found.tsx
